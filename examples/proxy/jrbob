@@ -1,0 +1,8 @@
+proxy:
+  proxytype: opnsense
+  host: jrbob.bierce.org
+  proto: https
+  verify_ssl: false
+  api_key: YOUR_API_KEY
+  api_secret: YOUR_API_SECRET
+  timeout: 30

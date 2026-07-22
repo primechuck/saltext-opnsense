@@ -1,0 +1,78 @@
+// Renovate customManagers snippet for saltext-opnsense
+// Drop these entries into root renovate.json5 customManagers array and postUpgradeTasks.
+//
+// Purpose: Track opnsense/core and opnsense/plugins releases and auto-regenerate
+// src/saltext/opnsense/utils/controllers.json + tools/controllers.json via
+// tools/generate_spec.py (similar to vendor_charts.py post-upgrade hook).
+
+{
+  customManagers: [
+    {
+      customType: "regex",
+      description: "Track opnsense core version for saltext-opnsense controllers.json (core_ref)",
+      fileMatch: [
+        "^projects/saltext-opnsense/src/saltext/opnsense/utils/controllers\\.json$",
+        "^projects/saltext-opnsense/tools/controllers\\.json$"
+      ],
+      matchStrings: [
+        "\"core_ref\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      depNameTemplate: "opnsense/core",
+      datasourceTemplate: "github-tags",
+      // OPNsense uses plain version tags like 25.7, 25.1, 24.7 etc (no v prefix)
+      // Some prereleases have _beta suffix — keep but allow unstable? Default skips.
+      // versioningTemplate: "semver" may not match 25.7 scheme, use loose or regex.
+      versioningTemplate: "loose"
+    },
+    {
+      customType: "regex",
+      description: "Track opnsense plugins version for saltext-opnsense controllers.json (plugins_ref)",
+      fileMatch: [
+        "^projects/saltext-opnsense/src/saltext/opnsense/utils/controllers\\.json$",
+        "^projects/saltext-opnsense/tools/controllers\\.json$"
+      ],
+      matchStrings: [
+        "\"plugins_ref\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      depNameTemplate: "opnsense/plugins",
+      datasourceTemplate: "github-tags",
+      versioningTemplate: "loose"
+    }
+  ],
+
+  // Group core + plugins into single PR because they release in lockstep (25.7 = both)
+  packageRules: [
+    {
+      matchDepNames: ["opnsense/core", "opnsense/plugins"],
+      groupName: "opnsense"
+    }
+  ],
+
+  // Post-upgrade: regenerate controllers.json after tag bump
+  postUpgradeTasks: {
+    commands: [
+      // existing vendor_charts hook
+      "cd infra/k8s && python3 vendor_charts.py all",
+      // new: regenerate OPNsense spec, copy to src
+      "cd projects/saltext-opnsense && python tools/generate_spec.py --core-ref {{newVersion}} --plugins-ref {{newVersion}} --output src/saltext/opnsense/utils/controllers.json || true",
+      "cd projects/saltext-opnsense && cp src/saltext/opnsense/utils/controllers.json tools/controllers.json || true"
+    ],
+    fileFilters: [
+      "infra/k8s/charts.json",
+      "projects/saltext-opnsense/src/saltext/opnsense/utils/controllers.json",
+      "projects/saltext-opnsense/tools/controllers.json"
+    ],
+    executionMode: "branch"
+  }
+}
+
+// Alternative simpler postUpgradeTasks if you want separate task per datasource:
+//
+// "postUpgradeTasks": {
+//   "commands": [
+//     "cd infra/k8s && python3 vendor_charts.py all",
+//     "cd projects/saltext-opnsense && python tools/generate_spec.py --core-ref $(jq -r '.meta.core_ref' src/saltext/opnsense/utils/controllers.json) --plugins-ref $(jq -r '.meta.plugins_ref' src/saltext/opnsense/utils/controllers.json) --output src/saltext/opnsense/utils/controllers.json && cp src/saltext/opnsense/utils/controllers.json tools/controllers.json"
+//   ],
+//   "fileFilters": ["infra/k8s/charts.json", "projects/saltext-opnsense/src/saltext/opnsense/utils/controllers.json"],
+//   "executionMode": "branch"
+// }

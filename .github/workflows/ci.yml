@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .[dev] || pip install -e . && pip install pytest requests salt
+      - run: PYTHONPATH=src pytest tests/unit -v
+
+  spec-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - run: python tools/generate_spec.py --core-ref master --plugins-ref master --output /tmp/controllers.json
+      - run: diff -u tools/controllers.json /tmp/controllers.json || (echo "controllers.json drift — run generate_spec.py" && exit 1)

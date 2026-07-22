@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "saltext-opnsense"
+description = "Salt extension for managing OPNsense via its API - templated, 3008+ ready"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Empire"}]
+keywords = ["salt", "salt-extension", "opnsense", "firewall", "api"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "salt>=3008",
+  "requests>=2.28",
+]
+dynamic = ["version"]
+
+[project.entry-points."salt.loader"]
+"saltext.opnsense" = "saltext.opnsense"
+
+[project.urls]
+Homepage = "https://github.com/empire/saltext-opnsense"
+Repository = "https://github.com/empire/saltext-opnsense"
+Issues = "https://github.com/empire/saltext-opnsense/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "saltext.opnsense.version.__version__"}
+
+[tool.setuptools_scm]
+write_to = "src/saltext/opnsense/version/_version.py"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+builtins = ["__opts__", "__salt__", "__proxy__", "__context__", "__grains__", "__utils__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "C90", "I", "N"]
+ignore = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.towncrier]
+name = "saltext-opnsense"
+version = {attr = "saltext.opnsense.version.__version__"}
+filename = "CHANGELOG.md"
+directory = "changelog"
+type = [
+  {directory = "feature", name = "Features", showcontent = true},
+  {directory = "bugfix", name = "Bug Fixes", showcontent = true},
+  {directory = "doc", name = "Improved Documentation", showcontent = true},
+  {directory = "removal", name = "Removals and De-precations", showcontent = true},
+  {directory = "misc", name = "Miscellaneous", showcontent = false},
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=7",
+  "pytest-salt-factories",
+  "nox",
+  "ruff",
+  "towncrier",
+]

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.nox/
+venv/
+.venv/
+controllers.json.bak
+/tmp/
+tools/tmp/
