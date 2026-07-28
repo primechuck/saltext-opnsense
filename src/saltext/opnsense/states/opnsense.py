@@ -9,6 +9,7 @@ from saltext.opnsense.utils.common import (
 from saltext.opnsense.utils.common import (
     is_uuid as _is_uuid,
 )
+from saltext.opnsense.utils.diff import diff_models
 
 __virtualname__ = "opnsense"
 
@@ -1289,6 +1290,19 @@ def item_present(
             found = row
             break
 
+    if found and found.get("uuid"):
+        try:
+            full_item = __salt__["opnsense.get"](module, controller, type, uuid=found.get("uuid"))
+            if isinstance(full_item, dict):
+                if type in full_item and isinstance(full_item[type], dict):
+                    found = full_item[type]
+                elif len(full_item) == 1 and isinstance(list(full_item.values())[0], dict):
+                    found = list(full_item.values())[0]
+                else:
+                    found = full_item
+        except Exception as exc:
+            log.debug("get full item failed: %s", exc)
+
     payload = data
     if (
         isinstance(data, dict)
@@ -1413,13 +1427,7 @@ def item_present(
             ret["comment"] = f"add failed: {exc}"
             return ret
 
-    diff = {}
-    for k, v in flat_data.items():
-        if k == "uuid":
-            continue
-        existing_val = found.get(k)
-        if str(existing_val or "") != str(v or ""):
-            diff[k] = {"old": existing_val, "new": v}
+    diff = diff_models(found, flat_data if isinstance(flat_data, dict) else {})
 
     if not diff:
         ret["result"] = True

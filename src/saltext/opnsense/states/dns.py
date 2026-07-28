@@ -9,6 +9,7 @@ from saltext.opnsense.utils.common import (
 from saltext.opnsense.utils.common import (
     parse_reconfigure_path as _parse_reconfigure,
 )
+from saltext.opnsense.utils.diff import diff_models
 
 log = logging.getLogger(__name__)
 
@@ -223,6 +224,10 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
             if hn:
                 purge_list.append((hn, dom))
 
+    enabled_str = "1" if enabled else "0"
+    if isinstance(enabled, str):
+        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
+
     if __opts__.get("test"):
         to_add = []
         to_upd = []
@@ -233,7 +238,16 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
                 to_add.append(f"{hn}.{dom}")
             else:
                 cur = existing_map[key]
-                if cur.get("host") != parent_uuid:
+                fqdn = f"{hn}.{dom}"
+                desc = descriptions.get(fqdn) or descriptions.get(hn) or f"managed by salt - {fqdn}"
+                desired_data = {
+                    "enabled": enabled_str,
+                    "host": parent_uuid,
+                    "hostname": hn,
+                    "domain": dom,
+                    "description": desc,
+                }
+                if diff_models(cur, desired_data, parent_human=parent):
                     to_upd.append(f"{hn}.{dom}")
         for hn, dom in purge_list:
             if (hn, dom) in existing_map:
@@ -255,10 +269,6 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
     updated = []
     errors = []
 
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
-
     for hn, dom in desired:
         fqdn = f"{hn}.{dom}"
         desc = descriptions.get(fqdn) or descriptions.get(hn) or f"managed by salt - {fqdn}"
@@ -277,12 +287,8 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
                 added.append(fqdn)
                 changes[fqdn] = {"action": "added", "parent": parent}
             else:
-                diff_needed = False
-                for k, v in desired_data.items():
-                    if str(existing.get(k, "")) != str(v):
-                        diff_needed = True
-                        break
-                if diff_needed:
+                diff = diff_models(existing, desired_data, parent_human=parent)
+                if diff:
                     __salt__["opnsense.set_item"]("unbound", "settings", "host_alias", existing.get("uuid"), payload)
                     updated.append(fqdn)
                     changes[fqdn] = {"action": "updated", "parent": parent}

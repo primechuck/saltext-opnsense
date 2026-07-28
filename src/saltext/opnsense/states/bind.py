@@ -9,6 +9,7 @@ from saltext.opnsense.utils.common import (
 from saltext.opnsense.utils.common import (
     parse_reconfigure_path as _parse_reconfigure,
 )
+from saltext.opnsense.utils.diff import diff_models
 
 log = logging.getLogger(__name__)
 
@@ -154,12 +155,7 @@ def domain_present(name, domain_type="primary", description=None, enabled=True, 
             ret["comment"] = f"add failed: {exc}"
             return ret
 
-    diff = {}
-    for k, v in data.items():
-        if k == "uuid":
-            continue
-        if str(existing.get(k, "")) != str(v):
-            diff[k] = {"old": existing.get(k), "new": v}
+    diff = diff_models(existing, data)
 
     if not diff:
         ret["result"] = True
@@ -352,12 +348,7 @@ def record_present(name, domain, type="A", value=None, ttl=None, enabled=True, d
             ret["comment"] = f"add failed: {exc}"
             return ret
 
-    diff = {}
-    for k, v in data.items():
-        if k == "uuid":
-            continue
-        if str(existing.get(k, "")) != str(v):
-            diff[k] = {"old": existing.get(k), "new": v}
+    diff = diff_models(existing, data, parent_human=domain)
 
     if not diff:
         ret["result"] = True
