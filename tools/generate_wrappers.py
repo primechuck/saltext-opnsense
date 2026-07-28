@@ -23,9 +23,11 @@ import pathlib
 import re
 import sys
 from collections import defaultdict
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Set, Tuple
 
-HEADER = "# AUTO-GENERATED - DO NOT EDIT - run tools/generate_wrappers.py\n"
+HEADER_TMPL = "# AUTO-GENERATED - DO NOT EDIT MANUALLY (Built against OPNsense {core_ref}) - run tools/generate_wrappers.py\n"
+HEADER = HEADER_TMPL.format(core_ref="25.7")
+
 
 # Manually curated fallback for acmeclient if missing
 MANUAL_ACMECLIENT = {
@@ -109,10 +111,6 @@ def find_spec_files() -> List[pathlib.Path]:
         base / ".." / "src/saltext/opnsense/utils/controllers.json",
         pathlib.Path.cwd() / "tools/controllers.json",
         pathlib.Path.cwd() / "src/saltext/opnsense/utils/controllers.json",
-        pathlib.Path.cwd() / "projects/saltext-opnsense/tools/controllers.json",
-        pathlib.Path.cwd() / "projects/saltext-opnsense/src/saltext/opnsense/utils/controllers.json",
-        pathlib.Path("/home/primechuck/Documents/GitHub/configurations/projects/saltext-opnsense/tools/controllers.json"),
-        pathlib.Path("/home/primechuck/Documents/GitHub/configurations/projects/saltext-opnsense/src/saltext/opnsense/utils/controllers.json"),
     ]
     found = []
     for p in candidates:
@@ -338,15 +336,9 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
             if low in CRUD_VERBS_SET:
                 simple_verbs.add(low)
             # Also check for verb without suffix but in generic_raw? Actually generic_map keys are snake of original, e.g., "search" -> "search"
-        # Also singleton already has get/set
-        all_simple = simple_verbs | singleton
         # For acmeclient style, if we have search and at least add/set or get etc, we have simple CRUD
         if "search" in generic_map or "search" in simple_verbs or ("search" in [a.lower() for a in uniq_actions]):
-            # Check if controller's raw actions include simple CRUD
             raw_low = [a.lower() for a in uniq_actions]
-            has_search = "search" in raw_low or any(a.lower().startswith("search") and len(a) > 6 for a in uniq_actions) is False and "search" in raw_low
-            # Actually for acmeclient, raw actions are exactly ["add","del","get","register","search","set","toggle","update"]
-            # So search present
             if "search" in raw_low:
                 # create pseudo type from controller name singular
                 pseudo_snake = camel_to_snake(singularize(controller))
@@ -484,13 +476,13 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
             # skip if collides with CRUD type same as controller
             if ctrl not in crud_snakes and sing_ctrl not in crud_snakes and fn not in generated_names:
                 lines.append(f"def {fn}():")
-                lines.append(f'    """')
+                lines.append('    """')
                 lines.append(f"    Get {ctrl} singleton config in {module}/{ctrl}.")
                 lines.append("")
                 lines.append(f"    Wraps: GET /api/{module}/{ctrl}/get")
                 lines.append("")
-                lines.append(f"    :return: API response dict")
-                lines.append(f'    """')
+                lines.append("    :return: API response dict")
+                lines.append('    """')
                 lines.append(f'    return __salt__["opnsense.get"]("{module}", "{ctrl}")')
                 lines.append("")
                 lines.append("")
@@ -500,14 +492,14 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
             fn = f"set_{ctrl}"
             if ctrl not in crud_snakes and sing_ctrl not in crud_snakes and fn not in generated_names:
                 lines.append(f"def {fn}(data):")
-                lines.append(f'    """')
+                lines.append('    """')
                 lines.append(f"    Set {ctrl} singleton config in {module}/{ctrl}.")
                 lines.append("")
                 lines.append(f"    Wraps: POST /api/{module}/{ctrl}/set")
                 lines.append("")
-                lines.append(f"    :param data: Config dict")
-                lines.append(f"    :return: API response dict")
-                lines.append(f'    """')
+                lines.append("    :param data: Config dict")
+                lines.append("    :return: API response dict")
+                lines.append('    """')
                 lines.append(f'    return __salt__["opnsense.call"]("{module}", "{ctrl}", "set", data=data, method="POST")')
                 lines.append("")
                 lines.append("")
@@ -530,18 +522,18 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("search", f"search{rep_suffix}")
                     lines.append(f"def {fn}(search_phrase=\"\", row_count=-1, current=1, sort=None, **kwargs):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Search {type_snake} entries in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}")
                     lines.append("")
-                    lines.append(f"    :param search_phrase: Optional search phrase")
-                    lines.append(f"    :param row_count: Rows per page, -1 for all")
-                    lines.append(f"    :param current: Current page")
-                    lines.append(f"    :param sort: Sort dict")
-                    lines.append(f"    :param kwargs: Additional filters")
-                    lines.append(f"    :return: API response with rows")
-                    lines.append(f'    """')
+                    lines.append("    :param search_phrase: Optional search phrase")
+                    lines.append("    :param row_count: Rows per page, -1 for all")
+                    lines.append("    :param current: Current page")
+                    lines.append("    :param sort: Sort dict")
+                    lines.append("    :param kwargs: Additional filters")
+                    lines.append("    :return: API response with rows")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.search"]("{module}", "{ctrl}", "{type_snake}", search_phrase=search_phrase, row_count=row_count, current=current, sort=sort, **kwargs)')
                     lines.append("")
                     lines.append("")
@@ -552,14 +544,14 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("get", f"get{rep_suffix}")
                     lines.append(f"def {fn}(uuid=None):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Get {type_snake} entry in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: GET /api/{module}/{ctrl}/{orig_action}/{{uuid}}")
                     lines.append("")
-                    lines.append(f"    :param uuid: Optional UUID")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param uuid: Optional UUID")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.get"]("{module}", "{ctrl}", "{type_snake}", uuid)')
                     lines.append("")
                     lines.append("")
@@ -570,14 +562,14 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("add", f"add{rep_suffix}")
                     lines.append(f"def {fn}(data):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Add {type_snake} entry in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}")
                     lines.append("")
-                    lines.append(f"    :param data: Dict with entry data")
-                    lines.append(f"    :return: API response with uuid")
-                    lines.append(f'    """')
+                    lines.append("    :param data: Dict with entry data")
+                    lines.append("    :return: API response with uuid")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.add"]("{module}", "{ctrl}", "{type_snake}", data)')
                     lines.append("")
                     lines.append("")
@@ -588,15 +580,15 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("set", f"set{rep_suffix}")
                     lines.append(f"def {fn}(uuid, data):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Set/update {type_snake} entry in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}/{{uuid}}")
                     lines.append("")
-                    lines.append(f"    :param uuid: UUID of existing entry")
-                    lines.append(f"    :param data: Updated data")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param uuid: UUID of existing entry")
+                    lines.append("    :param data: Updated data")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.set_item"]("{module}", "{ctrl}", "{type_snake}", uuid, data)')
                     lines.append("")
                     lines.append("")
@@ -607,14 +599,14 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("del", f"del{rep_suffix}")
                     lines.append(f"def {fn}(uuid):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Delete {type_snake} entry in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}/{{uuid}}")
                     lines.append("")
-                    lines.append(f"    :param uuid: UUID to delete")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param uuid: UUID to delete")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.delete"]("{module}", "{ctrl}", "{type_snake}", uuid)')
                     lines.append("")
                     lines.append("")
@@ -625,15 +617,15 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
                 if fn not in generated_names:
                     orig_action = info["verb_to_orig_action"].get("toggle", f"toggle{rep_suffix}")
                     lines.append(f"def {fn}(uuid, enabled=None):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Toggle {type_snake} entry in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}/{{uuid}}[/{{enabled}}]")
                     lines.append("")
-                    lines.append(f"    :param uuid: UUID")
-                    lines.append(f"    :param enabled: Optional 0/1 to force state")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param uuid: UUID")
+                    lines.append("    :param enabled: Optional 0/1 to force state")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.toggle"]("{module}", "{ctrl}", "{type_snake}", uuid, enabled)')
                     lines.append("")
                     lines.append("")
@@ -654,42 +646,42 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
             if is_reconf_like or gen_snake == "reconfigure":
                 if gen_snake.startswith("reconfigure"):
                     lines.append(f"def {func_name}(action=\"{orig_action}\", data=None):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    {orig_action} action in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}")
                     lines.append("")
                     lines.append(f"    :param action: Action override, default {orig_action}")
-                    lines.append(f"    :param data: Optional data")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param data: Optional data")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.reconfigure"]("{module}", "{ctrl}", action, data)')
                     lines.append("")
                     lines.append("")
                 else:
                     lines.append(f"def {func_name}(data=None):")
-                    lines.append(f'    """')
+                    lines.append('    """')
                     lines.append(f"    Execute {orig_action} in {module}/{ctrl}.")
                     lines.append("")
                     lines.append(f"    Wraps: POST /api/{module}/{ctrl}/{orig_action}")
                     lines.append("")
-                    lines.append(f"    :param data: Optional data dict")
-                    lines.append(f"    :return: API response")
-                    lines.append(f'    """')
+                    lines.append("    :param data: Optional data dict")
+                    lines.append("    :return: API response")
+                    lines.append('    """')
                     lines.append(f'    return __salt__["opnsense.call"]("{module}", "{ctrl}", "{orig_action}", data=data, method="POST")')
                     lines.append("")
                     lines.append("")
             else:
                 lines.append(f"def {func_name}(data=None, uuid=None):")
-                lines.append(f'    """')
+                lines.append('    """')
                 lines.append(f"    Execute {orig_action} in {module}/{ctrl}.")
                 lines.append("")
                 lines.append(f"    Wraps: /api/{module}/{ctrl}/{orig_action}")
                 lines.append("")
-                lines.append(f"    :param data: Optional data")
-                lines.append(f"    :param uuid: Optional UUID")
-                lines.append(f"    :return: API response")
-                lines.append(f'    """')
+                lines.append("    :param data: Optional data")
+                lines.append("    :param uuid: Optional UUID")
+                lines.append("    :return: API response")
+                lines.append('    """')
                 lines.append(f'    return __salt__["opnsense.call"]("{module}", "{ctrl}", "{orig_action}", uuid=uuid, data=data)')
                 lines.append("")
                 lines.append("")
@@ -700,15 +692,15 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
             fn = f"{ctrl}_reconfigure"
             if fn not in generated_names:
                 lines.append(f"def {fn}(action=\"reconfigure\", data=None):")
-                lines.append(f'    """')
+                lines.append('    """')
                 lines.append(f"    Reconfigure {module}/{ctrl}.")
                 lines.append("")
                 lines.append(f"    Wraps: POST /api/{module}/{ctrl}/reconfigure")
                 lines.append("")
-                lines.append(f"    :param action: Action, default reconfigure")
-                lines.append(f"    :param data: Optional data")
-                lines.append(f"    :return: API response")
-                lines.append(f'    """')
+                lines.append("    :param action: Action, default reconfigure")
+                lines.append("    :param data: Optional data")
+                lines.append("    :return: API response")
+                lines.append('    """')
                 lines.append(f'    return __salt__["opnsense.reconfigure"]("{module}", "{ctrl}", action, data)')
                 lines.append("")
                 lines.append("")
@@ -721,16 +713,16 @@ def generate_exec_module_code(module: str, mod_data: dict) -> str:
     default_ctrl = "service" if has_service_reconf else (sorted(controllers.keys())[0] if controllers else "service")
     if "reconfigure" not in generated_names:
         lines.append(f"def reconfigure(controller=\"{default_ctrl}\", action=\"reconfigure\", data=None):")
-        lines.append(f'    """')
+        lines.append('    """')
         lines.append(f"    Generic reconfigure for {module}.")
         lines.append("")
         lines.append(f"    Wraps: POST /api/{module}/{{controller}}/{{action}}")
         lines.append("")
         lines.append(f"    :param controller: Controller name, default {default_ctrl}")
-        lines.append(f"    :param action: Action name, default reconfigure")
-        lines.append(f"    :param data: Optional data")
-        lines.append(f"    :return: API response")
-        lines.append(f'    """')
+        lines.append("    :param action: Action name, default reconfigure")
+        lines.append("    :param data: Optional data")
+        lines.append("    :return: API response")
+        lines.append('    """')
         lines.append(f'    return __salt__["opnsense.reconfigure"]("{module}", controller, action, data)')
         lines.append("")
 
@@ -775,7 +767,7 @@ def generate_state_module_code(module: str, mod_data: dict) -> str:
     lines.append(f"Generated from controllers.json for module {module}.")
     lines.append("Do not edit manually; run tools/generate_wrappers.py.")
     lines.append("")
-    lines.append(f"Uses opnsense.item_present/absent which work in proxy and direct modes.")
+    lines.append("Uses opnsense.item_present/absent which work in proxy and direct modes.")
     lines.append('"""')
     lines.append("")
     lines.append("import logging")
@@ -822,35 +814,35 @@ def generate_state_module_code(module: str, mod_data: dict) -> str:
 
             # present
             lines.append(f"def {base_name}_present(name, data=None, match=None, reconfigure={default_reconf_str}, search_field=None):")
-            lines.append(f'    """')
+            lines.append('    """')
             lines.append(f"    Ensure {type_snake} {ctrl} present in {module}.")
             lines.append("")
             lines.append(f"    Wraps opnsense.item_present for /api/{module}/{ctrl}/{orig_search}")
             lines.append("")
-            lines.append(f"    :param name: Identifier for state, used for matching if match not given")
-            lines.append(f"    :param data: Dict of fields to set")
-            lines.append(f"    :param match: Dict to identify existing entry, e.g. {{\"hostname\": \"grafana\"}}")
+            lines.append("    :param name: Identifier for state, used for matching if match not given")
+            lines.append("    :param data: Dict of fields to set")
+            lines.append("    :param match: Dict to identify existing entry, e.g. {\"hostname\": \"www\"}")
             lines.append(f"    :param reconfigure: Reconfigure path, default {default_reconf or 'None'}")
-            lines.append(f"    :param search_field: Optional field to use as match if match not supplied")
-            lines.append(f"    :return: State result dict")
-            lines.append(f'    """')
+            lines.append("    :param search_field: Optional field to use as match if match not supplied")
+            lines.append("    :return: State result dict")
+            lines.append('    """')
             lines.append(f'    return __salt__["opnsense.item_present"](name, "{module}", "{ctrl}", "{type_snake}", data, match=match, reconfigure=reconfigure, search_field=search_field)')
             lines.append("")
             lines.append("")
 
             # absent
             lines.append(f"def {base_name}_absent(name, match=None, reconfigure={default_reconf_str}, search_field=None):")
-            lines.append(f'    """')
+            lines.append('    """')
             lines.append(f"    Ensure {type_snake} {ctrl} absent in {module}.")
             lines.append("")
             lines.append(f"    Wraps opnsense.item_absent for /api/{module}/{ctrl}/{orig_search}")
             lines.append("")
-            lines.append(f"    :param name: Identifier")
-            lines.append(f"    :param match: Dict to identify entry to delete")
-            lines.append(f"    :param reconfigure: Reconfigure path")
-            lines.append(f"    :param search_field: Optional search field")
-            lines.append(f"    :return: State result")
-            lines.append(f'    """')
+            lines.append("    :param name: Identifier")
+            lines.append("    :param match: Dict to identify entry to delete")
+            lines.append("    :param reconfigure: Reconfigure path")
+            lines.append("    :param search_field: Optional search field")
+            lines.append("    :return: State result")
+            lines.append('    """')
             lines.append(f'    return __salt__["opnsense.item_absent"](name, "{module}", "{ctrl}", "{type_snake}", match=match, reconfigure=reconfigure, search_field=search_field)')
             lines.append("")
             lines.append("")
@@ -858,15 +850,15 @@ def generate_state_module_code(module: str, mod_data: dict) -> str:
     # Generic reconfigured state helper for module
     lines.append("")
     lines.append(f"def reconfigured(name, controller=\"{ 'service' if has_service else sorted(controllers.keys())[0] if controllers else 'service' }\", action=\"reconfigure\"):")
-    lines.append(f'    """')
+    lines.append('    """')
     lines.append(f"    Trigger reconfigure for {module}.")
     lines.append("")
-    lines.append(f"    Wraps opnsense.reconfigured state.")
+    lines.append("    Wraps opnsense.reconfigured state.")
     lines.append("")
-    lines.append(f"    :param name: State name")
-    lines.append(f"    :param controller: Controller to reconfigure")
-    lines.append(f"    :param action: Action, default reconfigure")
-    lines.append(f'    """')
+    lines.append("    :param name: State name")
+    lines.append("    :param controller: Controller to reconfigure")
+    lines.append("    :param action: Action, default reconfigure")
+    lines.append('    """')
     lines.append(f'    return __salt__["opnsense.reconfigured"](name, "{module}", controller, action) if "opnsense.reconfigured" in __salt__ else __salt__["opnsense.item_present"](name, "{module}", controller, "reconfigure", {{}}, reconfigure=None)  # fallback')
     # Actually call opnsense.reconfigured via state? The state module has reconfigured function. We have __salt__ mapping for state? No, states call execution module directly. Simpler: we call execution reconfigure via module state?
     # We'll implement direct call to execution's reconfigure via __salt__['opnsense.reconfigure'] and return result style
@@ -874,15 +866,15 @@ def generate_state_module_code(module: str, mod_data: dict) -> str:
     # For simplicity, we will call the generic state opnsense.reconfigured if it exists as state, but __salt__ is execution. So we need to implement inline similar to states/opnsense.py reconfigured
     # We'll instead directly implement
     lines.pop()  # remove last line workaround
-    lines.append(f"    ret = {{\"name\": name, \"result\": False, \"changes\": {{}}, \"comment\": \"\"}}")
-    lines.append(f"    try:")
+    lines.append("    ret = {\"name\": name, \"result\": False, \"changes\": {}, \"comment\": \"\"}")
+    lines.append("    try:")
     lines.append(f"        __salt__[\"opnsense.reconfigure\"](\"{module}\", controller, action)")
-    lines.append(f"        ret[\"result\"] = True")
+    lines.append("        ret[\"result\"] = True")
     lines.append(f"        ret[\"comment\"] = f\"reconfigured {module}/{{controller}}/{{action}}\"")
     lines.append(f"        ret[\"changes\"] = {{\"reconfigured\": f\"{module}/{{controller}}/{{action}}\"}}")
-    lines.append(f"    except Exception as exc:")
-    lines.append(f"        ret[\"comment\"] = f\"reconfigure failed: {{exc}}\"")
-    lines.append(f"    return ret")
+    lines.append("    except Exception as exc:")
+    lines.append("        ret[\"comment\"] = f\"reconfigure failed: {exc}\"")
+    lines.append("    return ret")
     lines.append("")
 
     return "\n".join(lines)
@@ -932,12 +924,7 @@ def main():
         src_modules_dir = alt_modules
         src_states_dir = alt_states
 
-    # Also handle repo root case projects/saltext-opnsense
-    proj_modules = pathlib.Path.cwd() / "projects/saltext-opnsense/src/saltext/opnsense/modules"
-    proj_states = pathlib.Path.cwd() / "projects/saltext-opnsense/src/saltext/opnsense/states"
-    if proj_modules.exists():
-        src_modules_dir = proj_modules
-        src_states_dir = proj_states
+
 
     # Ensure dirs exist
     src_modules_dir.mkdir(parents=True, exist_ok=True)

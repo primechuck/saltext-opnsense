@@ -4,17 +4,25 @@
 
 ```
 src/saltext/opnsense/
-  utils/opnsense.py   — Client
-  utils/api_spec.py   — Spec registry loader
+  utils/opnsense.py   — Client (search/get/add/set/del/toggle/reconfigure)
+  utils/api_spec.py   — Spec registry loader (list_modules returns 76)
+  utils/controllers.json — 76 modules (acmeclient..zerotier) + meta
   proxy/opnsense.py   — Proxy minion
-  modules/opnsense.py — Execution module (generic)
-  states/opnsense.py  — State module (generic)
-  grains/opnsense.py  — Grains
+  modules/opnsense.py — Execution module (generic) + dynamic injection 1816 funcs for all 76 modules (free)
+  modules/opnsense_{module}.py — 76 auto-generated ergonomic wrappers (caddy,haproxy,nginx etc included free)
+  states/opnsense.py  — State module (generic) + dynamic injection
+  states/opnsense_{module}.py — 76 auto-generated state wrappers (free)
+  grains/opnsense.py  — Grains (opnsense_version, api_modules=76)
+examples/states/
+  free_modules_demo.sls — proves free modules importable (caddy/haproxy/nginx via generic+wrapper)
 tools/
-  generate_spec.py    — codegen from upstream core/plugins
-  controllers.json    — generated registry (committed)
-tests/
-  unit/               — mocked, no live OPNsense needed
+  generate_spec.py    — codegen from upstream core/plugins → controllers.json (76 modules)
+  generate_wrappers.py — spec → 76+76 wrappers (free, idempotent)
+  verify_import.py    — import proof: exec 76 OK + state 76 OK + dynamic 1816 + list_api_modules 76
+  controllers.json    — generated registry (committed, fallback)
+tests/unit/
+  test_free_modules_import.py — 8 tests proving free modules import, demo exists
+  modules/test_exec_wrappers_generated.py — verifies all modules have search/reconfigure
 ```
 
 ## Salt 3008+ notes
@@ -49,7 +57,7 @@ Add to `renovate.json5`:
   customManagers: [
     {
       customType: "regex",
-      fileMatch: ["^projects/saltext-opnsense/tools/controllers.json$"],
+      fileMatch: ["^src/saltext/opnsense/utils/controllers\\.json$"],
       matchStrings: ['"core_ref": "(?<currentValue>.*)"'],
       datasourceTemplate: "github-tags",
       depNameTemplate: "opnsense/core"
@@ -60,21 +68,14 @@ Add to `renovate.json5`:
 
 Post-upgrade task: run `generate_spec.py`.
 
-## Publishing as own repo
+## Publishing
 
-Eventually this directory becomes submodule:
+This extension is published at https://github.com/primechuck/saltext-opnsense. To install:
 
 ```bash
-# Create Forgejo repo
-ssh forgejo.bierce.org create repo empire/saltext-opnsense
-
-# In monorepo root, filter branch to extract
-git subtree split -P projects/saltext-opnsense -b saltext-opnsense-main
-git push ssh://git@forgejo.bierce.org:2222/empire/saltext-opnsense.git saltext-opnsense-main:main
-
-# Then replace directory with submodule
-git rm -r projects/saltext-opnsense
-git submodule add ssh://git@forgejo.bierce.org:2222/empire/saltext-opnsense.git projects/saltext-opnsense
+pip install saltext-opnsense
+# or into Salt's onedir:
+salt-pip install saltext-opnsense
 ```
 
 ## Future SSH module
@@ -87,4 +88,3 @@ Same state interface, different transport:
 ```
 
 Keep API scope only for now.
-

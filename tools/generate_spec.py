@@ -5,7 +5,7 @@ Generate controllers.json from opnsense/core and opnsense/plugins repositories.
 This implements the templated maintenance strategy: easy to sprint OPNsense releases.
 
 Usage:
-    python tools/generate_spec.py [--core-ref 25.1] [--plugins-ref 25.1] [--output tools/controllers.json]
+    python tools/generate_spec.py [--core-ref 25.1] [--plugins-ref 25.1] [--output src/saltext/opnsense/utils/controllers.json]
     python tools/generate_spec.py --local-core /path/to/core --local-plugins /path/to/plugins
 
 It parses:
@@ -31,9 +31,7 @@ import argparse
 import json
 import pathlib
 import re
-import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 
 CONTROLLER_RE = re.compile(r"src/opnsense/mvc/app/controllers/OPNsense/([^/]+)/Api/([^/]+)Controller\.php")
@@ -113,7 +111,7 @@ def main():
     parser.add_argument("--plugins-ref", default="master", help="git ref for opnsense/plugins")
     parser.add_argument("--local-core", help="local path to core repo (skip clone)")
     parser.add_argument("--local-plugins", help="local path to plugins repo (skip clone)")
-    parser.add_argument("--output", default="tools/controllers.json", help="output json path")
+    parser.add_argument("--output", default="src/saltext/opnsense/utils/controllers.json", help="output json path")
     parser.add_argument("--tmp-dir", default="/tmp/opnsense-spec", help="temp clone dir")
     args = parser.parse_args()
 

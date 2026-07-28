@@ -1,0 +1,35 @@
+# Example pillar top.sls addition for OPNsense proxy minion
+#
+# Add to your Salt master's pillar/top.sls
+# This shows how master assigns pillar to proxy minion id `opnsense-router`.
+#
+# The proxy minion process runs with --proxyid=opnsense-router, so master matches it
+# via minion id targeting (not grains). File-based /etc/salt/proxy can also
+# work alone without this, but pillar is preferred for secrets.
+
+base:
+  # All minions still get common
+  '*':
+    - common
+
+  # salt-master itself needs opnsense pillar for direct mode (optional)
+  # Direct mode = `salt salt-master opnsense.call ...` without proxy
+  'salt-master':
+    - hosts.salt-master
+    # Uncomment if you want direct API access from master pillar `opnsense:`
+    # - hosts.opnsense-router   # contains opnsense: host/key/secret + aliases
+
+  # Proxy minion id opnsense-router — master provides proxy: dict
+  'opnsense-router':
+    - match: list
+    - hosts.opnsense-router
+
+# Notes:
+# - If using file-based /etc/salt/proxy on salt-master host, the above `opnsense-router`
+#   entry is still useful for CMDB data (aliases, bind_zone, cluster_parent)
+#   but proxy credentials come from file, not pillar.
+# - Vault integration: hosts/opnsense-router.sls uses __slot__:salt:vault.read(...)
+#   Those slots are rendered on master, so secret never appears plaintext
+#   in pillar file — only resolved during pillar compilation.
+# - For local testing without master, you can skip top.sls entirely and just
+#   use /etc/salt/proxy flat file.

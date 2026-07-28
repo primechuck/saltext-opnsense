@@ -13,3 +13,8 @@ venv/
 controllers.json.bak
 /tmp/
 tools/tmp/
+# generated ergonomic wrappers - dynamic injection covers all, keep repo minimal
+src/saltext/opnsense/modules/opnsense_*.py
+src/saltext/opnsense/states/opnsense_*.py
+# but keep generic opnsense.py (excluded above would ignore generic too? pattern is opnsense_*.py, not opnsense.py, so generic safe)
+

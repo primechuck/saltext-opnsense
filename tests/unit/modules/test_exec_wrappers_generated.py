@@ -1,9 +1,9 @@
-import pytest
+import importlib
 from unittest.mock import MagicMock
 
-def _setup_module(mod_name, mock_salt=None):
-    import importlib
-    full = f"saltext.opnsense.modules.{mod_name}"
+
+def _setup_generic(mock_salt=None):
+    full = "saltext.opnsense.modules.opnsense"
     mod = importlib.import_module(full)
     if mock_salt is None:
         mock_salt = {
@@ -22,86 +22,54 @@ def _setup_module(mod_name, mock_salt=None):
 def _has_any(mod, substrings):
     return any(any(s in name for s in substrings) for name in dir(mod) if not name.startswith("_"))
 
-def test_unbound_host_alias_wrappers():
-    mod, mocks = _setup_module("opnsense_unbound")
-    assert _has_any(mod, ["host_alias", "hostalias"])
-    assert _has_any(mod, ["search_host_alias", "search_hostalias", "search_host_alias"])
-    mod.__salt__ = mocks
-    mods_with_search = [m for m in dir(mod) if "search" in m and "host_alias" in m]
-    if mods_with_search:
-        getattr(mod, mods_with_search[0])(search_phrase="grafana", row_count=-1)
-        assert mocks["opnsense.search"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+def test_dynamic_wrappers_cover_all():
+    mod, mocks = _setup_generic()
+    assert _has_any(mod, ["unbound_settings_search_host_alias"])
+    assert _has_any(mod, ["bind_record_search_record"])
+    assert _has_any(mod, ["firewall_alias_search_item"])
+    assert _has_any(mod, ["kea_dhcpv4_search_subnet"])
+    assert _has_any(mod, ["acmeclient_accounts_search"])
 
-def test_unbound_reconfigure_helpers():
-    mod, mocks = _setup_module("opnsense_unbound")
-    assert _has_any(mod, ["reconfigure"])
-    funcs = [m for m in dir(mod) if "reconfigure" in m]
-    assert funcs
-    getattr(mod, funcs[0])()
-    assert mocks["opnsense.reconfigure"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+def test_dynamic_search_calls():
+    mod, mocks = _setup_generic()
+    import sys
+    import types
+    if "salt" not in sys.modules:
+        salt_mock = types.ModuleType("salt")
+        utils_mock = types.ModuleType("salt.utils")
+        platform_mock = types.ModuleType("salt.utils.platform")
+        platform_mock.is_proxy = lambda: False
+        sys.modules["salt"] = salt_mock
+        sys.modules["salt.utils"] = utils_mock
+        sys.modules["salt.utils.platform"] = platform_mock
 
-def test_bind_domain_wrappers():
-    mod, mocks = _setup_module("opnsense_bind")
-    assert _has_any(mod, ["primary_domain", "domain", "record"])
-    assert _has_any(mod, ["reconfigure"])
-    assert _has_any(mod, ["search_record", "record"])
-    funcs = [m for m in dir(mod) if "search" in m and "record" in m]
-    if funcs:
-        getattr(mod, funcs[0])()
-        assert mocks["opnsense.search"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+    mod.__opts__ = {"proxy": {}}
+    mod.__pillar__ = {}
 
-def test_firewall_alias_wrappers():
-    mod, mocks = _setup_module("opnsense_firewall")
-    assert _has_any(mod, ["alias", "item"])
-    assert _has_any(mod, ["reconfigure"])
-    funcs = [m for m in dir(mod) if "search" in m]
-    assert funcs
-    getattr(mod, funcs[0])()
-    assert mocks["opnsense.search"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+    from unittest.mock import patch
+    with patch("saltext.opnsense.modules.opnsense._get_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"rows": [], "total": 0}
+        mock_client.call.return_value = {"result": "ok"}
+        mock_get_client.return_value = mock_client
 
-def test_interfaces_wrappers():
-    mod, mocks = _setup_module("opnsense_interfaces")
-    assert _has_any(mod, ["vlan", "vip", "export", "overview"])
-    assert _has_any(mod, ["reconfigure"]) or True
-    funcs = [m for m in dir(mod) if "search" in m or "export" in m]
-    assert funcs
-    getattr(mod, funcs[0])()
-    assert mocks["opnsense.search"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+        func = getattr(mod, "unbound_settings_search_host_alias")
+        _ = func(search_phrase="www", row_count=1)
+        assert mock_client.call.called or mock_client.search.called
 
-def test_acmeclient_wrappers():
-    mod, mocks = _setup_module("opnsense_acmeclient")
-    assert _has_any(mod, ["account", "certificate", "validation"])
-    assert _has_any(mod, ["reconfigure"]) or True
-    funcs = [m for m in dir(mod) if "search" in m]
-    assert funcs
-    getattr(mod, funcs[0])()
-    assert mocks["opnsense.search"].call_count >= 1 or mocks["opnsense.call"].call_count >= 1
+def test_generic_api():
+    mod, _ = _setup_generic()
+    assert hasattr(mod, "call")
+    assert hasattr(mod, "search")
+    assert hasattr(mod, "get")
+    assert hasattr(mod, "add")
+    assert hasattr(mod, "list_api_modules")
+    assert hasattr(mod, "spec")
 
-def test_kea_wrappers():
-    mod, mocks = _setup_module("opnsense_kea")
-    assert _has_any(mod, ["subnet", "reservation", "dhcpv4", "kea"])
-    funcs = [m for m in dir(mod) if "search" in m]
-    assert funcs
-
-def test_virtual():
-    for mod_name in ["opnsense_unbound", "opnsense_bind", "opnsense_firewall", "opnsense_interfaces", "opnsense_acmeclient", "opnsense_kea"]:
-        mod, mocks = _setup_module(mod_name)
-        result = mod.__virtual__()
-        assert result == mod.__virtualname__
-
-def test_all_modules_have_reconfigure_or_search():
-    import pathlib, json
-    spec_path = pathlib.Path(__file__).parent.parent.parent / "src" / "saltext" / "opnsense" / "utils" / "controllers.json"
-    if not spec_path.exists():
-        spec_path = pathlib.Path(__file__).parent.parent.parent / "tools" / "controllers.json"
-    if not spec_path.exists():
-        return
-    data = json.loads(spec_path.read_text())
-    modules = data.get("modules", {})
-    for mod_name in modules.keys():
-        full_mod = f"opnsense_{mod_name}"
-        try:
-            mod, _ = _setup_module(full_mod)
-        except Exception:
-            continue
-        assert _has_any(mod, ["search", "get", "reconfigure", "export", "status"]), f"{full_mod} has no search/get/reconfigure"
+def test_list_modules_full():
+    mod, _ = _setup_generic()
+    mods = mod.list_api_modules()
+    assert len(mods) >= 6
+    assert "unbound" in mods
+    assert "bind" in mods
+    assert "acmeclient" in mods

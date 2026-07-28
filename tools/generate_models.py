@@ -4,14 +4,15 @@ Generate OPNsense model field registry from Model XML.
 
 Parses OPNsense Model XML files like:
   src/opnsense/mvc/app/models/OPNsense/Unbound/Unbound.xml
-  src/opnsense/mvc/app/models/OPNsense/Bind/Bind.xml
+  src/opnsense/mvc/app/models/OPNsense/Bind/Domain.xml
   src/opnsense/mvc/app/models/OPNsense/Kea/KeaDhcpv4.xml
+  plugins/.../models/OPNsense/AcmeClient/AcmeClient.xml
 
 Produces models.json with field metadata for validation / state generation.
 
 Usage:
-    python tools/generate_models.py --core /tmp/opnsense-spec/core --plugins /tmp/opnsense-spec/plugins --output tools/models.json
-    python tools/generate_models.py --core-ref 25.7 --output tools/models.json
+    python tools/generate_models.py --core /tmp/opnsense-spec/core --plugins /tmp/opnsense-spec/plugins --output src/saltext/opnsense/utils/models.json
+    python tools/generate_models.py --core-ref 25.7
 """
 
 import argparse
@@ -24,6 +25,17 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 MODEL_FILE_RE = re.compile(r"src/opnsense/mvc/app/models/OPNsense/([^/]+)/([^/]+)\.xml")
+
+SKIP_TAGS = {
+    "type", "help", "Help", "Required", "Default", "Mask",
+    "Model", "BlankDesc", "Multiple", "AsList",
+    "ChangeCase", "Validation", "ConfigdPopulateAct", "Sorted", "filters",
+    "VolumeSize", "WildcardEnabled",
+    "NetMaskRequired", "NetMaskAllowed", "AddressFamily", "Strict",
+    "IpAllowed", "HostWildcardAllowed", "FqdnWildcardAllowed", "IsDNSName",
+    "NetMaskAllowed", "MaskPerItem",
+}
+
 
 def clone_or_update(repo_url, dest, ref=None):
     if dest.exists():
@@ -39,6 +51,127 @@ def clone_or_update(repo_url, dest, ref=None):
         cmd += [repo_url, str(dest)]
         subprocess.run(cmd, check=True)
 
+
+def _get_type_from_elem(elem: ET.Element) -> str:
+    t = elem.attrib.get("type")
+    if t:
+        return t.strip()
+    child = elem.find("type")
+    if child is not None and child.text:
+        return child.text.strip()
+    return ""
+
+
+def _get_child_text(elem: ET.Element, tag_name: str) -> str:
+    child = elem.find(tag_name)
+    if child is not None and child.text:
+        return child.text.strip()
+    # case-insensitive fallback for some tags
+    tag_lower = tag_name.lower()
+    for sub in elem:
+        if sub.tag.lower() == tag_lower and sub.text:
+            return sub.text.strip()
+    return ""
+
+
+def _extract_relation_targets(field_elem: ET.Element) -> list[dict]:
+    targets: list[dict] = []
+    model_elem = field_elem.find("Model")
+    if model_elem is None:
+        for child in field_elem:
+            if child.tag.lower() == "model":
+                model_elem = child
+                break
+    if model_elem is None:
+        return targets
+    for rel in model_elem:
+        if not isinstance(rel.tag, str):
+            continue
+        source = _get_child_text(rel, "source") or _get_child_text(rel, "Source")
+        if not source and rel.text:
+            source = (rel.text or "").strip()
+        if not source:
+            for sub in rel:
+                if sub.tag.lower() == "source" and sub.text:
+                    source = sub.text.strip()
+                    break
+        if not source:
+            continue
+        items = _get_child_text(rel, "items") or _get_child_text(rel, "Items")
+        display = _get_child_text(rel, "display") or _get_child_text(rel, "Display")
+        t: dict = {"key": rel.tag, "source": source}
+        if items:
+            t["items"] = items
+        if display:
+            t["display"] = display
+        for fn in ("filters", "Filters"):
+            fe = rel.find(fn)
+            if fe is not None:
+                filt = {}
+                for fchild in fe:
+                    if isinstance(fchild.tag, str) and fchild.text:
+                        filt[fchild.tag] = fchild.text.strip()
+                if filt:
+                    t["filters"] = filt
+                break
+        targets.append(t)
+    return targets
+
+
+def extract_field_meta(field_elem: ET.Element) -> dict:
+    ftype = _get_type_from_elem(field_elem)
+    required = _get_child_text(field_elem, "Required")
+    default = _get_child_text(field_elem, "Default")
+    help_text = _get_child_text(field_elem, "help")
+    if not help_text:
+        help_text = _get_child_text(field_elem, "Help")
+    meta = {
+        "type": ftype,
+        "required": required or "0",
+        "help": help_text,
+        "default": default,
+    }
+
+    # Extract additional constraints for client-side validation
+    for tag in ("ValidationMessage", "MaximumValue", "MinimumValue"):
+        val = _get_child_text(field_elem, tag)
+        if val:
+            meta[tag] = val
+
+    # Extract OptionValues (Enum choices)
+    ov_elem = field_elem.find("OptionValues")
+    if ov_elem is not None:
+        options = {}
+        for child in ov_elem:
+            if isinstance(child.tag, str):
+                options[child.tag] = (child.text or "").strip()
+        if options:
+            meta["OptionValues"] = options
+
+    # Extract generic Constraints if available
+    constraints_elem = field_elem.find("Constraints")
+    if constraints_elem is not None:
+        constraints = {}
+        for child in constraints_elem:
+            if isinstance(child.tag, str):
+                constraints[child.tag] = (child.text or "").strip()
+        if constraints:
+            meta["Constraints"] = constraints
+
+    if "ModelRelationField" in ftype or "RelationField" in ftype:
+        rels = _extract_relation_targets(field_elem)
+        if rels:
+            meta["relation"] = rels if len(rels) > 1 else rels[0]
+            if len(rels) == 1:
+                meta["relation_targets"] = rels
+            else:
+                meta["relation_targets"] = rels
+        multiple = _get_child_text(field_elem, "Multiple")
+        if multiple:
+            meta["multiple"] = multiple
+    return meta
+
+
 def parse_model_xml(path: pathlib.Path):
     try:
         tree = ET.parse(path)
@@ -47,124 +180,119 @@ def parse_model_xml(path: pathlib.Path):
         print(f"Failed to parse {path}: {e}", file=sys.stderr)
         return None
 
-    model_name = path.stem
-    fields = {}
+    array_fields: dict[str, dict] = {}
 
-    # Model XML structure: <model> -> <mount> -> <items> -> field name -> type
-    # Example: <host> <type>ArrayField</type> -> nested items
-    def walk_items(elem, prefix=""):
-        out = {}
-        for child in elem:
-            field_type_elem = child.find("type")
-            field_type = field_type_elem.text if field_type_elem is not None else "StringField"
-            help_elem = child.find("help")
-            required_elem = child.find("Required")
-            default_elem = child.find("Default")
-            mask_elem = child.find("Mask")
-
-            is_array = field_type == "ArrayField"
-            sub_items = {}
-            if is_array:
-                # ArrayField has inner model or items
-                inner = child.find("*/*")
-                # Actually ArrayField typically has its fields as direct children of <host> ? Let's just look for nested <...>
-                # Simpler: iterate child elements that are not type/help/...
-                for sub in child:
-                    if sub.tag in ("type", "help", "Required", "Default", "Mask", "ValidationMessage", "Constraints"):
-                        continue
-                    # sub is field definition?
-                    sub_type_el = sub.find("type")
-                    if sub_type_el is not None:
-                        sub_items[sub.tag] = {
-                            "type": sub_type_el.text,
-                            "help": (sub.find("help").text if sub.find("help") is not None else ""),
-                            "required": sub.find("Required").text if sub.find("Required") is not None else "0",
-                        }
-
-            key = f"{prefix}.{child.tag}" if prefix else child.tag
-            out[child.tag] = {
-                "type": field_type,
-                "help": help_elem.text if help_elem is not None else "",
-                "required": required_elem.text if required_elem is not None else "0",
-                "default": default_elem.text if default_elem is not None else "",
-                "is_array": is_array,
-                "sub_fields": sub_items,
-            }
-        return out
-
-    # Find items root
-    mounts = root.findall(".//items")
-    if not mounts:
-        mounts = [root]
-
-    all_fields = {}
-    for mount in mounts:
-        # mount may be <items> containing fields
-        for child in mount:
-            if child.tag in ("type", "help", "Required", "Default"):
-                continue
-            ft_el = child.find("type")
-            if ft_el is None:
-                continue
-            all_fields.update(walk_items(mount))
-
-            break
-
-    # Alternative: walk all ArrayField types at any depth
-    array_fields = {}
     for elem in root.iter():
-        type_el = elem.find("type")
-        if type_el is not None and type_el.text == "ArrayField":
-            # elem.tag is e.g., "host" with uuid keyed items
-            model_fields = {}
-            for sub in elem:
-                if sub.tag in ("type", "help", "Required"):
-                    continue
-                # sub may be array item template? Actually ArrayField inner fields often defined under same level?
-                # Let's try to find fields inside this ArrayField that have type
-                for field in sub:
-                    if isinstance(field.tag, str) and field.find("type") is not None:
-                        ft = field.find("type").text
-                        model_fields[field.tag] = {
-                            "type": ft,
-                            "required": field.find("Required").text if field.find("Required") is not None else "0",
-                        }
-            # Simpler: direct children that have type are fields
-            for field in elem:
-                if field.tag in ("type", "help"):
-                    continue
-                ft_el = field.find("type")
-                if ft_el is not None:
-                    array_fields[elem.tag] = array_fields.get(elem.tag, {})
-                    array_fields[elem.tag][field.tag] = {
-                        "type": ft_el.text,
-                        "required": field.find("Required").text if field.find("Required") is not None else "0",
-                        "help": field.find("help").text if field.find("help") is not None else "",
-                    }
+        if not isinstance(elem.tag, str):
+            continue
+        elem_type = _get_type_from_elem(elem)
+        if elem_type != "ArrayField":
+            continue
+
+        array_name = elem.tag
+        if not array_name:
+            continue
+
+        fields: dict[str, dict] = {}
+
+        for child in elem:
+            if not isinstance(child.tag, str):
+                continue
+            if child.tag in SKIP_TAGS:
+                continue
+
+            child_type = _get_type_from_elem(child)
+            if child_type:
+                # direct field
+                if child.tag not in fields:
+                    fields[child.tag] = extract_field_meta(child)
+            else:
+                # container without type (e.g., option_data) – look one level deeper
+                for sub in child:
+                    if not isinstance(sub.tag, str):
+                        continue
+                    if sub.tag in SKIP_TAGS:
+                        continue
+                    sub_type = _get_type_from_elem(sub)
+                    if sub_type and sub.tag not in fields:
+                        fields[sub.tag] = extract_field_meta(sub)
+                    elif not sub_type:
+                        # third level fallback for deeply nested structures
+                        for sub2 in sub:
+                            if not isinstance(sub2.tag, str):
+                                continue
+                            if sub2.tag in SKIP_TAGS:
+                                continue
+                            sub2_type = _get_type_from_elem(sub2)
+                            if sub2_type and sub2.tag not in fields:
+                                fields[sub2.tag] = extract_field_meta(sub2)
+
+        if fields:
+            array_fields[array_name] = fields
+
+    if not array_fields:
+        return None
 
     return {
-        "model": model_name,
+        "model": path.stem,
         "path": str(path),
         "array_fields": array_fields,
-        "fields": all_fields,
     }
 
+
+def extract_module_model(xml_path: pathlib.Path):
+    s = str(xml_path)
+    if "/models/OPNsense/" not in s:
+        return None, None
+    # split after OPNsense/
+    try:
+        after = s.split("/models/OPNsense/")[1]
+    except IndexError:
+        return None, None
+    parts = after.split("/")
+    if not parts:
+        return None, None
+    module = parts[0]
+    model = xml_path.stem
+    # sanity: model file should be xml; skip if module contains "."
+    if not module:
+        return None, None
+    return module.lower(), model
+
+
 def scan_models(root: pathlib.Path):
-    models = {}
+    models: dict = {}
     for xml_path in root.rglob("*.xml"):
         if "/models/OPNsense/" not in str(xml_path):
             continue
-        m = MODEL_FILE_RE.search(str(xml_path))
-        if not m:
-            continue
-        module = m.group(1).lower()
-        model = m.group(2)
+        # quick skip for ACL/Menu etc – still parse but they often have no ArrayField
+        # Use improved extraction
+        module, model = extract_module_model(xml_path)
+        if not module or not model:
+            # fallback to regex
+            m = MODEL_FILE_RE.search(str(xml_path))
+            if not m:
+                continue
+            module = m.group(1).lower()
+            model = m.group(2)
         parsed = parse_model_xml(xml_path)
-        if parsed and parsed["array_fields"]:
-            models.setdefault(module, {})
-            models[module][model] = parsed["array_fields"]
+        if not parsed:
+            continue
+        if not parsed["array_fields"]:
+            continue
+        models.setdefault(module, {})
+        models[module].setdefault(model, {})
+        # merge arrays for same model (if multiple xml define same model? but we use array granularity)
+        for arr_name, fields in parsed["array_fields"].items():
+            if arr_name not in models[module][model]:
+                models[module][model][arr_name] = fields
+            else:
+                # merge fields
+                for f_name, f_meta in fields.items():
+                    models[module][model][arr_name].setdefault(f_name, f_meta)
 
     return models
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -173,7 +301,7 @@ def main():
     parser.add_argument("--core-ref", default="master", help="core git ref")
     parser.add_argument("--plugins-ref", default="master", help="plugins git ref")
     parser.add_argument("--tmp-dir", default="/tmp/opnsense-spec", help="tmp clone dir")
-    parser.add_argument("--output", default="tools/models.json", help="output json")
+    parser.add_argument("--output", default="src/saltext/opnsense/utils/models.json", help="output json")
     args = parser.parse_args()
 
     tmp = pathlib.Path(args.tmp_dir)
@@ -196,17 +324,26 @@ def main():
     print(f"Scanning core models: {core_root}")
     core_models = scan_models(core_root)
     print(f"  Found {len(core_models)} modules with models")
+    for mod, mmodels in sorted(core_models.items())[:20]:
+        print(f"    core {mod}: {list(mmodels.keys())[:5]} ({len(mmodels)} models)")
 
     print(f"Scanning plugins models: {plugins_root}")
     plugin_models = scan_models(plugins_root)
     print(f"  Found {len(plugin_models)} modules with models")
+    for mod, mmodels in sorted(plugin_models.items())[:20]:
+        print(f"    plug {mod}: {list(mmodels.keys())[:5]} ({len(mmodels)} models)")
 
     merged = {}
     for src in [core_models, plugin_models]:
         for mod, models in src.items():
             merged.setdefault(mod, {})
-            for model_name, fields in models.items():
-                merged[mod][model_name] = fields
+            for model_name, arrays in models.items():
+                merged[mod].setdefault(model_name, {})
+                for arr_name, fields in arrays.items():
+                    if arr_name not in merged[mod][model_name]:
+                        merged[mod][model_name][arr_name] = fields
+                    else:
+                        merged[mod][model_name][arr_name].update(fields)
 
     output = {
         "meta": {
@@ -215,6 +352,7 @@ def main():
             "plugins_ref": args.plugins_ref,
             "total_modules": len(merged),
             "total_models": sum(len(v) for v in merged.values()),
+            "total_arrays": sum(len(arrs) for mods in merged.values() for arrs in mods.values()),
         },
         "models": merged,
     }
@@ -224,7 +362,15 @@ def main():
         out_path = pathlib.Path.cwd() / out_path
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
-    print(f"Wrote {out_path} — modules={len(merged)} models={output['meta']['total_models']}")
+    print(f"Wrote {out_path} — modules={len(merged)} models={output['meta']['total_models']} arrays={output['meta']['total_arrays']}")
+
+    # highlight required modules
+    for need in ["unbound", "bind", "kea", "acmeclient"]:
+        if need in merged:
+            print(f"  OK {need}: models={list(merged[need].keys())}")
+        else:
+            print(f"  MISSING {need}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

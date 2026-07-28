@@ -1,0 +1,10 @@
+include README.md LICENSE CHANGELOG.md
+include src/saltext/opnsense/utils/controllers.json
+include src/saltext/opnsense/utils/models.json
+recursive-include src/saltext/opnsense/utils *.json
+recursive-include tools *.json
+include pyproject.toml
+global-exclude __pycache__
+global-exclude *.py[cod]
+prune .pytest_cache
+prune .nox

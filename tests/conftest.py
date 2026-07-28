@@ -31,7 +31,7 @@ import pytest
 def opnsense_opts():
     return {
         "opnsense": {
-            "host": "jrbob.bierce.org",
+            "host": "opnsense.example.com",
             "api_key": "testkey",
             "api_secret": "testsecret",
             "proto": "https",

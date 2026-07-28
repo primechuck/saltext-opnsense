@@ -1,0 +1,8 @@
+proxy:
+  proxytype: opnsense
+  host: opnsense.example.com
+  proto: https
+  verify_ssl: false
+  api_key: YOUR_API_KEY
+  api_secret: YOUR_API_SECRET
+  timeout: 30

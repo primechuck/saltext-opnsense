@@ -1,0 +1,57 @@
+# File-based proxy minion config — /etc/salt/proxy
+# This file lives on the host running salt-proxy, NOT in pillar.
+# Salt proxy minion reads /etc/salt/proxy (YAML) and merges into __opts__['proxy'].
+#
+# Format: flat dict (no outer `proxy:` wrapper) for file-based install.
+# The `proxy:` wrapper is only used when config comes from pillar.
+#
+# Example 1: Minimal file /etc/salt/proxy for opnsense-router
+# ---------------------------------------------------
+# proxytype: opnsense
+# host: opnsense.example.com
+# proto: https
+# verify_ssl: false
+# api_key: YOUR_API_KEY
+# api_secret: YOUR_API_SECRET
+# timeout: 30
+
+# Example 1 rendered as file content (copy to /etc/salt/proxy):
+proxytype: opnsense
+host: opnsense.example.com
+proto: https
+verify_ssl: false
+api_key: REPLACE_WITH_REAL_KEY
+api_secret: REPLACE_WITH_REAL_SECRET
+timeout: 30
+
+# NOTES:
+# - `host` can be IP or FQDN reachable from proxy host (salt-master).
+# - `proto` = https (default) or http for testing.
+# - `verify_ssl: false` is needed for self-signed OPNsense cert.
+# - For secrets, file-based is plain text; prefer pillar + vault for production
+#   (see opnsense.sls and opnsense-router.sls examples).
+#
+# ---
+# Example 2: Pillar-based variant (for contrast) — this WOULD live in pillar
+# When using pillar, the dict IS nested under `proxy:` key:
+#
+# proxy:
+#   proxytype: opnsense
+#   host: opnsense.example.com
+#   api_key: __slot__:salt:vault.read(secret/opnsense/api_key)
+#   api_secret: __slot__:salt:vault.read(secret/opnsense/api_secret)
+#
+# Dance explanation:
+# - Master holds pillar top.sls entry for minion id `opnsense-router` → `hosts.opnsense-router`
+# - `hosts/opnsense-router.sls` defines `proxy:` dict (or `opnsense:` for direct mode)
+# - When `salt-proxy --proxyid=opnsense-router` starts, it connects to master, asks for
+#   pillar for id `opnsense-router`, receives merged pillar including `proxy:`.
+# - Loader in proxy/opnsense.py: `opts.get("proxy")` gets that dict, or from
+#   /etc/salt/proxy file if pillar not present. `get_client_from_opts` merges
+#   both `proxy` and `opnsense` keys so direct mode (`salt salt-master opnsense.call`)
+#   works when `opnsense:` pillar is present on master.
+# - File-based /etc/salt/proxy bypasses pillar transport entirely — useful for
+#   bootstrap before vault is available, or for testing without master pillar.
+# - Hybrid: minimal /etc/salt/proxy with only `proxytype: opnsense`, rest from
+#   pillar `opnsense:` (direct fallback). `get_client_from_opts` checks pillar
+#   first, then opts, merging.

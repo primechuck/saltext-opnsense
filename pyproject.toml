@@ -4,24 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "saltext-opnsense"
-description = "Salt extension for managing OPNsense via its API - templated, 3008+ ready"
+description = "Salt extension for managing OPNsense via its API - templated, 3008+ ready, with dynamic wrappers, file-based install, and Vault support"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-authors = [{name = "Empire"}]
-keywords = ["salt", "salt-extension", "opnsense", "firewall", "api"]
+authors = [{name = "David Bierce", email = "david@bierce.org"}]
+maintainers = [{name = "David Bierce", email = "david@bierce.org"}]
+keywords = ["salt", "salt-extension", "saltext", "opnsense", "firewall", "api", "unbound", "bind", "kea", "acme"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: System Administrators",
   "License :: OSI Approved :: MIT License",
+  "Topic :: System :: Networking :: Firewalls",
+  "Topic :: System :: Systems Administration",
+  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "salt>=3008",
   "requests>=2.28",
+  "urllib3>=1.26",
 ]
 dynamic = ["version"]
 
@@ -29,15 +37,21 @@ dynamic = ["version"]
 "saltext.opnsense" = "saltext.opnsense"
 
 [project.urls]
-Homepage = "https://github.com/empire/saltext-opnsense"
-Repository = "https://github.com/empire/saltext-opnsense"
-Issues = "https://github.com/empire/saltext-opnsense/issues"
+Homepage = "https://github.com/primechuck/saltext-opnsense"
+Repository = "https://github.com/primechuck/saltext-opnsense"
+Issues = "https://github.com/primechuck/saltext-opnsense/issues"
+Documentation = "https://primechuck.github.io/saltext-opnsense/"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"saltext.opnsense.utils" = ["controllers.json", "models.json", "*.json"]
+"saltext.opnsense" = ["py.typed"]
 
 [tool.setuptools.dynamic]
 version = {attr = "saltext.opnsense.version.__version__"}
@@ -48,11 +62,18 @@ write_to = "src/saltext/opnsense/version/_version.py"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-builtins = ["__opts__", "__salt__", "__proxy__", "__context__", "__grains__", "__utils__"]
+builtins = ["__opts__", "__salt__", "__proxy__", "__context__", "__grains__", "__utils__", "__pillar__"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N"]
-ignore = []
+ignore = ["E501", "N807", "E731", "N814", "E402"]
+
+
+
+[tool.ruff.lint.mccabe]
+max-complexity = 50
+
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Live smoke test against jrbob — no Salt required.
+Live smoke test against opnsense-router — no Salt required.
 Uses pillar env vars or args.
 
 Usage:
-    OPNSENSE_HOST=jrbob.bierce.org OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... python tools/test_live.py
-    python tools/test_live.py --host jrbob.bierce.org --key ... --secret ...
+    OPNSENSE_HOST=opnsense.example.com OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... python tools/test_live.py
+    python tools/test_live.py --host opnsense.example.com --key ... --secret ...
 """
 
 import argparse
@@ -19,7 +19,7 @@ from saltext.opnsense.utils.opnsense import OPNsenseClient, OPNsenseClientConfig
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default=os.getenv("OPNSENSE_HOST", "jrbob.bierce.org"))
+    parser.add_argument("--host", default=os.getenv("OPNSENSE_HOST", "opnsense.example.com"))
     parser.add_argument("--key", default=os.getenv("OPNSENSE_API_KEY"))
     parser.add_argument("--secret", default=os.getenv("OPNSENSE_API_SECRET"))
     parser.add_argument("--no-verify", action="store_true", default=True)
@@ -53,7 +53,7 @@ def main():
             if data is not None:
                 res = client.call(mod, ctrl, act, data=data, method="POST")
             else:
-                res = client.call(mod, ctrl, act, method="GET")
+                res = client.call(mod, ctrl, act, data={}, method="POST")
             rows = res.get("rows", res)
             count = len(rows) if isinstance(rows, list) else 1
             print(f"  OK {mod}/{ctrl}/{act} -> {count} rows / keys={list(res.keys())[:5]}")

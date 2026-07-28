@@ -1,21 +1,13 @@
 import logging
 
-import salt.utils.json
-import salt.utils.platform
-
 log = logging.getLogger(__name__)
 
-def _load_deps():
+def _load_client_deps():
     import importlib
-    candidates = [
-        "saltext.opnsense.utils.opnsense",
-        "opnsense",
-        "salt.utils.opnsense",
-    ]
-    last_err = None
-    for mod in candidates:
+
+    for mod_name in ["saltext.opnsense.utils.opnsense", "opnsense", "salt.utils.opnsense"]:
         try:
-            m = importlib.import_module(mod)
+            m = importlib.import_module(mod_name)
             return (
                 getattr(m, "OPNsenseClient"),
                 getattr(m, "OPNsenseClientConfig"),
@@ -23,143 +15,150 @@ def _load_deps():
                 True,
                 "",
             )
-        except Exception as e:
-            last_err = str(e)
+        except Exception as exc:
+            last = str(exc)
             continue
-    return None, None, None, False, last_err or "import failed"
+    return None, None, None, False, last
 
-OPNsenseClient, OPNsenseClientConfig, get_client_from_opts, HAS_DEPS, HAS_DEPS_ERROR = _load_deps()
+OPNsenseClient, OPNsenseClientConfig, get_client_from_opts, HAS_DEPS, HAS_DEPS_ERROR = _load_client_deps()
 
 __proxyenabled__ = ["opnsense"]
 __virtualname__ = "opnsense"
-DETAILS = {}
 
+def _ctx():
+    return __context__.setdefault("opnsense", {})
 
 def __virtual__():
     if not HAS_DEPS:
-        return (False, f"saltext-opnsense dependencies missing: {HAS_DEPS_ERROR}")
+        return (False, f"saltext-opnsense deps missing: {HAS_DEPS_ERROR}")
     return __virtualname__
 
-
 def init(opts):
-    proxy_conf = opts.get("proxy", {})
+    ctx = _ctx()
+    proxy_conf = opts.get("proxy", {}) or opts.get("opnsense", {})
     if not proxy_conf:
-        proxy_conf = opts.get("opnsense", {})
-
-    if not proxy_conf:
-        log.error("Proxy config missing: expected pillar/proxy or opts proxy for opnsense")
-        DETAILS["initialized"] = False
+        log.error("Proxy config missing for opnsense")
+        ctx["initialized"] = False
         return False
-
     try:
         client = get_client_from_opts(opts, pillar=proxy_conf)
     except Exception as exc:
-        log.error("Failed to create OPNsense client: %s", exc)
-        DETAILS["initialized"] = False
+        log.error("Failed to create client: %s", exc)
+        ctx["initialized"] = False
         return False
-
-    DETAILS["client"] = client
-    DETAILS["initialized"] = True
-    DETAILS["opts"] = opts
-
-    log.info("OPNsense proxy initialized for host %s", client.config.host)
+    ctx["client"] = client
+    ctx["initialized"] = True
+    ctx["opts"] = opts
+    log.info("OPNsense proxy initialized host=%s proto=%s", client.config.host, client.config.proto)
     return True
-
 
 def initialized():
-    return DETAILS.get("initialized", False)
-
+    return _ctx().get("initialized", False)
 
 def shutdown(opts=None):
-    DETAILS.clear()
+    __context__.pop("opnsense", None)
     return True
 
-
 def ping():
-    if not DETAILS.get("client"):
+    ctx = _ctx()
+    client = ctx.get("client")
+    if not client:
         return False
-    client = DETAILS["client"]
-    try:
-        client.call("core", "system", "status", method="GET")
-        return True
-    except Exception:
+    for mod, ctrl, typ in [
+        ("unbound", "settings", "host_alias"),
+        ("bind", "domain", "primary_domain"),
+        ("firewall", "alias", "item"),
+        ("unbound", "settings", "host_override"),
+    ]:
         try:
-            client.call("diagnostics", "interface", "getArp", method="GET")
+            client.search(mod, ctrl, typ, row_count=1)
             return True
         except Exception as exc:
-            log.debug("ping failed: %s", exc)
-            return False
-
+            log.debug("ping %s/%s/%s failed: %s", mod, ctrl, typ, exc)
+            continue
+    try:
+        client.call("unbound", "settings", "searchHostAlias", data={"rowCount": 1, "current": 1, "searchPhrase": ""}, method="POST")
+        return True
+    except Exception as exc:
+        log.debug("ping fallback failed: %s", exc)
+        return False
 
 def alive(opts=None):
     return ping()
 
-
 def grains():
-    if not DETAILS.get("client"):
+    ctx = _ctx()
+    client = ctx.get("client")
+    if not client:
         return {}
+    out = {"opnsense_host": client.config.host}
     try:
-        client = DETAILS["client"]
-        info = client.call("core", "firmware", "status", method="GET")
-        return {
-            "opnsense_version": info.get("product_version", "unknown"),
-            "opnsense_host": client.config.host,
-        }
+        fw = client.search("unbound", "settings", "host_alias", row_count=1)
+        out["opnsense_unbound_alias_count"] = fw.get("total", 0)
     except Exception:
-        return {}
-
+        pass
+    try:
+        info = client.call("core", "firmware", "status", data={}, method="POST")
+        if isinstance(info, dict):
+            out["opnsense_version"] = info.get("product_version") or info.get("product_version_string", "unknown")
+    except Exception:
+        pass
+    try:
+        diag = client.search("bind", "domain", "primary_domain", row_count=1)
+        out["opnsense_bind_domain_count"] = diag.get("total", 0)
+    except Exception:
+        pass
+    return out
 
 def call(module, controller, action, uuid=None, data=None, method=None):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.call(module, controller, action, uuid=uuid, data=data, method=method)
 
-
 def search(module, controller, type_name=None, **kwargs):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
-    return client.search(module, controller, type_name, **kwargs)
-
+    kwargs = {k: v for k, v in kwargs.items() if not k.startswith("__")}
+    search_phrase = kwargs.pop("search_phrase", "")
+    row_count = kwargs.pop("row_count", -1)
+    current = kwargs.pop("current", 1)
+    sort = kwargs.pop("sort", None)
+    return client.search(module, controller, type_name, search_phrase=search_phrase, row_count=row_count, current=current, sort=sort, extra=kwargs if kwargs else None)
 
 def get(module, controller, type_name=None, uuid=None):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.get(module, controller, type_name, uuid=uuid)
 
-
 def add(module, controller, type_name, data):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.add(module, controller, type_name, data)
 
-
 def set_item(module, controller, type_name, uuid, data):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.set(module, controller, type_name, uuid, data)
 
-
 def delete(module, controller, type_name, uuid):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.delete(module, controller, type_name, uuid)
 
-
 def toggle(module, controller, type_name, uuid, enabled=None):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.toggle(module, controller, type_name, uuid, enabled)
 
-
 def reconfigure(module, controller, action="reconfigure", data=None):
-    if not DETAILS.get("client"):
+    client = _ctx().get("client")
+    if not client:
         raise Exception("OPNsense proxy not initialized")
-    client = DETAILS["client"]
     return client.reconfigure(module, controller, action, data=data)

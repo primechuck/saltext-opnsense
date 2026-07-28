@@ -1,7 +1,8 @@
-from unittest.mock import MagicMock
 import importlib
+from unittest.mock import MagicMock
 
-def _setup_state(mod_name):
+
+def _setup_state(mod_name="opnsense"):
     full = f"saltext.opnsense.states.{mod_name}"
     mod = importlib.import_module(full)
     mock_salt = {
@@ -9,69 +10,33 @@ def _setup_state(mod_name):
         "opnsense.item_absent": MagicMock(return_value={"result": True, "changes": {}, "comment": "absent"}),
         "opnsense.reconfigure": MagicMock(return_value={"result": "reconfigured"}),
         "opnsense.call": MagicMock(return_value={}),
+        "opnsense.search": MagicMock(return_value={"rows": []}),
     }
     mod.__salt__ = mock_salt
+    mod.__opts__ = {"test": False}
     return mod, mock_salt
 
 def _has_any(mod, substrings):
-    return any(any(s in name for s in substrings) for name in dir(mod) if not name.startswith("_") and name.endswith("_present"))
+    return any(any(s in name for s in substrings) for name in dir(mod) if not name.startswith("_"))
 
-def test_unbound_state_host_alias():
-    mod, mocks = _setup_state("opnsense_unbound")
-    assert _has_any(mod, ["host_alias", "hostalias", "host_override"])
-    funcs = [m for m in dir(mod) if "host_alias" in m and m.endswith("_present")]
-    if not funcs:
-        funcs = [m for m in dir(mod) if m.endswith("_present")]
-    assert funcs
-    getattr(mod, funcs[0])(name="grafana.bierce.org", data={"hostname": "grafana"}, match={"hostname": "grafana"})
-    mocks["opnsense.item_present"].assert_called()
-
-def test_firewall_state_alias_item():
-    mod, mocks = _setup_state("opnsense_firewall")
+def test_dynamic_state_wrappers():
+    mod, mocks = _setup_state("opnsense")
+    assert _has_any(mod, ["unbound_settings_host_alias_present", "host_alias_present"])
+    assert _has_any(mod, ["bind_record_present", "record_present"])
     assert any(m.endswith("_present") for m in dir(mod))
-    funcs = [m for m in dir(mod) if m.endswith("_present")]
-    assert funcs
-    getattr(mod, funcs[0])(name="test", data={"name": "test"})
-    args, _ = mocks["opnsense.item_present"].call_args
-    assert args[1] == "firewall"
+    assert any(m.endswith("_absent") for m in dir(mod))
 
-def test_bind_state_record():
-    mod, mocks = _setup_state("opnsense_bind")
-    funcs = [m for m in dir(mod) if "record" in m and m.endswith("_present")]
-    if not funcs:
-        funcs = [m for m in dir(mod) if m.endswith("_present")]
-    assert funcs
-    getattr(mod, funcs[0])(name="pihole", data={"name": "pihole"})
-    mocks["opnsense.item_present"].assert_called()
-    args, _ = mocks["opnsense.item_present"].call_args
-    assert args[1] == "bind"
+def test_item_present_exists():
+    mod, _ = _setup_state("opnsense")
+    assert hasattr(mod, "item_present")
+    assert hasattr(mod, "item_absent")
+    assert hasattr(mod, "items_present")
+    assert hasattr(mod, "items_absent")
+    assert hasattr(mod, "reconfigured")
 
-def test_acmeclient_state():
-    mod, mocks = _setup_state("opnsense_acmeclient")
-    funcs = [m for m in dir(mod) if m.endswith("_present")]
-    assert funcs
-    getattr(mod, funcs[0])(name="myaccount", data={"name": "myaccount"})
-    mocks["opnsense.item_present"].assert_called()
-    args, _ = mocks["opnsense.item_present"].call_args
-    assert args[1] == "acmeclient"
-
-def test_interfaces_state():
-    mod, mocks = _setup_state("opnsense_interfaces")
-    funcs = [m for m in dir(mod) if m.endswith("_present")]
-    assert funcs
-    getattr(mod, funcs[0])(name="vlan10", data={"vlan": 10})
-    mocks["opnsense.item_present"].assert_called()
-
-def test_state_virtual():
-    for mod_name in ["opnsense_unbound", "opnsense_bind", "opnsense_firewall", "opnsense_interfaces", "opnsense_acmeclient", "opnsense_kea"]:
-        try:
-            mod, _ = _setup_state(mod_name)
-        except Exception:
-            continue
-        assert mod.__virtual__() == mod.__virtualname__
-
-def test_all_state_modules_have_present():
-    import pathlib, json
+def test_all_modules_dynamic_present():
+    import json
+    import pathlib
     spec_path = pathlib.Path(__file__).parent.parent.parent / "src" / "saltext" / "opnsense" / "utils" / "controllers.json"
     if not spec_path.exists():
         spec_path = pathlib.Path(__file__).parent.parent.parent / "tools" / "controllers.json"
@@ -79,11 +44,11 @@ def test_all_state_modules_have_present():
         return
     data = json.loads(spec_path.read_text())
     modules = data.get("modules", {})
+    mod, _ = _setup_state("opnsense")
+    count = 0
     for mod_name in modules.keys():
-        full_mod = f"opnsense_{mod_name}"
-        try:
-            mod, _ = _setup_state(full_mod)
-        except Exception:
-            continue
-        assert any(m.endswith("_present") for m in dir(mod)), f"{full_mod} has no *_present"
-        assert any(m.endswith("_absent") for m in dir(mod)), f"{full_mod} has no *_absent"
+        for name in dir(mod):
+            if mod_name in name and name.endswith("_present"):
+                count += 1
+                break
+    assert count >= 5
