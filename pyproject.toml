@@ -53,8 +53,6 @@ where = ["src"]
 "saltext.opnsense.utils" = ["controllers.json", "models.json", "*.json"]
 "saltext.opnsense" = ["py.typed"]
 
-[tool.setuptools.dynamic]
-version = {attr = "saltext.opnsense.version.__version__"}
 
 [tool.setuptools_scm]
 write_to = "src/saltext/opnsense/version/_version.py"
