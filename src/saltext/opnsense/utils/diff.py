@@ -181,7 +181,10 @@ def normalize_field_value(
 
     # 5. Strings
     if isinstance(val, str):
-        return val.strip()
+        s = val.strip()
+        if s.endswith(".") and len(s) > 1 and not s.endswith(".."):
+            s = s.rstrip(".")
+        return s
 
     return val
 

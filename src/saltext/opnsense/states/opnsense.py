@@ -1273,6 +1273,14 @@ def item_present(
     if match is None:
         match = {"description": name}
 
+    if match:
+        match = _auto_resolve_dict(
+            dict(match),
+            parent_module=module,
+            parent_controller=controller,
+            parent_type=type,
+        )
+
     try:
         existing_res = __salt__["opnsense.search"](module, controller, type, row_count=-1)
         rows = existing_res.get("rows", [])

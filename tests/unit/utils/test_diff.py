@@ -70,3 +70,9 @@ def test_diff_models_detects_changes():
         "enabled": {"old": "1", "new": "0"},
         "port": {"old": "80", "new": 8080},
     }
+
+
+def test_normalize_field_value_fqdn_trailing_dot():
+    assert normalize_field_value("value", "target.example.com.") == "target.example.com"
+    assert normalize_field_value("value", "target.example.com") == "target.example.com"
+    assert diff_models({"value": "target.example.com"}, {"value": "target.example.com."}) == {}
