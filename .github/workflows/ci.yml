@@ -47,4 +47,4 @@ jobs:
           CORE_REF=$(python3 -c "import json,pathlib; print(json.loads(pathlib.Path('src/saltext/opnsense/utils/controllers.json').read_text()).get('meta',{}).get('core_ref','25.7'))")
           echo "Verifying spec against upstream tag: ${CORE_REF}"
           python tools/generate_spec.py --core-ref "${CORE_REF}" --plugins-ref "${CORE_REF}" --output /tmp/controllers.json
-          diff -u src/saltext/opnsense/utils/controllers.json /tmp/controllers.json || (echo "controllers.json drift detected — run make bump CORE=${CORE_REF}" && exit 1)
+          diff -u -I '"generated_at"' src/saltext/opnsense/utils/controllers.json /tmp/controllers.json || (echo "controllers.json drift detected — run make bump CORE=${CORE_REF}" && exit 1)
