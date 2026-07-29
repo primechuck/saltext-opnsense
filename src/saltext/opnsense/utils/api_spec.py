@@ -8,44 +8,114 @@ log = logging.getLogger(__name__)
 try:
     from saltext.opnsense.utils.common import camel_to_snake
 except Exception:
+
     def camel_to_snake(name: str) -> str:
         import re
+
         name = name.replace("-", "_")
         s1 = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name)
         s1 = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", s1)
         s1 = s1.lower()
         return re.sub(r"__+", "_", s1).strip("_")
 
+
 CORE_MODULES = [
-    "auth", "captiveportal", "core", "cron", "dhcrelay", "diagnostics", "dnsmasq",
-    "firewall", "firmware", "hostdiscovery", "ids", "interfaces", "ipsec",
-    "kea", "monit", "ntpd", "openvpn", "radvd", "routes", "routing",
-    "syslog", "trafficshaper", "trust", "unbound", "wireguard"
+    "auth",
+    "captiveportal",
+    "core",
+    "cron",
+    "dhcrelay",
+    "diagnostics",
+    "dnsmasq",
+    "firewall",
+    "firmware",
+    "hostdiscovery",
+    "ids",
+    "interfaces",
+    "ipsec",
+    "kea",
+    "monit",
+    "ntpd",
+    "openvpn",
+    "radvd",
+    "routes",
+    "routing",
+    "syslog",
+    "trafficshaper",
+    "trust",
+    "unbound",
+    "wireguard",
 ]
 
 PLUGIN_MODULES = [
-    "acmeclient", "apcupsd", "bind", "caddy", "chrony", "clamav", "collectd",
-    "crowdsec", "dhcp", "dnscryptproxy", "dyndns", "freeradius", "haproxy",
-    "nginx", "postfix", "proxy", "telegraf", "wireguard", "zerotier",
+    "acmeclient",
+    "apcupsd",
+    "bind",
+    "caddy",
+    "chrony",
+    "clamav",
+    "collectd",
+    "crowdsec",
+    "dhcp",
+    "dnscryptproxy",
+    "dyndns",
+    "freeradius",
+    "haproxy",
+    "nginx",
+    "postfix",
+    "proxy",
+    "telegraf",
+    "wireguard",
+    "zerotier",
 ]
 
 UNBOUND_CONTROLLERS = {
     "settings": [
-        "searchHostOverride", "getHostOverride", "addHostOverride", "setHostOverride", "delHostOverride", "toggleHostOverride",
-        "searchHostAlias", "getHostAlias", "addHostAlias", "setHostAlias", "delHostAlias", "toggleHostAlias",
-        "get", "set", "search_host_override", "search_host_alias",
+        "searchHostOverride",
+        "getHostOverride",
+        "addHostOverride",
+        "setHostOverride",
+        "delHostOverride",
+        "toggleHostOverride",
+        "searchHostAlias",
+        "getHostAlias",
+        "addHostAlias",
+        "setHostAlias",
+        "delHostAlias",
+        "toggleHostAlias",
+        "get",
+        "set",
+        "search_host_override",
+        "search_host_alias",
     ],
     "service": ["reconfigure", "restart", "status"],
 }
 
 BIND_CONTROLLERS = {
-    "domain": ["searchPrimaryDomain", "getPrimaryDomain", "addPrimaryDomain", "setPrimaryDomain", "delPrimaryDomain", "get", "set", "search_primary_domain"],
+    "domain": [
+        "searchPrimaryDomain",
+        "getPrimaryDomain",
+        "addPrimaryDomain",
+        "setPrimaryDomain",
+        "delPrimaryDomain",
+        "get",
+        "set",
+        "search_primary_domain",
+    ],
     "record": ["searchRecord", "getRecord", "addRecord", "setRecord", "delRecord", "search_record"],
     "service": ["reconfigure", "restart", "status"],
 }
 
 FIREWALL_CONTROLLERS = {
-    "alias": ["searchItem", "getItem", "addItem", "setItem", "delItem", "toggleItem", "search_item"],
+    "alias": [
+        "searchItem",
+        "getItem",
+        "addItem",
+        "setItem",
+        "delItem",
+        "toggleItem",
+        "search_item",
+    ],
     "filter": ["searchRule", "getRule", "addRule", "setRule", "delRule", "search_rule"],
 }
 
@@ -55,7 +125,16 @@ INTERFACES_CONTROLLERS = {
 }
 
 KEA_CONTROLLERS = {
-    "dhcpv4": ["searchSubnet", "getSubnet", "addSubnet", "setSubnet", "delSubnet", "searchReservation", "search_subnet", "search_reservation"],
+    "dhcpv4": [
+        "searchSubnet",
+        "getSubnet",
+        "addSubnet",
+        "setSubnet",
+        "delSubnet",
+        "searchReservation",
+        "search_subnet",
+        "search_reservation",
+    ],
     "service": ["reconfigure", "status"],
 }
 
@@ -82,6 +161,7 @@ def _load_via_filesystem() -> dict[str, Any] | None:
 
     try:
         from importlib.resources import files as res_files
+
         for pkg in ["saltext.opnsense.utils", "saltext.opnsense"]:
             try:
                 pkg_files = res_files(pkg)

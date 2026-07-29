@@ -4,9 +4,11 @@ from unittest.mock import MagicMock
 def _make_search_mock():
     def _search(module, controller, typ, search_phrase="", row_count=-1, **kw):
         if module == "unbound" and typ == "host_override":
-            return {"rows": [
-                {"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"},
-            ]}
+            return {
+                "rows": [
+                    {"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"},
+                ]
+            }
         if module == "unbound" and typ == "host_alias":
             if search_phrase == "www":
                 return {"rows": []}
@@ -14,12 +16,15 @@ def _make_search_mock():
                 return {"rows": []}
             return {"rows": []}
         if module == "bind" and controller == "domain":
-            return {"rows": [
-                {"uuid": "zone-1", "domainname": "example.com"},
-            ]}
+            return {
+                "rows": [
+                    {"uuid": "zone-1", "domainname": "example.com"},
+                ]
+            }
         if module == "bind" and controller == "record":
             return {"rows": []}
         return {"rows": []}
+
     return MagicMock(side_effect=_search)
 
 
@@ -30,7 +35,9 @@ def test_unbound_alias_present_resolves_parent():
 
     def search_with_alias(module, controller, typ, search_phrase="", row_count=-1, **kw):
         if module == "unbound" and typ == "host_override":
-            return {"rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]
+            }
         if module == "unbound" and typ == "host_alias":
             return {"rows": []}
         return {"rows": []}
@@ -65,7 +72,9 @@ def test_unbound_alias_present_uuid_parent():
     }
     state_mod.__pillar__ = {}
 
-    result = state_mod.alias_present(name="www", parent="550e8400-e29b-41d4-a716-446655440000", domain="example.com")
+    result = state_mod.alias_present(
+        name="www", parent="550e8400-e29b-41d4-a716-446655440000", domain="example.com"
+    )
     assert result["result"] is True
     payload = state_mod.__salt__["opnsense.add"].call_args[0][3]
     assert payload["alias"]["host"] == "550e8400-e29b-41d4-a716-446655440000"
@@ -89,7 +98,9 @@ def test_unbound_aliases_managed_test_mode():
 
     def search_side(module, controller, typ, search_phrase="", row_count=-1, **kw):
         if typ == "host_override":
-            return {"rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]
+            }
         if typ == "host_alias":
             return {"rows": []}
         return {"rows": []}
@@ -121,7 +132,9 @@ def test_unbound_aliases_managed_actual():
 
     def search_side(module, controller, typ, search_phrase="", row_count=-1, **kw):
         if typ == "host_override":
-            return {"rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]
+            }
         if typ == "host_alias":
             return {"rows": []}
         return {"rows": []}
@@ -187,7 +200,9 @@ def test_bind_record_present():
         "opnsense.reconfigure": MagicMock(return_value={}),
     }
 
-    result = state_mod.record_present(name="www", domain="example.com", type="A", value="172.18.60.30")
+    result = state_mod.record_present(
+        name="www", domain="example.com", type="A", value="172.18.60.30"
+    )
     assert result["result"] is True
     payload = state_mod.__salt__["opnsense.add"].call_args[0][3]
     assert payload["record"]["name"] == "www"
@@ -199,7 +214,9 @@ def test_dns_managed_pillar_read():
 
     def search_side(module, controller, typ, search_phrase="", row_count=-1, **kw):
         if typ == "host_override":
-            return {"rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com"}]
+            }
         if typ == "host_alias":
             return {"rows": []}
         return {"rows": []}

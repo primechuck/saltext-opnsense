@@ -73,7 +73,9 @@ def find_repo_root() -> pathlib.Path | None:
         if cand in seen:
             continue
         seen.add(cand)
-        if (cand / "infra" / "salt" / "states").exists() and (cand / "projects" / "saltext-opnsense").exists():
+        if (cand / "infra" / "salt" / "states").exists() and (
+            cand / "projects" / "saltext-opnsense"
+        ).exists():
             return cand
     p = PROJECT_ROOT.resolve()
     for _ in range(10):
@@ -88,10 +90,14 @@ def step_spec(core_ref: str, plugins_ref: str) -> int:
     cmd = [
         sys.executable,
         str(TOOLS_DIR / "generate_spec.py"),
-        "--core-ref", core_ref,
-        "--plugins-ref", plugins_ref,
-        "--output", str(CTRL_JSON_SRC),
-        "--tmp-dir", str(TMP_DIR),
+        "--core-ref",
+        core_ref,
+        "--plugins-ref",
+        plugins_ref,
+        "--output",
+        str(CTRL_JSON_SRC),
+        "--tmp-dir",
+        str(TMP_DIR),
     ]
     rc = run_cmd(cmd, desc=f"generate_spec core={core_ref} plugins={plugins_ref}")
     if rc != 0:
@@ -138,8 +144,11 @@ def step_verify() -> int:
     print(f"\n=== verify_import (PYTHONPATH={env_pythonpath}) ===")
     print(f"$ PYTHONPATH={env_pythonpath} {' '.join(full_cmd)}")
     import os
+
     env = os.environ.copy()
-    env["PYTHONPATH"] = env_pythonpath + (":" + env.get("PYTHONPATH", "") if env.get("PYTHONPATH") else "")
+    env["PYTHONPATH"] = env_pythonpath + (
+        ":" + env.get("PYTHONPATH", "") if env.get("PYTHONPATH") else ""
+    )
     result = subprocess.run(full_cmd, cwd=str(PROJECT_ROOT), env=env)
     if result.returncode != 0:
         print(f"!! verify_import FAILED ({result.returncode})", file=sys.stderr)
@@ -153,7 +162,9 @@ def step_tests() -> int:
     has_pytest = shutil.which("pytest") is not None
     if not has_pytest:
         try:
-            subprocess.run([sys.executable, "-m", "pytest", "--version"], check=True, capture_output=True)
+            subprocess.run(
+                [sys.executable, "-m", "pytest", "--version"], check=True, capture_output=True
+            )
             pytest_bin = f"{sys.executable} -m pytest"
             cmd = [sys.executable, "-m", "pytest", "tests/unit", "-q"]
         except Exception:
@@ -165,17 +176,27 @@ def step_tests() -> int:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Orchestrate full codegen pipeline for saltext-opnsense")
-    parser.add_argument("--core-ref", default="master", help="git ref for opnsense/core (default: master)")
-    parser.add_argument("--plugins-ref", default="master", help="git ref for opnsense/plugins (default: master)")
+    parser = argparse.ArgumentParser(
+        description="Orchestrate full codegen pipeline for saltext-opnsense"
+    )
+    parser.add_argument(
+        "--core-ref", default="master", help="git ref for opnsense/core (default: master)"
+    )
+    parser.add_argument(
+        "--plugins-ref", default="master", help="git ref for opnsense/plugins (default: master)"
+    )
     parser.add_argument("--skip-sync", action="store_true", help="skip sync_extmods.py --copy step")
-    parser.add_argument("--skip-live", action="store_true", help="skip pytest tests (alias for --skip-tests)")
+    parser.add_argument(
+        "--skip-live", action="store_true", help="skip pytest tests (alias for --skip-tests)"
+    )
     parser.add_argument("--skip-tests", action="store_true", help="skip pytest tests/unit")
     parser.add_argument("--skip-verify", action="store_true", help="skip verify_import.py")
     parser.add_argument("--skip-wrappers", action="store_true", help="skip generate_wrappers.py")
     parser.add_argument("--skip-models", action="store_true", help="skip generate_models.py")
     parser.add_argument("--skip-spec", action="store_true", help="skip generate_spec.py")
-    parser.add_argument("--only", help="run only one phase: spec, models, wrappers, sync, verify, test")
+    parser.add_argument(
+        "--only", help="run only one phase: spec, models, wrappers, sync, verify, test"
+    )
     parser.add_argument("--dry-run", action="store_true", help="print steps without executing")
     args = parser.parse_args()
 
@@ -194,13 +215,17 @@ def main():
     print("== saltext-opnsense generate_all ==")
     print(f"Project root: {PROJECT_ROOT}")
     print(f"Core ref: {args.core_ref}  Plugins ref: {args.plugins_ref}")
-    print(f"Only: {only or 'all'}  skip_sync={args.skip_sync} skip_tests={args.skip_tests} dry_run={args.dry_run}")
+    print(
+        f"Only: {only or 'all'}  skip_sync={args.skip_sync} skip_tests={args.skip_tests} dry_run={args.dry_run}"
+    )
 
     rc = 0
 
     if should_run("spec") and not args.skip_spec:
         if args.dry_run:
-            print(f"[dry-run] would run: generate_spec.py --core-ref {args.core_ref} --plugins-ref {args.plugins_ref}")
+            print(
+                f"[dry-run] would run: generate_spec.py --core-ref {args.core_ref} --plugins-ref {args.plugins_ref}"
+            )
         else:
             rc = step_spec(args.core_ref, args.plugins_ref)
             if rc != 0:
@@ -210,7 +235,9 @@ def main():
 
     if should_run("models") and not args.skip_models:
         if args.dry_run:
-            print(f"[dry-run] would run: generate_models.py --core-ref {args.core_ref} --plugins-ref {args.plugins_ref}")
+            print(
+                f"[dry-run] would run: generate_models.py --core-ref {args.core_ref} --plugins-ref {args.plugins_ref}"
+            )
         else:
             rc = step_models(args.core_ref, args.plugins_ref)
             if rc != 0:
@@ -267,7 +294,9 @@ def main():
 
     print("\n== generate_all DONE ==")
     if args.dry_run:
-        print("Dry run — no files modified beyond earlier steps that already ran (spec is dry-only).")
+        print(
+            "Dry run — no files modified beyond earlier steps that already ran (spec is dry-only)."
+        )
     return 0
 
 

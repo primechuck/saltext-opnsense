@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 def test_module_virtual():
     from saltext.opnsense.modules import opnsense as mod
+
     assert mod.__virtual__() == "opnsense"
 
 

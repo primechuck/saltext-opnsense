@@ -25,18 +25,26 @@ def opnsense_grains():
                 if isinstance(spec, dict):
                     mods = spec.get("modules", {})
                     meta = spec.get("meta", {})
-                    grains["opnsense_api_modules"] = list(mods.keys()) if isinstance(mods, dict) else list(mods)
+                    grains["opnsense_api_modules"] = (
+                        list(mods.keys()) if isinstance(mods, dict) else list(mods)
+                    )
                     grains["opnsense_spec_version"] = meta.get("core_ref", "25.7")
             except Exception:
                 pass
             try:
-                fw_status = __salt__["opnsense.call"]("core", "firmware", "status", data={}, method="POST")
+                fw_status = __salt__["opnsense.call"](
+                    "core", "firmware", "status", data={}, method="POST"
+                )
                 if isinstance(fw_status, dict):
-                    grains["opnsense_version"] = fw_status.get("product_version") or fw_status.get("product_version_string")
+                    grains["opnsense_version"] = fw_status.get("product_version") or fw_status.get(
+                        "product_version_string"
+                    )
             except Exception:
                 pass
             try:
-                alias_res = __salt__["opnsense.search"]("unbound", "settings", "host_alias", row_count=1)
+                alias_res = __salt__["opnsense.search"](
+                    "unbound", "settings", "host_alias", row_count=1
+                )
                 if isinstance(alias_res, dict):
                     grains["opnsense_unbound_alias_count"] = alias_res.get("total", 0)
             except Exception:

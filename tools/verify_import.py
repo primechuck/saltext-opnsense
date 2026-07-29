@@ -16,8 +16,14 @@ SRC_BASE = pathlib.Path(__file__).resolve().parent.parent / "src" / "saltext" / 
 TOOLS_CTRL = pathlib.Path(__file__).with_name("controllers.json")
 SRC_CTRL = SRC_BASE / "utils" / "controllers.json"
 
+
 def load_modules_from_spec():
-    for path in [SRC_CTRL, TOOLS_CTRL, pathlib.Path.cwd() / "tools" / "controllers.json", pathlib.Path.cwd() / "src" / "saltext" / "opnsense" / "utils" / "controllers.json"]:
+    for path in [
+        SRC_CTRL,
+        TOOLS_CTRL,
+        pathlib.Path.cwd() / "tools" / "controllers.json",
+        pathlib.Path.cwd() / "src" / "saltext" / "opnsense" / "utils" / "controllers.json",
+    ]:
         if path.exists():
             try:
                 data = json.loads(path.read_text())
@@ -28,6 +34,7 @@ def load_modules_from_spec():
                 continue
     return [], 0, None
 
+
 def main():
     print("== saltext-opnsense dynamic import proof (human-friendly) ==\n")
 
@@ -37,6 +44,7 @@ def main():
         print(f"Sample: {', '.join(modules_list[:10])} ...")
 
     import types
+
     if "salt" not in sys.modules:
         salt_mock = types.ModuleType("salt")
         utils_mock = types.ModuleType("salt.utils")
@@ -70,7 +78,10 @@ def main():
         print(f"  OK dynamic exec includes {f}")
 
     print("\nPASS: dynamic-only covers all 76 modules, no static wrapper bloat needed.")
-    print("Human can read just 4 files: utils/opnsense.py, proxy/opnsense.py, modules/opnsense.py, states/opnsense.py")
+    print(
+        "Human can read just 4 files: utils/opnsense.py, proxy/opnsense.py, modules/opnsense.py, states/opnsense.py"
+    )
+
 
 if __name__ == "__main__":
     main()

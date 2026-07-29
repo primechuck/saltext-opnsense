@@ -506,7 +506,11 @@ def doctor() -> dict:
         res["spec_version"] = meta["core_ref"]
 
     try:
-        if salt.utils.platform.is_proxy() and "__proxy__" in globals() and "opnsense.call" in __proxy__:
+        if (
+            salt.utils.platform.is_proxy()
+            and "__proxy__" in globals()
+            and "opnsense.call" in __proxy__
+        ):
             firmware_res = __proxy__["opnsense.call"]("core", "firmware", "status")
         else:
             client = _get_client()
@@ -521,11 +525,3 @@ def doctor() -> dict:
 
 
 _inject_dynamic_wrappers()
-
-
-
-
-
-
-
-

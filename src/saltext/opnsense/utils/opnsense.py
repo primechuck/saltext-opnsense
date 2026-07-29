@@ -183,7 +183,9 @@ class OPNsenseClient:
                         attempt,
                         exc,
                     )
-                    raise OPNsenseAPIError(f"{method_up} {url} failed after {attempt} attempts: {exc}") from exc
+                    raise OPNsenseAPIError(
+                        f"{method_up} {url} failed after {attempt} attempts: {exc}"
+                    ) from exc
 
                 sleep = _BACKOFF_BASE * (2 ** (attempt - 1))
                 log.warning(
@@ -221,7 +223,9 @@ class OPNsenseClient:
 
         if resp is None:
             if last_exc:
-                raise OPNsenseAPIError(f"{method_up} {url} failed after {_MAX_RETRIES}: {last_exc}") from last_exc
+                raise OPNsenseAPIError(
+                    f"{method_up} {url} failed after {_MAX_RETRIES}: {last_exc}"
+                ) from last_exc
             raise OPNsenseAPIError(f"{method_up} {url} failed: no response")
 
         if resp.status_code >= 400:
@@ -251,7 +255,9 @@ class OPNsenseClient:
         if not isinstance(j, dict):
             return
 
-        if j.get("result") == "failed" or (isinstance(j.get("validations"), dict) and bool(j.get("validations"))):
+        if j.get("result") == "failed" or (
+            isinstance(j.get("validations"), dict) and bool(j.get("validations"))
+        ):
             vals = j.get("validations") if isinstance(j.get("validations"), dict) else {}
             err_msg = j.get("errorMessage") or j.get("error") or j.get("message")
             if err_msg and not vals:
@@ -302,7 +308,9 @@ class OPNsenseClient:
         if method == "POST" and data is None:
             data = {}
 
-        result = self.request(method, module, controller, action, uuid=uuid, data=data, params=params)
+        result = self.request(
+            method, module, controller, action, uuid=uuid, data=data, params=params
+        )
 
         if action.startswith("search") and isinstance(result, dict):
             rows = result.get("rows", [])
@@ -344,7 +352,16 @@ class OPNsenseClient:
         elif verb == "set":
             cands.extend([f"{verb}_{snake}", f"{verb}{pascal}", f"{verb}"])
         elif verb == "del":
-            cands.extend([f"{verb}_{snake}", f"{verb}{pascal}", f"{verb}", f"del{pascal}", f"delete_{snake}", f"delete{pascal}"])
+            cands.extend(
+                [
+                    f"{verb}_{snake}",
+                    f"{verb}{pascal}",
+                    f"{verb}",
+                    f"del{pascal}",
+                    f"delete_{snake}",
+                    f"delete{pascal}",
+                ]
+            )
         elif verb == "toggle":
             cands.extend([f"{verb}_{snake}", f"{verb}{pascal}", f"{verb}"])
 
@@ -490,7 +507,9 @@ class OPNsenseClient:
                 last_exc,
             )
             raise last_exc
-        raise OPNsenseAPIError(f"no candidates succeeded for {module}/{controller} tried {candidates}")
+        raise OPNsenseAPIError(
+            f"no candidates succeeded for {module}/{controller} tried {candidates}"
+        )
 
     def search(
         self,
@@ -603,7 +622,9 @@ class OPNsenseClient:
             module, controller, cands, uuid=uuid, data={}, enable_fallback=enable_fallback
         )
 
-    def reconfigure(self, module: str, controller: str, action: str = "reconfigure", data: dict | None = None) -> dict:
+    def reconfigure(
+        self, module: str, controller: str, action: str = "reconfigure", data: dict | None = None
+    ) -> dict:
         if data is None:
             data = {}
         return self.call(module, controller, action, data=data, method="POST")

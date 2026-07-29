@@ -72,15 +72,21 @@ def _copy_file(src, dst):
 
 def main():
     parser = argparse.ArgumentParser(description="Sync extension modules to an extmods directory")
-    parser.add_argument("--dest", help="Target extmods root directory (e.g. /srv/salt/states or /srv/salt)")
-    parser.add_argument("--check", action="store_true", help="check if copies are in sync, fail if not")
+    parser.add_argument(
+        "--dest", help="Target extmods root directory (e.g. /srv/salt/states or /srv/salt)"
+    )
+    parser.add_argument(
+        "--check", action="store_true", help="check if copies are in sync, fail if not"
+    )
     parser.add_argument("--copy", action="store_true", help="copy files")
     args = parser.parse_args()
 
     dest_path = pathlib.Path(args.dest).resolve() if args.dest else find_default_dest()
 
     if not dest_path or not dest_path.exists():
-        print("INFO: No valid target extmods directory found or specified via --dest or SALT_EXTMODS_DIR. Skipping sync.")
+        print(
+            "INFO: No valid target extmods directory found or specified via --dest or SALT_EXTMODS_DIR. Skipping sync."
+        )
         return 0
 
     if not args.copy and not args.check:
@@ -125,7 +131,9 @@ def main():
             dst_sub.mkdir(parents=True, exist_ok=True)
             for f in src_sub.glob("*.py"):
                 _copy_file(f, dst_sub / f.name)
-                print(f"Copied saltext/opnsense/{sub}/{f.name} -> _utils/saltext/opnsense/{sub}/{f.name}")
+                print(
+                    f"Copied saltext/opnsense/{sub}/{f.name} -> _utils/saltext/opnsense/{sub}/{f.name}"
+                )
 
         for init_path in [
             dest_path / "_utils" / "saltext" / "__init__.py",

@@ -19,8 +19,10 @@ def _setup_generic(mock_salt=None):
     mod.__salt__ = mock_salt
     return mod, mock_salt
 
+
 def _has_any(mod, substrings):
     return any(any(s in name for s in substrings) for name in dir(mod) if not name.startswith("_"))
+
 
 def test_dynamic_wrappers_cover_all():
     mod, mocks = _setup_generic()
@@ -30,10 +32,12 @@ def test_dynamic_wrappers_cover_all():
     assert _has_any(mod, ["kea_dhcpv4_search_subnet"])
     assert _has_any(mod, ["acmeclient_accounts_search"])
 
+
 def test_dynamic_search_calls():
     mod, mocks = _setup_generic()
     import sys
     import types
+
     if "salt" not in sys.modules:
         salt_mock = types.ModuleType("salt")
         utils_mock = types.ModuleType("salt.utils")
@@ -47,6 +51,7 @@ def test_dynamic_search_calls():
     mod.__pillar__ = {}
 
     from unittest.mock import patch
+
     with patch("saltext.opnsense.modules.opnsense._get_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.search.return_value = {"rows": [], "total": 0}
@@ -57,6 +62,7 @@ def test_dynamic_search_calls():
         _ = func(search_phrase="www", row_count=1)
         assert mock_client.call.called or mock_client.search.called
 
+
 def test_generic_api():
     mod, _ = _setup_generic()
     assert hasattr(mod, "call")
@@ -65,6 +71,7 @@ def test_generic_api():
     assert hasattr(mod, "add")
     assert hasattr(mod, "list_api_modules")
     assert hasattr(mod, "spec")
+
 
 def test_list_modules_full():
     mod, _ = _setup_generic()

@@ -69,12 +69,16 @@ def test_infer_reconfigure_firewall_filter():
 
 def test_infer_reconfigure_uses_service_controller_detection():
     mod = _get_state_mod()
-    with patch.object(mod, "_safe_list_controllers", return_value=["settings", "service", "diagnostics"]):
+    with patch.object(
+        mod, "_safe_list_controllers", return_value=["settings", "service", "diagnostics"]
+    ):
         with patch.object(mod, "_safe_list_actions", return_value=["reconfigure"]):
             rc = mod._infer_reconfigure("unbound", "settings", "host_alias")
             assert rc == {"module": "unbound", "controller": "service", "action": "reconfigure"}
 
-    with patch.object(mod, "_safe_list_controllers", return_value=["alias", "filter", "filter_base"]):
+    with patch.object(
+        mod, "_safe_list_controllers", return_value=["alias", "filter", "filter_base"]
+    ):
         rc = mod._infer_reconfigure("firewall", "filter", "rule")
         assert rc["module"] == "firewall"
         assert "filter_base" in rc["controller"]
@@ -123,7 +127,16 @@ def test_human_diff_host_alias():
     diff = {"host": {"old": "stream", "new": "cluster.example.com"}}
     data = {"hostname": "www", "domain": "example.com", "host": "cluster.example.com"}
     found = {"hostname": "www", "domain": "example.com", "host": "stream"}
-    human = mod._human_diff("host_alias", match, diff, data, found=found, module="unbound", controller="settings", name="www.example.com")
+    human = mod._human_diff(
+        "host_alias",
+        match,
+        diff,
+        data,
+        found=found,
+        module="unbound",
+        controller="settings",
+        name="www.example.com",
+    )
     assert human is not None
     assert "www.example.com" in human
     assert "cluster.example.com" in human
@@ -136,7 +149,9 @@ def test_human_diff_bind_record():
     diff = {"value": {"old": "1.2.3.4", "new": "5.6.7.8"}}
     data = {"name": "pihole", "type": "A", "value": "5.6.7.8"}
     found = {"name": "pihole", "type": "A", "value": "1.2.3.4"}
-    human = mod._human_diff("record", match, diff, data, found=found, module="bind", controller="record", name="pihole")
+    human = mod._human_diff(
+        "record", match, diff, data, found=found, module="bind", controller="record", name="pihole"
+    )
     assert human is not None
     assert "pihole" in human
     assert "1.2.3.4" in human
@@ -149,7 +164,16 @@ def test_human_diff_firewall_alias():
     match = {"name": " RFC1918 "}
     diff = {"content": {"old": "10.0.0.0/8", "new": "172.18.0.0/16"}}
     data = {"name": "RFC1918", "content": "172.18.0.0/16"}
-    human = mod._human_diff("item", match, diff, data, found={"name": "RFC1918", "content": "10.0.0.0/8"}, module="firewall", controller="alias", name="RFC1918")
+    human = mod._human_diff(
+        "item",
+        match,
+        diff,
+        data,
+        found={"name": "RFC1918", "content": "10.0.0.0/8"},
+        module="firewall",
+        controller="alias",
+        name="RFC1918",
+    )
     assert human is not None
     assert "10.0.0.0/8" in human or "RFC1918" in human
     assert "172.18.0.0/16" in human
@@ -158,7 +182,16 @@ def test_human_diff_firewall_alias():
 def test_human_diff_create_host_alias():
     mod = _get_state_mod()
     data = {"hostname": "www", "domain": "example.com", "host": "cluster.example.com"}
-    human = mod._human_diff("host_alias", {"hostname": "www", "domain": "example.com"}, {}, data, found=None, module="unbound", controller="settings", name="www.example.com")
+    human = mod._human_diff(
+        "host_alias",
+        {"hostname": "www", "domain": "example.com"},
+        {},
+        data,
+        found=None,
+        module="unbound",
+        controller="settings",
+        name="www.example.com",
+    )
     assert human is not None
     assert "www.example.com" in human
 
@@ -169,7 +202,9 @@ def test_item_present_auto_reconfigure_called():
 
     def search_side_effect(module, controller, type_name, search_phrase="", row_count=-1, **kwargs):
         if module == "unbound" and type_name == "host_override":
-            return {"rows": [{"uuid": "parent-uuid", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "parent-uuid", "hostname": "cluster", "domain": "example.com"}]
+            }
         return {"rows": []}
 
     search_mock = MagicMock(side_effect=search_side_effect)
@@ -189,7 +224,12 @@ def test_item_present_auto_reconfigure_called():
         module="unbound",
         controller="settings",
         type="host_alias",
-        data={"hostname": "www", "domain": "example.com", "host": "cluster.example.com", "enabled": "1"},
+        data={
+            "hostname": "www",
+            "domain": "example.com",
+            "host": "cluster.example.com",
+            "enabled": "1",
+        },
         match={"hostname": "www", "domain": "example.com"},
         reconfigure=None,
     )
@@ -267,7 +307,9 @@ def test_preflight_bind_domain_missing():
     mod.__salt__["opnsense.search"] = MagicMock(return_value={"rows": []})
     mod.__salt__["opnsense.call"] = MagicMock(return_value={})
     data = {"name": "pihole", "type": "A", "value": "1.2.3.4", "domain": "missing-uuid"}
-    ok, msg = mod._preflight_check("bind", "record", "record", data, match={"name": "pihole"}, found=None, is_create=True)
+    ok, msg = mod._preflight_check(
+        "bind", "record", "record", data, match={"name": "pihole"}, found=None, is_create=True
+    )
     assert ok is False
     assert "not found" in msg.lower()
 
@@ -278,8 +320,20 @@ def test_preflight_host_alias_missing_parent():
     # No parent host_override rows
     mod.__salt__["opnsense.search"] = MagicMock(return_value={"rows": []})
     mod.__salt__["opnsense.call"] = MagicMock(return_value={})
-    data = {"hostname": "www", "domain": "example.com", "host": "550e8400-e29b-41d4-a716-446655440000"}
-    ok, msg = mod._preflight_check("unbound", "settings", "host_alias", data, match={"hostname": "www", "domain": "example.com"}, found=None, is_create=True)
+    data = {
+        "hostname": "www",
+        "domain": "example.com",
+        "host": "550e8400-e29b-41d4-a716-446655440000",
+    }
+    ok, msg = mod._preflight_check(
+        "unbound",
+        "settings",
+        "host_alias",
+        data,
+        match={"hostname": "www", "domain": "example.com"},
+        found=None,
+        is_create=True,
+    )
     assert ok is False
     assert "parent" in msg.lower()
 
@@ -367,7 +421,9 @@ def test_reconfigured_state_failed():
     mod = _get_state_mod()
     mod.__opts__ = {"test": False}
     mod.__salt__ = {
-        "opnsense.reconfigure": MagicMock(return_value={"result": "failed", "error": "Config syntax error"}),
+        "opnsense.reconfigure": MagicMock(
+            return_value={"result": "failed", "error": "Config syntax error"}
+        ),
     }
     res = mod.reconfigured("reload_unbound", "unbound", "service", "reconfigure")
     assert res["result"] is False
@@ -429,19 +485,24 @@ def test_items_absent_reconfigure_failed():
 
 def test_dns_managed_reconfigure_failed():
     import importlib
+
     dns_mod = importlib.import_module("saltext.opnsense.states.dns")
     dns_mod.__opts__ = {"test": False}
     dns_mod.__pillar__ = {}
 
     def search_side_effect(module, controller, type_name, search_phrase="", row_count=-1, **kwargs):
         if type_name == "host_override":
-            return {"rows": [{"uuid": "parent-uuid", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "parent-uuid", "hostname": "cluster", "domain": "example.com"}]
+            }
         return {"rows": []}
 
     dns_mod.__salt__ = {
         "opnsense.search": MagicMock(side_effect=search_side_effect),
         "opnsense.add": MagicMock(return_value={"uuid": "alias-uuid"}),
-        "opnsense.reconfigure": MagicMock(return_value={"result": "failed", "message": "DNS reload failed"}),
+        "opnsense.reconfigure": MagicMock(
+            return_value={"result": "failed", "message": "DNS reload failed"}
+        ),
         "opnsense.call": MagicMock(return_value={}),
     }
 

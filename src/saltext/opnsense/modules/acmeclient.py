@@ -14,7 +14,9 @@ def __virtual__():
 def _search(controller, type_name, search_phrase="", row_count=-1):
     try:
         fn = __salt__["opnsense.search"]
-        res = fn("acmeclient", controller, type_name, search_phrase=search_phrase, row_count=row_count)
+        res = fn(
+            "acmeclient", controller, type_name, search_phrase=search_phrase, row_count=row_count
+        )
         if isinstance(res, dict):
             return res.get("rows", [])
         return []
@@ -50,7 +52,7 @@ def list_accounts_pretty():
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} [{info.get('ca')}] uuid={info.get('uuid','')[:8]}")
+        lines.append(f"{name} [{info.get('ca')}] uuid={info.get('uuid', '')[:8]}")
     return lines
 
 
@@ -76,7 +78,7 @@ def list_validations_pretty():
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} method={info.get('method')} uuid={info.get('uuid','')[:8]}")
+        lines.append(f"{name} method={info.get('method')} uuid={info.get('uuid', '')[:8]}")
     return lines
 
 
@@ -102,7 +104,7 @@ def list_actions_pretty():
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} type={info.get('type')} uuid={info.get('uuid','')[:8]}")
+        lines.append(f"{name} type={info.get('type')} uuid={info.get('uuid', '')[:8]}")
     return lines
 
 
@@ -134,7 +136,7 @@ def list_certificates_pretty():
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} status={info.get('status')} uuid={info.get('uuid','')[:8]}")
+        lines.append(f"{name} status={info.get('status')} uuid={info.get('uuid', '')[:8]}")
     return lines
 
 

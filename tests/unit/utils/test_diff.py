@@ -1,4 +1,3 @@
-import pytest
 from saltext.opnsense.utils.diff import diff_models, normalize_field_value
 
 

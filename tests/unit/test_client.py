@@ -14,12 +14,16 @@ from saltext.opnsense.utils.opnsense import (
 
 
 def test_config_base_url():
-    cfg = OPNsenseClientConfig(host="opnsense.example.com", api_key="k", api_secret="s", proto="https", verify_ssl=False)
+    cfg = OPNsenseClientConfig(
+        host="opnsense.example.com", api_key="k", api_secret="s", proto="https", verify_ssl=False
+    )
     assert cfg.base_url() == "https://opnsense.example.com/api/"
 
 
 def test_config_from_dict():
-    cfg = OPNsenseClientConfig.from_dict({"host": "opnsense-router", "api_key": "a", "api_secret": "b"})
+    cfg = OPNsenseClientConfig.from_dict(
+        {"host": "opnsense-router", "api_key": "a", "api_secret": "b"}
+    )
     assert cfg.host == "opnsense-router"
 
 
@@ -62,10 +66,14 @@ def test_config_enable_fallback():
     cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b")
     assert cfg.enable_fallback is False
 
-    cfg2 = OPNsenseClientConfig.from_dict({"host": "r", "api_key": "a", "api_secret": "b", "enable_fallback": True})
+    cfg2 = OPNsenseClientConfig.from_dict(
+        {"host": "r", "api_key": "a", "api_secret": "b", "enable_fallback": True}
+    )
     assert cfg2.enable_fallback is True
 
-    cfg3 = OPNsenseClientConfig.from_dict({"host": "r", "api_key": "a", "api_secret": "b", "fallback_mode": True})
+    cfg3 = OPNsenseClientConfig.from_dict(
+        {"host": "r", "api_key": "a", "api_secret": "b", "fallback_mode": True}
+    )
     assert cfg3.enable_fallback is True
 
 
@@ -77,7 +85,9 @@ def test_resolve_via_spec_authoritative_no_fallback():
 
 
 def test_resolve_via_spec_authoritative_with_fallback():
-    cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b", enable_fallback=True)
+    cfg = OPNsenseClientConfig(
+        host="opnsense-router", api_key="a", api_secret="b", enable_fallback=True
+    )
     client = OPNsenseClient(cfg)
     resolved = client._resolve_via_spec("unbound", "settings", "search", "host_alias")
     assert "searchHostAlias" in resolved
@@ -99,10 +109,13 @@ def test_call_with_fallback_suppresses_404_probing_when_authoritative(mock_req):
     mock_resp.text = "Endpoint not found"
     mock_req.return_value = mock_resp
 
-    cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b", enable_fallback=False)
+    cfg = OPNsenseClientConfig(
+        host="opnsense-router", api_key="a", api_secret="b", enable_fallback=False
+    )
     client = OPNsenseClient(cfg)
 
     from saltext.opnsense.utils.opnsense import OPNsenseAPIError
+
     with pytest.raises(OPNsenseAPIError) as exc_info:
         client._call_with_fallback("unbound", "settings", ["searchHostAlias", "searchHostOverride"])
 
@@ -124,10 +137,14 @@ def test_call_with_fallback_allows_404_probing_when_fallback_enabled(mock_req):
 
     mock_req.side_effect = [mock_resp_404, mock_resp_200]
 
-    cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b", enable_fallback=True)
+    cfg = OPNsenseClientConfig(
+        host="opnsense-router", api_key="a", api_secret="b", enable_fallback=True
+    )
     client = OPNsenseClient(cfg)
 
-    res = client._call_with_fallback("unbound", "settings", ["searchHostAlias", "searchHostOverride"])
+    res = client._call_with_fallback(
+        "unbound", "settings", ["searchHostAlias", "searchHostOverride"]
+    )
     assert res == {"rows": []}
     assert mock_req.call_count == 2
 
@@ -145,7 +162,9 @@ def test_call_with_fallback_allows_404_probing_when_spec_unlisted(mock_req):
 
     mock_req.side_effect = [mock_resp_404, mock_resp_200]
 
-    cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b", enable_fallback=False)
+    cfg = OPNsenseClientConfig(
+        host="opnsense-router", api_key="a", api_secret="b", enable_fallback=False
+    )
     client = OPNsenseClient(cfg)
 
     res = client._call_with_fallback("custom_module", "custom_ctrl", ["search_item", "searchItem"])
@@ -158,7 +177,10 @@ def test_request_validation_error_result_failed(mock_req):
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.text = '{"result": "failed", "validations": {"hostname": "Field is required"}}'
-    mock_resp.json.return_value = {"result": "failed", "validations": {"hostname": "Field is required"}}
+    mock_resp.json.return_value = {
+        "result": "failed",
+        "validations": {"hostname": "Field is required"},
+    }
     mock_req.return_value = mock_resp
 
     cfg = OPNsenseClientConfig(host="opnsense-router", api_key="a", api_secret="b")

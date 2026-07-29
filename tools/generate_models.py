@@ -27,20 +27,43 @@ from datetime import datetime, timezone
 MODEL_FILE_RE = re.compile(r"src/opnsense/mvc/app/models/OPNsense/([^/]+)/([^/]+)\.xml")
 
 SKIP_TAGS = {
-    "type", "help", "Help", "Required", "Default", "Mask",
-    "Model", "BlankDesc", "Multiple", "AsList",
-    "ChangeCase", "Validation", "ConfigdPopulateAct", "Sorted", "filters",
-    "VolumeSize", "WildcardEnabled",
-    "NetMaskRequired", "NetMaskAllowed", "AddressFamily", "Strict",
-    "IpAllowed", "HostWildcardAllowed", "FqdnWildcardAllowed", "IsDNSName",
-    "NetMaskAllowed", "MaskPerItem",
+    "type",
+    "help",
+    "Help",
+    "Required",
+    "Default",
+    "Mask",
+    "Model",
+    "BlankDesc",
+    "Multiple",
+    "AsList",
+    "ChangeCase",
+    "Validation",
+    "ConfigdPopulateAct",
+    "Sorted",
+    "filters",
+    "VolumeSize",
+    "WildcardEnabled",
+    "NetMaskRequired",
+    "NetMaskAllowed",
+    "AddressFamily",
+    "Strict",
+    "IpAllowed",
+    "HostWildcardAllowed",
+    "FqdnWildcardAllowed",
+    "IsDNSName",
+    "NetMaskAllowed",
+    "MaskPerItem",
 }
 
 
 def clone_or_update(repo_url, dest, ref=None):
     if dest.exists():
         print(f"Updating {dest}...")
-        subprocess.run(["git", "-C", str(dest), "fetch", "--depth", "1", "origin", ref or "master"], check=False)
+        subprocess.run(
+            ["git", "-C", str(dest), "fetch", "--depth", "1", "origin", ref or "master"],
+            check=False,
+        )
         if ref:
             subprocess.run(["git", "-C", str(dest), "checkout", ref], check=False)
     else:
@@ -301,7 +324,9 @@ def main():
     parser.add_argument("--core-ref", default="master", help="core git ref")
     parser.add_argument("--plugins-ref", default="master", help="plugins git ref")
     parser.add_argument("--tmp-dir", default="/tmp/opnsense-spec", help="tmp clone dir")
-    parser.add_argument("--output", default="src/saltext/opnsense/utils/models.json", help="output json")
+    parser.add_argument(
+        "--output", default="src/saltext/opnsense/utils/models.json", help="output json"
+    )
     args = parser.parse_args()
 
     tmp = pathlib.Path(args.tmp_dir)
@@ -311,14 +336,22 @@ def main():
         core_root = pathlib.Path(args.core)
     else:
         core_dest = tmp / "core"
-        clone_or_update("https://github.com/opnsense/core.git", core_dest, args.core_ref if args.core_ref != "master" else None)
+        clone_or_update(
+            "https://github.com/opnsense/core.git",
+            core_dest,
+            args.core_ref if args.core_ref != "master" else None,
+        )
         core_root = core_dest
 
     if args.plugins:
         plugins_root = pathlib.Path(args.plugins)
     else:
         plugins_dest = tmp / "plugins"
-        clone_or_update("https://github.com/opnsense/plugins.git", plugins_dest, args.plugins_ref if args.plugins_ref != "master" else None)
+        clone_or_update(
+            "https://github.com/opnsense/plugins.git",
+            plugins_dest,
+            args.plugins_ref if args.plugins_ref != "master" else None,
+        )
         plugins_root = plugins_dest
 
     print(f"Scanning core models: {core_root}")
@@ -362,7 +395,9 @@ def main():
         out_path = pathlib.Path.cwd() / out_path
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
-    print(f"Wrote {out_path} — modules={len(merged)} models={output['meta']['total_models']} arrays={output['meta']['total_arrays']}")
+    print(
+        f"Wrote {out_path} — modules={len(merged)} models={output['meta']['total_models']} arrays={output['meta']['total_arrays']}"
+    )
 
     # highlight required modules
     for need in ["unbound", "bind", "kea", "acmeclient"]:

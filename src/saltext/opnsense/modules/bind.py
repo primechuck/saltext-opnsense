@@ -26,7 +26,14 @@ def _search(controller, type_name, search_phrase="", row_count=-1):
 def _search_domain_all():
     all_rows = []
     for c in ("domain",):
-        for t in ("primary_domain", "secondary_domain", "forward_domain", "master_domain", "slave_domain", "domain"):
+        for t in (
+            "primary_domain",
+            "secondary_domain",
+            "forward_domain",
+            "master_domain",
+            "slave_domain",
+            "domain",
+        ):
             try:
                 rows = _search(c, t, row_count=-1)
                 if rows:
@@ -84,7 +91,7 @@ def list_domains_pretty(domain_type=None):
     for dname in sorted(data):
         info = data[dname]
         en = "enabled" if info.get("enabled") else "disabled"
-        lines.append(f"{dname} [{info.get('type')}] ({en}) {info.get('uuid','')[:8]}")
+        lines.append(f"{dname} [{info.get('type')}] ({en}) {info.get('uuid', '')[:8]}")
     return lines
 
 
@@ -204,7 +211,9 @@ def list_acls_pretty():
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} ({'enabled' if info.get('enabled') else 'disabled'}) {info.get('uuid','')[:8]}")
+        lines.append(
+            f"{name} ({'enabled' if info.get('enabled') else 'disabled'}) {info.get('uuid', '')[:8]}"
+        )
     return lines
 
 

@@ -2,6 +2,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def _load_client_deps():
     import importlib
 
@@ -20,18 +21,24 @@ def _load_client_deps():
             continue
     return None, None, None, False, last
 
-OPNsenseClient, OPNsenseClientConfig, get_client_from_opts, HAS_DEPS, HAS_DEPS_ERROR = _load_client_deps()
+
+OPNsenseClient, OPNsenseClientConfig, get_client_from_opts, HAS_DEPS, HAS_DEPS_ERROR = (
+    _load_client_deps()
+)
 
 __proxyenabled__ = ["opnsense"]
 __virtualname__ = "opnsense"
 
+
 def _ctx():
     return __context__.setdefault("opnsense", {})
+
 
 def __virtual__():
     if not HAS_DEPS:
         return (False, f"saltext-opnsense deps missing: {HAS_DEPS_ERROR}")
     return __virtualname__
+
 
 def init(opts):
     ctx = _ctx()
@@ -52,12 +59,15 @@ def init(opts):
     log.info("OPNsense proxy initialized host=%s proto=%s", client.config.host, client.config.proto)
     return True
 
+
 def initialized():
     return _ctx().get("initialized", False)
+
 
 def shutdown(opts=None):
     __context__.pop("opnsense", None)
     return True
+
 
 def ping():
     ctx = _ctx()
@@ -77,14 +87,22 @@ def ping():
             log.debug("ping %s/%s/%s failed: %s", mod, ctrl, typ, exc)
             continue
     try:
-        client.call("unbound", "settings", "searchHostAlias", data={"rowCount": 1, "current": 1, "searchPhrase": ""}, method="POST")
+        client.call(
+            "unbound",
+            "settings",
+            "searchHostAlias",
+            data={"rowCount": 1, "current": 1, "searchPhrase": ""},
+            method="POST",
+        )
         return True
     except Exception as exc:
         log.debug("ping fallback failed: %s", exc)
         return False
 
+
 def alive(opts=None):
     return ping()
+
 
 def grains():
     ctx = _ctx()
@@ -100,7 +118,9 @@ def grains():
     try:
         info = client.call("core", "firmware", "status", data={}, method="POST")
         if isinstance(info, dict):
-            out["opnsense_version"] = info.get("product_version") or info.get("product_version_string", "unknown")
+            out["opnsense_version"] = info.get("product_version") or info.get(
+                "product_version_string", "unknown"
+            )
     except Exception:
         pass
     try:
@@ -110,11 +130,13 @@ def grains():
         pass
     return out
 
+
 def call(module, controller, action, uuid=None, data=None, method=None):
     client = _ctx().get("client")
     if not client:
         raise Exception("OPNsense proxy not initialized")
     return client.call(module, controller, action, uuid=uuid, data=data, method=method)
+
 
 def search(module, controller, type_name=None, **kwargs):
     client = _ctx().get("client")
@@ -125,7 +147,17 @@ def search(module, controller, type_name=None, **kwargs):
     row_count = kwargs.pop("row_count", -1)
     current = kwargs.pop("current", 1)
     sort = kwargs.pop("sort", None)
-    return client.search(module, controller, type_name, search_phrase=search_phrase, row_count=row_count, current=current, sort=sort, extra=kwargs if kwargs else None)
+    return client.search(
+        module,
+        controller,
+        type_name,
+        search_phrase=search_phrase,
+        row_count=row_count,
+        current=current,
+        sort=sort,
+        extra=kwargs if kwargs else None,
+    )
+
 
 def get(module, controller, type_name=None, uuid=None):
     client = _ctx().get("client")
@@ -133,11 +165,13 @@ def get(module, controller, type_name=None, uuid=None):
         raise Exception("OPNsense proxy not initialized")
     return client.get(module, controller, type_name, uuid=uuid)
 
+
 def add(module, controller, type_name, data):
     client = _ctx().get("client")
     if not client:
         raise Exception("OPNsense proxy not initialized")
     return client.add(module, controller, type_name, data)
+
 
 def set_item(module, controller, type_name, uuid, data):
     client = _ctx().get("client")
@@ -145,17 +179,20 @@ def set_item(module, controller, type_name, uuid, data):
         raise Exception("OPNsense proxy not initialized")
     return client.set(module, controller, type_name, uuid, data)
 
+
 def delete(module, controller, type_name, uuid):
     client = _ctx().get("client")
     if not client:
         raise Exception("OPNsense proxy not initialized")
     return client.delete(module, controller, type_name, uuid)
 
+
 def toggle(module, controller, type_name, uuid, enabled=None):
     client = _ctx().get("client")
     if not client:
         raise Exception("OPNsense proxy not initialized")
     return client.toggle(module, controller, type_name, uuid, enabled)
+
 
 def reconfigure(module, controller, action="reconfigure", data=None):
     client = _ctx().get("client")

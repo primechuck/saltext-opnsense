@@ -17,7 +17,17 @@ def _mock_salt_with_rows(host_overrides=None, aliases=None, bind_domains=None, b
         if module == "kea" and type_name == "subnet":
             return {"rows": [{"uuid": "subnet-aaa", "subnet": "172.18.60.0/24"}]}
         if module == "kea" and type_name == "reservation":
-            return {"rows": [{"uuid": "res-1", "hostname": "www", "ip_address": "172.18.60.30", "hw_address": "aa:bb:cc:dd:ee:ff", "subnet": "subnet-aaa"}]}
+            return {
+                "rows": [
+                    {
+                        "uuid": "res-1",
+                        "hostname": "www",
+                        "ip_address": "172.18.60.30",
+                        "hw_address": "aa:bb:cc:dd:ee:ff",
+                        "subnet": "subnet-aaa",
+                    }
+                ]
+            }
         if module == "acmeclient":
             if type_name == "account":
                 return {"rows": [{"uuid": "acc-1", "name": "letsencrypt-prod"}]}
@@ -40,8 +50,20 @@ def test_unbound_list_host_overrides():
 
     mock_salt = _mock_salt_with_rows(
         host_overrides=[
-            {"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com", "server": "172.18.60.10", "enabled": "1"},
-            {"uuid": "host-uuid-2", "hostname": "www", "domain": "example.com", "server": "172.18.60.30", "enabled": "1"},
+            {
+                "uuid": "host-uuid-1",
+                "hostname": "cluster",
+                "domain": "example.com",
+                "server": "172.18.60.10",
+                "enabled": "1",
+            },
+            {
+                "uuid": "host-uuid-2",
+                "hostname": "www",
+                "domain": "example.com",
+                "server": "172.18.60.30",
+                "enabled": "1",
+            },
         ]
     )
     mod.__salt__ = mock_salt
@@ -59,8 +81,21 @@ def test_unbound_list_aliases_simple():
             {"uuid": "host-uuid-1", "hostname": "cluster", "domain": "example.com", "enabled": "1"},
         ],
         aliases=[
-            {"uuid": "alias-1", "hostname": "www", "domain": "example.com", "host": "host-uuid-1", "enabled": "1", "description": "test"},
-            {"uuid": "alias-2", "hostname": "git", "domain": "example.com", "host": "host-uuid-1", "enabled": "1"},
+            {
+                "uuid": "alias-1",
+                "hostname": "www",
+                "domain": "example.com",
+                "host": "host-uuid-1",
+                "enabled": "1",
+                "description": "test",
+            },
+            {
+                "uuid": "alias-2",
+                "hostname": "git",
+                "domain": "example.com",
+                "host": "host-uuid-1",
+                "enabled": "1",
+            },
         ],
     )
     mod.__salt__ = mock_salt
@@ -110,7 +145,13 @@ def test_bind_list_records():
             {"uuid": "zone-1", "domainname": "example.com"},
         ],
         bind_records=[
-            {"uuid": "rec-1", "name": "www", "domain": "zone-1", "type": "A", "value": "172.18.60.30"},
+            {
+                "uuid": "rec-1",
+                "name": "www",
+                "domain": "zone-1",
+                "type": "A",
+                "value": "172.18.60.30",
+            },
         ],
     )
     mod.__salt__ = mock_salt
@@ -156,10 +197,18 @@ def test_dns_module():
             {"uuid": "alias-1", "hostname": "www", "domain": "example.com", "host": "host-uuid-1"},
         ],
     )
-    mock_salt["opnsense_unbound.list_aliases"] = MagicMock(return_value={"www.example.com": {"parent": "cluster.example.com"}})
+    mock_salt["opnsense_unbound.list_aliases"] = MagicMock(
+        return_value={"www.example.com": {"parent": "cluster.example.com"}}
+    )
     mock_salt["opnsense_unbound.resolve_parent"] = MagicMock(return_value="host-uuid-1")
     mod.__salt__ = mock_salt
-    mod.__pillar__ = {"opnsense": {"aliases": {"example.com": ["www"]}, "purge_aliases": {}, "cluster_parent": {"hostname": "cluster", "domain": "example.com"}}}
+    mod.__pillar__ = {
+        "opnsense": {
+            "aliases": {"example.com": ["www"]},
+            "purge_aliases": {},
+            "cluster_parent": {"hostname": "cluster", "domain": "example.com"},
+        }
+    }
 
     preview = mod.managed_preview()
     assert "www.example.com" in preview["desired"]

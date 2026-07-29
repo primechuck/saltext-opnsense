@@ -7,4 +7,3 @@ except ImportError:
         __version__ = version("saltext-opnsense")
     except PackageNotFoundError:
         __version__ = "0.0.0.dev+unknown"
-

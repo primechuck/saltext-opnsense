@@ -34,14 +34,19 @@ import re
 import subprocess
 from datetime import datetime, timezone
 
-CONTROLLER_RE = re.compile(r"src/opnsense/mvc/app/controllers/OPNsense/([^/]+)/Api/([^/]+)Controller\.php")
+CONTROLLER_RE = re.compile(
+    r"src/opnsense/mvc/app/controllers/OPNsense/([^/]+)/Api/([^/]+)Controller\.php"
+)
 ACTION_RE = re.compile(r"public\s+function\s+(\w+)Action\s*\(")
 
 
 def clone_or_update(repo_url, dest, ref=None):
     if dest.exists():
         print(f"Updating {dest}...")
-        subprocess.run(["git", "-C", str(dest), "fetch", "--depth", "1", "origin", ref or "master"], check=False)
+        subprocess.run(
+            ["git", "-C", str(dest), "fetch", "--depth", "1", "origin", ref or "master"],
+            check=False,
+        )
         if ref:
             subprocess.run(["git", "-C", str(dest), "checkout", ref], check=False)
         else:
@@ -111,7 +116,9 @@ def main():
     parser.add_argument("--plugins-ref", default="master", help="git ref for opnsense/plugins")
     parser.add_argument("--local-core", help="local path to core repo (skip clone)")
     parser.add_argument("--local-plugins", help="local path to plugins repo (skip clone)")
-    parser.add_argument("--output", default="src/saltext/opnsense/utils/controllers.json", help="output json path")
+    parser.add_argument(
+        "--output", default="src/saltext/opnsense/utils/controllers.json", help="output json path"
+    )
     parser.add_argument("--tmp-dir", default="/tmp/opnsense-spec", help="temp clone dir")
     args = parser.parse_args()
 
@@ -122,14 +129,22 @@ def main():
         core_root = pathlib.Path(args.local_core)
     else:
         core_dest = tmp / "core"
-        clone_or_update("https://github.com/opnsense/core.git", core_dest, args.core_ref if args.core_ref != "master" else None)
+        clone_or_update(
+            "https://github.com/opnsense/core.git",
+            core_dest,
+            args.core_ref if args.core_ref != "master" else None,
+        )
         core_root = core_dest
 
     if args.local_plugins:
         plugins_root = pathlib.Path(args.local_plugins)
     else:
         plugins_dest = tmp / "plugins"
-        clone_or_update("https://github.com/opnsense/plugins.git", plugins_dest, args.plugins_ref if args.plugins_ref != "master" else None)
+        clone_or_update(
+            "https://github.com/opnsense/plugins.git",
+            plugins_dest,
+            args.plugins_ref if args.plugins_ref != "master" else None,
+        )
         plugins_root = plugins_dest
 
     print(f"Scanning core: {core_root}")
@@ -162,7 +177,9 @@ def main():
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
-    print(f"Wrote {out_path} — modules={len(merged)} ctrls={output['meta']['total_controllers']} actions={output['meta']['total_actions']}")
+    print(
+        f"Wrote {out_path} — modules={len(merged)} ctrls={output['meta']['total_controllers']} actions={output['meta']['total_actions']}"
+    )
 
     core_ctrls = sum(len(v) for v in core_mods.values())
     print(f"Core only: modules={len(core_mods)} controllers={core_ctrls}")

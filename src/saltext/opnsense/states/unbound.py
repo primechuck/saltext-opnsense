@@ -28,7 +28,9 @@ def _get_reconfigure(reconfigure):
 
 def _do_search(type_name, search_phrase=""):
     try:
-        res = __salt__["opnsense.search"]("unbound", "settings", type_name, search_phrase=search_phrase, row_count=-1)
+        res = __salt__["opnsense.search"](
+            "unbound", "settings", type_name, search_phrase=search_phrase, row_count=-1
+        )
         return res.get("rows", []) if isinstance(res, dict) else []
     except Exception as exc:
         log.debug("search %s failed: %s", type_name, exc)
@@ -180,7 +182,9 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
                 pr = _parse_reconfigure(rc)
                 if pr:
                     try:
-                        __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                        __salt__["opnsense.reconfigure"](
+                            pr["module"], pr["controller"], pr["action"]
+                        )
                         ret["comment"] += f" and reconfigured {rc}"
                     except Exception as e:
                         ret["comment"] += f" but reconfigure {rc} failed: {e}"
@@ -299,7 +303,9 @@ def alias_absent(name, domain=None, reconfigure=True):
         return ret
 
 
-def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True):
+def aliases_managed(
+    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+):
     """
     Batch manage many unbound aliases — one state, one reconfigure.
 
@@ -375,12 +381,14 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
             if isinstance(cp, dict) and cp.get("uuid"):
                 parent = cp["uuid"]
             elif isinstance(cp, dict) and cp.get("hostname"):
-                parent = f"{cp['hostname']}.{cp.get('domain','example.com')}"
+                parent = f"{cp['hostname']}.{cp.get('domain', 'example.com')}"
         except Exception:
             pass
 
     if not parent:
-        ret["comment"] = "parent required — provide parent: cluster.example.com or from pillar opnsense:cluster_parent"
+        ret["comment"] = (
+            "parent required — provide parent: cluster.example.com or from pillar opnsense:cluster_parent"
+        )
         return ret
 
     parent_uuid, err = _resolve_parent(parent)
@@ -452,7 +460,9 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
             if (hn, dom) in existing_map:
                 to_del.append(f"{hn}.{dom}")
         ret["result"] = None
-        ret["comment"] = f"would manage {len(desired)} aliases ({len(to_add)} to add, {len(to_upd)} to update, {len(to_del)} to purge)"
+        ret["comment"] = (
+            f"would manage {len(desired)} aliases ({len(to_add)} to add, {len(to_upd)} to update, {len(to_del)} to purge)"
+        )
         ch = {}
         if to_add:
             ch["would_add"] = to_add
@@ -488,7 +498,9 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
             else:
                 diff = diff_models(existing, desired_data, parent_human=parent)
                 if diff:
-                    __salt__["opnsense.set_item"]("unbound", "settings", "host_alias", existing.get("uuid"), payload)
+                    __salt__["opnsense.set_item"](
+                        "unbound", "settings", "host_alias", existing.get("uuid"), payload
+                    )
                     updated.append(fqdn)
                     changes[fqdn] = {"action": "updated", "parent": parent}
         except Exception as exc:
@@ -499,7 +511,9 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
         existing = existing_map.get((hn, dom))
         if existing:
             try:
-                __salt__["opnsense.delete"]("unbound", "settings", "host_alias", existing.get("uuid"))
+                __salt__["opnsense.delete"](
+                    "unbound", "settings", "host_alias", existing.get("uuid")
+                )
                 fqdn = f"{hn}.{dom}"
                 deleted.append(fqdn)
                 changes[fqdn] = {"action": "deleted"}
@@ -520,20 +534,28 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
             if pr:
                 try:
                     __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
-                    ret["comment"] = f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged and reconfigured {rc}"
+                    ret["comment"] = (
+                        f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged and reconfigured {rc}"
+                    )
                 except Exception as exc:
                     ret["comment"] = f"managed aliases but reconfigure {rc} failed: {exc}"
                     ret["result"] = False
                     ret["changes"] = changes
                     return ret
             else:
-                ret["comment"] = f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged"
+                ret["comment"] = (
+                    f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged"
+                )
         else:
-            ret["comment"] = f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged"
+            ret["comment"] = (
+                f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged"
+            )
         ret["changes"] = changes
         ret["result"] = True
     else:
-        ret["comment"] = f"{len(desired)} aliases already present, {len(deleted)} purged already absent"
+        ret["comment"] = (
+            f"{len(desired)} aliases already present, {len(deleted)} purged already absent"
+        )
         ret["result"] = True
 
     return ret

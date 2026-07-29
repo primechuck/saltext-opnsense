@@ -6,17 +6,22 @@ Requires real opnsense-router credentials via env:
 
 This is intentionally not run in CI. Use for local validation after `salt-proxy` is up.
 """
+
 import os
 
 import pytest
 
-pytestmark = pytest.mark.skipif(os.getenv("OPNSENSE_LIVE_TEST") != "1", reason="live test disabled — set OPNSENSE_LIVE_TEST=1")
+pytestmark = pytest.mark.skipif(
+    os.getenv("OPNSENSE_LIVE_TEST") != "1", reason="live test disabled — set OPNSENSE_LIVE_TEST=1"
+)
 
 try:
     from saltext.opnsense.utils.opnsense import OPNsenseClient, OPNsenseClientConfig
+
     HAS_CLIENT = True
 except Exception:
     HAS_CLIENT = False
+
 
 def _client():
     host = os.getenv("OPNSENSE_HOST", "opnsense.example.com")
@@ -26,12 +31,14 @@ def _client():
     cfg = OPNsenseClientConfig(host=host, api_key=key, api_secret=secret, verify_ssl=False)
     return OPNsenseClient(cfg)
 
+
 def test_live_search_host_alias():
     if not HAS_CLIENT:
         pytest.skip("client utils not available")
     client = _client()
     res = client.search("unbound", "settings", "host_alias", row_count=5)
     assert "rows" in res
+
 
 def test_live_ping_via_firmware():
     if not HAS_CLIENT:

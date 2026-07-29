@@ -102,7 +102,7 @@ def list_host_overrides_pretty():
     for fqdn in sorted(data):
         info = data[fqdn]
         en = "enabled" if info.get("enabled") else "disabled"
-        lines.append(f"{fqdn} -> {info.get('ip')} ({en}) [{info.get('uuid','')[:8]}]")
+        lines.append(f"{fqdn} -> {info.get('ip')} ({en}) [{info.get('uuid', '')[:8]}]")
     return lines
 
 
@@ -128,9 +128,12 @@ def list_aliases(domain=None, parent=None):
         try:
             from saltext.opnsense.utils.common import is_uuid
         except Exception:
+
             def is_uuid(v):
                 import re
+
                 return bool(re.match(r"^[0-9a-fA-F]{8}-", str(v)))
+
         if is_uuid(parent):
             parent_filter_uuid = parent
         else:
@@ -284,7 +287,11 @@ def resolve_parent(parent):
         import re
 
         def is_uuid(v):
-            return bool(re.match(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"))
+            return bool(
+                re.match(
+                    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                )
+            )
 
     if is_uuid(parent):
         return parent

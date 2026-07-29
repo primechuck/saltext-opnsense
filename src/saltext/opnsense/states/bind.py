@@ -28,7 +28,9 @@ def _get_reconfigure(reconfigure):
 
 def _search(controller, type_name, search_phrase="", row_count=-1):
     try:
-        res = __salt__["opnsense.search"]("bind", controller, type_name, search_phrase=search_phrase, row_count=row_count)
+        res = __salt__["opnsense.search"](
+            "bind", controller, type_name, search_phrase=search_phrase, row_count=row_count
+        )
         return res.get("rows", []) if isinstance(res, dict) else []
     except Exception as exc:
         log.debug("bind search %s/%s failed: %s", controller, type_name, exc)
@@ -37,7 +39,14 @@ def _search(controller, type_name, search_phrase="", row_count=-1):
 
 def _search_domains_all():
     all_rows = []
-    for t in ("primary_domain", "secondary_domain", "forward_domain", "master_domain", "slave_domain", "domain"):
+    for t in (
+        "primary_domain",
+        "secondary_domain",
+        "forward_domain",
+        "master_domain",
+        "slave_domain",
+        "domain",
+    ):
         try:
             rows = _search("domain", t, row_count=-1)
             all_rows.extend(rows)
@@ -75,7 +84,9 @@ def _find_domain(domainname):
     return None
 
 
-def domain_present(name, domain_type="primary", description=None, enabled=True, reconfigure=True, **kwargs):
+def domain_present(
+    name, domain_type="primary", description=None, enabled=True, reconfigure=True, **kwargs
+):
     """
     Ensure a BIND primary/secondary/forward domain exists.
 
@@ -125,7 +136,11 @@ def domain_present(name, domain_type="primary", description=None, enabled=True, 
     }
     data.update(kwargs)
 
-    payload = {"domain": data} if type_name in ("domain", "primary_domain", "secondary_domain") else {type_name: data}
+    payload = (
+        {"domain": data}
+        if type_name in ("domain", "primary_domain", "secondary_domain")
+        else {type_name: data}
+    )
     if type_name == "primary_domain":
         payload = {"domain": data}
 
@@ -145,7 +160,9 @@ def domain_present(name, domain_type="primary", description=None, enabled=True, 
                 pr = _parse_reconfigure(rc)
                 if pr:
                     try:
-                        __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                        __salt__["opnsense.reconfigure"](
+                            pr["module"], pr["controller"], pr["action"]
+                        )
                         ret["comment"] += f" and reconfigured {rc}"
                     except Exception as e:
                         ret["comment"] += f" but reconfigure failed: {e}"
@@ -239,7 +256,9 @@ def domain_absent(name, reconfigure=True):
         return ret
 
 
-def record_present(name, domain, type="A", value=None, ttl=None, enabled=True, description=None, reconfigure=True):
+def record_present(
+    name, domain, type="A", value=None, ttl=None, enabled=True, description=None, reconfigure=True
+):
     """
     Ensure a BIND DNS record exists. Human domain name, not UUID — auto-resolved.
 
@@ -299,7 +318,9 @@ def record_present(name, domain, type="A", value=None, ttl=None, enabled=True, d
     if not existing:
         all_rows = _search("record", "record")
         for r in all_rows:
-            if r.get("name") == name and (r.get("domain") == domain_uuid or r.get("domain") == domain):
+            if r.get("name") == name and (
+                r.get("domain") == domain_uuid or r.get("domain") == domain
+            ):
                 if r.get("type") == type:
                     existing = r
                     break
@@ -338,7 +359,9 @@ def record_present(name, domain, type="A", value=None, ttl=None, enabled=True, d
                 pr = _parse_reconfigure(rc)
                 if pr:
                     try:
-                        __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                        __salt__["opnsense.reconfigure"](
+                            pr["module"], pr["controller"], pr["action"]
+                        )
                         ret["comment"] += f" and reconfigured {rc}"
                     except Exception as e:
                         ret["comment"] += f" but reconfigure failed: {e}"
@@ -413,7 +436,9 @@ def record_absent(name, domain, type="A", reconfigure=True):
     if not existing:
         all_rows = _search("record", "record")
         for r in all_rows:
-            if r.get("name") == name and (r.get("domain") == domain_uuid or r.get("domain") == domain):
+            if r.get("name") == name and (
+                r.get("domain") == domain_uuid or r.get("domain") == domain
+            ):
                 if not type or r.get("type") == type:
                     existing = r
                     break

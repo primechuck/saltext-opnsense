@@ -20,14 +20,11 @@ from unittest.mock import MagicMock
 # Add src to python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from saltext.opnsense.states import bind as state_bind
-from saltext.opnsense.states import opnsense as state_opnsense
 from saltext.opnsense.states import unbound as state_unbound
-from saltext.opnsense.utils.diff import diff_models, normalize_field_value
 
 
 def print_result(title: str, ret: dict):
-    print(f"\n{'='*20} {title} {'='*20}")
+    print(f"\n{'=' * 20} {title} {'=' * 20}")
     print(f"Result  : {ret.get('result')}")
     print(f"Comment : {ret.get('comment')}")
     print("Changes :")
@@ -57,7 +54,7 @@ def test_mock_idempotency():
                         "hostname": "www",
                         "domain": "example.com",
                         "host": "cluster.example.com",  # Grid returns human FQDN
-                        "enabled": "1",                # Grid returns string "1"
+                        "enabled": "1",  # Grid returns string "1"
                         "description": "managed by salt - www.example.com",
                     }
                 ]

@@ -46,7 +46,7 @@ def list_subnets_pretty(version="v4"):
     lines = []
     for cidr in sorted(data):
         info = data[cidr]
-        lines.append(f"{cidr} [{info.get('description','')}] {info.get('uuid','')[:8]}")
+        lines.append(f"{cidr} [{info.get('description', '')}] {info.get('uuid', '')[:8]}")
     return lines
 
 
@@ -115,7 +115,9 @@ def list_reservations_pretty(subnet=None, version="v4"):
     lines = []
     for key in sorted(data):
         info = data[key]
-        lines.append(f"{info.get('hostname')} {info.get('ip_address')} {info.get('hw_address')} subnet={info.get('subnet_cidr')} [{info.get('uuid','')[:8]}]")
+        lines.append(
+            f"{info.get('hostname')} {info.get('ip_address')} {info.get('hw_address')} subnet={info.get('subnet_cidr')} [{info.get('uuid', '')[:8]}]"
+        )
     return lines
 
 
@@ -132,7 +134,13 @@ def list_leases(version="v4"):
         action = "searchLease6"
         controller = "leases"
     try:
-        res = __salt__["opnsense.call"]("kea", controller, action, data={"current": 1, "rowCount": -1, "searchPhrase": ""}, method="POST")
+        res = __salt__["opnsense.call"](
+            "kea",
+            controller,
+            action,
+            data={"current": 1, "rowCount": -1, "searchPhrase": ""},
+            method="POST",
+        )
         if isinstance(res, dict):
             rows = res.get("rows", []) or res.get("leases", [])
             if isinstance(rows, dict):
@@ -141,7 +149,13 @@ def list_leases(version="v4"):
             for r in rows:
                 if not isinstance(r, dict):
                     continue
-                key = r.get("hostname") or r.get("hwaddr") or r.get("ip_address") or r.get("uuid") or str(id(r))
+                key = (
+                    r.get("hostname")
+                    or r.get("hwaddr")
+                    or r.get("ip_address")
+                    or r.get("uuid")
+                    or str(id(r))
+                )
                 result[key] = r
             return dict(sorted(result.items()))
         return {}
@@ -156,7 +170,9 @@ def list_leases_pretty(version="v4"):
     for key in sorted(data):
         r = data[key]
         if isinstance(r, dict):
-            lines.append(f"{r.get('hostname','')} {r.get('address','') or r.get('ip_address','')} {r.get('hwaddr','')}")
+            lines.append(
+                f"{r.get('hostname', '')} {r.get('address', '') or r.get('ip_address', '')} {r.get('hwaddr', '')}"
+            )
         else:
             lines.append(str(r))
     return lines
@@ -188,14 +204,23 @@ def resolve_subnet(subnet_cidr_or_uuid, version="v4"):
         import re
 
         def is_uuid(v):
-            return bool(re.match(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"))
+            return bool(
+                re.match(
+                    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                )
+            )
 
     if is_uuid(subnet_cidr_or_uuid):
         return subnet_cidr_or_uuid
     subnets = list_subnets(version=version)
     if subnet_cidr_or_uuid in subnets:
         return subnets[subnet_cidr_or_uuid]["uuid"]
-    rows = _search("dhcpv4" if version == "v4" else "dhcpv6", "subnet", search_phrase=subnet_cidr_or_uuid, row_count=-1)
+    rows = _search(
+        "dhcpv4" if version == "v4" else "dhcpv6",
+        "subnet",
+        search_phrase=subnet_cidr_or_uuid,
+        row_count=-1,
+    )
     for r in rows:
         if r.get("subnet") == subnet_cidr_or_uuid:
             return r.get("uuid")
@@ -203,4 +228,6 @@ def resolve_subnet(subnet_cidr_or_uuid, version="v4"):
 
 
 def get_subnet(cidr_or_uuid, version="v4"):
-    return list_subnets(version=version).get(cidr_or_uuid) or list_subnets(version=version).get(resolve_subnet(cidr_or_uuid, version=version) or "")
+    return list_subnets(version=version).get(cidr_or_uuid) or list_subnets(version=version).get(
+        resolve_subnet(cidr_or_uuid, version=version) or ""
+    )

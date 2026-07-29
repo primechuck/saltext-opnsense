@@ -6,7 +6,11 @@ def test_state_present_already():
 
     state_mod.__opts__ = {"test": False}
     state_mod.__salt__ = {
-        "opnsense.search": MagicMock(return_value={"rows": [{"uuid": "1", "hostname": "www", "domain": "example.com", "enabled": "1"}]}),
+        "opnsense.search": MagicMock(
+            return_value={
+                "rows": [{"uuid": "1", "hostname": "www", "domain": "example.com", "enabled": "1"}]
+            }
+        ),
     }
 
     result = state_mod.item_present(
@@ -118,7 +122,13 @@ def test_auto_resolve_host_dict():
     add_call = state_mod.__salt__["opnsense.add"].call_args
     assert add_call is not None
     args, _ = add_call
-    payload = args[3] if len(args) > 3 else add_call[1].get("data") if isinstance(add_call[1], dict) else None
+    payload = (
+        args[3]
+        if len(args) > 3
+        else add_call[1].get("data")
+        if isinstance(add_call[1], dict)
+        else None
+    )
     flat = payload.get("alias") if isinstance(payload, dict) and "alias" in payload else payload
     assert flat is not None
     assert flat.get("host") == "host-uuid-1111"
@@ -136,7 +146,13 @@ def test_auto_resolve_subnet_cidr():
             return {"rows": []}
         if module == "kea" and typ == "reservation":
             return {"rows": []}
-        return _make_search_mock().side_effect(module, controller, typ, search_phrase, row_count, **kwargs) if False else {"rows": []}
+        return (
+            _make_search_mock().side_effect(
+                module, controller, typ, search_phrase, row_count, **kwargs
+            )
+            if False
+            else {"rows": []}
+        )
 
     wrapped = MagicMock(side_effect=search_side_effect)
 
@@ -172,7 +188,11 @@ def test_auto_resolve_subnet_cidr():
     assert add_call is not None
     args, _ = add_call
     payload = args[3]
-    flat = payload.get("reservation") if isinstance(payload, dict) and "reservation" in payload else payload
+    flat = (
+        payload.get("reservation")
+        if isinstance(payload, dict) and "reservation" in payload
+        else payload
+    )
     assert flat.get("subnet") == "subnet-uuid-aaa"
 
 
@@ -184,7 +204,9 @@ def test_auto_resolve_acme_account_name():
     def dispatch(module, controller, typ, search_phrase="", row_count=-1, **kwargs):
         if typ == "certificate":
             return {"rows": []}
-        return _make_search_mock().side_effect(module, controller, typ, search_phrase, row_count, **kwargs)
+        return _make_search_mock().side_effect(
+            module, controller, typ, search_phrase, row_count, **kwargs
+        )
 
     search_mock.side_effect = dispatch
 
@@ -211,7 +233,11 @@ def test_auto_resolve_acme_account_name():
     assert result["result"] is True
     add_call = state_mod.__salt__["opnsense.add"].call_args
     payload = add_call[0][3]
-    flat = payload.get("certificate") if isinstance(payload, dict) and "certificate" in payload else payload
+    flat = (
+        payload.get("certificate")
+        if isinstance(payload, dict) and "certificate" in payload
+        else payload
+    )
     assert flat.get("account") == "account-uuid-prod"
     assert flat.get("validationMethod") == "valid-uuid-cf"
 
@@ -244,7 +270,11 @@ def test_auto_resolve_preserves_uuid():
     assert result["result"] is True
     add_call = state_mod.__salt__["opnsense.add"].call_args
     payload = add_call[0][3]
-    flat = payload.get("reservation") if isinstance(payload, dict) and "reservation" in payload else payload
+    flat = (
+        payload.get("reservation")
+        if isinstance(payload, dict) and "reservation" in payload
+        else payload
+    )
     assert flat.get("subnet") == existing_uuid
     assert search_mock.call_count == 1
 
@@ -283,12 +313,30 @@ def test_item_present_idempotency_second_run():
     from saltext.opnsense.states import opnsense as state_mod
 
     state_mod.__opts__ = {"test": False}
-    search_mock = MagicMock(return_value={
-        "rows": [{"uuid": "alias-uuid-9999", "hostname": "www", "domain": "example.com", "enabled": "1", "host": "host-uuid-1111"}]
-    })
-    get_mock = MagicMock(return_value={
-        "host_alias": {"uuid": "alias-uuid-9999", "hostname": "www", "domain": "example.com", "enabled": "1", "host": "host-uuid-1111"}
-    })
+    search_mock = MagicMock(
+        return_value={
+            "rows": [
+                {
+                    "uuid": "alias-uuid-9999",
+                    "hostname": "www",
+                    "domain": "example.com",
+                    "enabled": "1",
+                    "host": "host-uuid-1111",
+                }
+            ]
+        }
+    )
+    get_mock = MagicMock(
+        return_value={
+            "host_alias": {
+                "uuid": "alias-uuid-9999",
+                "hostname": "www",
+                "domain": "example.com",
+                "enabled": "1",
+                "host": "host-uuid-1111",
+            }
+        }
+    )
     state_mod.__salt__ = {
         "opnsense.search": search_mock,
         "opnsense.get": get_mock,
@@ -311,11 +359,25 @@ def test_alias_present_idempotency_second_run():
     from saltext.opnsense.states import unbound as unbound_mod
 
     unbound_mod.__opts__ = {"test": False}
+
     def search_side_effect(mod, ctrl, typ, **kwargs):
         if typ == "host_override":
-            return {"rows": [{"uuid": "host-uuid-1111", "hostname": "cluster", "domain": "example.com"}]}
+            return {
+                "rows": [{"uuid": "host-uuid-1111", "hostname": "cluster", "domain": "example.com"}]
+            }
         if typ == "host_alias":
-            return {"rows": [{"uuid": "alias-uuid-9999", "hostname": "www", "domain": "example.com", "enabled": "1", "host": "host-uuid-1111", "description": "managed by salt - www.example.com"}]}
+            return {
+                "rows": [
+                    {
+                        "uuid": "alias-uuid-9999",
+                        "hostname": "www",
+                        "domain": "example.com",
+                        "enabled": "1",
+                        "host": "host-uuid-1111",
+                        "description": "managed by salt - www.example.com",
+                    }
+                ]
+            }
         return {"rows": []}
 
     unbound_mod.__salt__ = {
@@ -336,11 +398,23 @@ def test_record_present_idempotency_second_run():
     from saltext.opnsense.states import bind as bind_mod
 
     bind_mod.__opts__ = {"test": False}
+
     def search_side_effect(mod, ctrl, typ, **kwargs):
         if typ == "primary_domain":
             return {"rows": [{"uuid": "zone-uuid-1111", "domainname": "example.com"}]}
         if typ == "record":
-            return {"rows": [{"uuid": "rec-uuid-8888", "name": "www", "domain": "zone-uuid-1111", "type": "A", "value": "192.168.1.10", "enabled": "1"}]}
+            return {
+                "rows": [
+                    {
+                        "uuid": "rec-uuid-8888",
+                        "name": "www",
+                        "domain": "zone-uuid-1111",
+                        "type": "A",
+                        "value": "192.168.1.10",
+                        "enabled": "1",
+                    }
+                ]
+            }
         return {"rows": []}
 
     bind_mod.__salt__ = {
@@ -357,4 +431,3 @@ def test_record_present_idempotency_second_run():
     assert result["result"] is True
     assert result["changes"] == {}
     assert "already present" in result["comment"]
-

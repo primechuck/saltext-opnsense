@@ -7,16 +7,54 @@ from typing import Any
 SPEC_FILE = pathlib.Path(__file__).with_name("models.json")
 
 CORE_MODULES = [
-    "auth", "captiveportal", "core", "cron", "dhcrelay", "diagnostics", "dnsmasq",
-    "firewall", "firmware", "hostdiscovery", "ids", "interfaces", "ipsec",
-    "kea", "monit", "ntpd", "openvpn", "radvd", "routes", "routing",
-    "syslog", "trafficshaper", "trust", "unbound", "wireguard"
+    "auth",
+    "captiveportal",
+    "core",
+    "cron",
+    "dhcrelay",
+    "diagnostics",
+    "dnsmasq",
+    "firewall",
+    "firmware",
+    "hostdiscovery",
+    "ids",
+    "interfaces",
+    "ipsec",
+    "kea",
+    "monit",
+    "ntpd",
+    "openvpn",
+    "radvd",
+    "routes",
+    "routing",
+    "syslog",
+    "trafficshaper",
+    "trust",
+    "unbound",
+    "wireguard",
 ]
 
 PLUGIN_MODULES = [
-    "acmeclient", "apcupsd", "bind", "caddy", "chrony", "clamav", "collectd",
-    "crowdsec", "dec_hw", "dhcp", "dnscryptproxy", "dyndns", "freeradius",
-    "haproxy", "nginx", "postfix", "quagga", "tor", "wireguard", "kea",
+    "acmeclient",
+    "apcupsd",
+    "bind",
+    "caddy",
+    "chrony",
+    "clamav",
+    "collectd",
+    "crowdsec",
+    "dec_hw",
+    "dhcp",
+    "dnscryptproxy",
+    "dyndns",
+    "freeradius",
+    "haproxy",
+    "nginx",
+    "postfix",
+    "quagga",
+    "tor",
+    "wireguard",
+    "kea",
 ]
 
 
@@ -234,6 +272,12 @@ def all_relation_fields(module: str | None = None) -> dict[str, list[dict[str, A
                     if is_relation_field(fmeta):
                         key = f"{mod}.{model_name}.{arr_name}.{fname}"
                         result.setdefault(mod, []).append(
-                            {"key": key, "model": model_name, "array": arr_name, "field": fname, "meta": fmeta}
+                            {
+                                "key": key,
+                                "model": model_name,
+                                "array": arr_name,
+                                "field": fname,
+                                "meta": fmeta,
+                            }
                         )
     return result

@@ -16,15 +16,15 @@ def __virtual__():
 def _search(controller, type_name, search_phrase="", row_count=-1):
     try:
         fn = __salt__["opnsense.search"]
-        res = fn("firewall", controller, type_name, search_phrase=search_phrase, row_count=row_count)
+        res = fn(
+            "firewall", controller, type_name, search_phrase=search_phrase, row_count=row_count
+        )
         if isinstance(res, dict):
             return res.get("rows", [])
         return []
     except Exception as exc:
         log.debug("firewall search %s/%s failed: %s", controller, type_name, exc)
         return []
-
-
 
 
 def list_aliases(search_phrase="", row_count=-1):
@@ -55,7 +55,9 @@ def list_aliases_pretty(search_phrase=""):
     lines = []
     for name in sorted(data):
         info = data[name]
-        lines.append(f"{name} type={info.get('type')} content={info.get('content')} ({'enabled' if info.get('enabled') else 'disabled'})")
+        lines.append(
+            f"{name} type={info.get('type')} content={info.get('content')} ({'enabled' if info.get('enabled') else 'disabled'})"
+        )
     return lines
 
 
@@ -82,7 +84,9 @@ def list_rules_pretty(search_phrase=""):
     lines = []
     for descr in sorted(data):
         info = data[descr]
-        lines.append(f"{descr} action={info.get('action')} iface={info.get('interface')} proto={info.get('protocol')}")
+        lines.append(
+            f"{descr} action={info.get('action')} iface={info.get('interface')} proto={info.get('protocol')}"
+        )
     return lines
 
 

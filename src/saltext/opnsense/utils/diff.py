@@ -3,6 +3,7 @@ Centralized diff engine and value normalization for OPNsense state modules.
 """
 
 from typing import Any
+
 from saltext.opnsense.utils.common import is_uuid
 
 BOOL_TRUE = {"1", "true", "yes", "enabled", "on"}
@@ -27,13 +28,24 @@ def _is_bool_context(key: Any, val: Any, field_meta: dict | None = None) -> bool
         return True
     if isinstance(key, str):
         k_low = key.lower()
-        if k_low in ("enabled", "disabled") or k_low.endswith("_enabled") or k_low.startswith("is_"):
+        if (
+            k_low in ("enabled", "disabled")
+            or k_low.endswith("_enabled")
+            or k_low.startswith("is_")
+        ):
             return True
     if field_meta and isinstance(field_meta, dict):
         ftype = str(field_meta.get("type", ""))
         if ftype in ("BooleanField", "OptionField") or "bool" in ftype.lower():
             return True
-    if isinstance(val, str) and val.strip().lower() in ("true", "false", "yes", "no", "enabled", "disabled"):
+    if isinstance(val, str) and val.strip().lower() in (
+        "true",
+        "false",
+        "yes",
+        "no",
+        "enabled",
+        "disabled",
+    ):
         return True
     return False
 
@@ -46,7 +58,11 @@ def _is_relation_key(key: Any, field_meta: dict | None = None) -> bool:
         return True
     if field_meta and isinstance(field_meta, dict):
         ftype = str(field_meta.get("type", ""))
-        if "relation" in ftype.lower() or "relation" in field_meta or "relation_targets" in field_meta:
+        if (
+            "relation" in ftype.lower()
+            or "relation" in field_meta
+            or "relation_targets" in field_meta
+        ):
             return True
     return False
 
@@ -133,7 +149,9 @@ def normalize_field_value(
     else:
         val_str = str(val)
 
-    if _is_relation_key(key, field_meta) or (ph_str and (val_str == ph_str or is_uuid(val_str) or isinstance(val, dict))):
+    if _is_relation_key(key, field_meta) or (
+        ph_str and (val_str == ph_str or is_uuid(val_str) or isinstance(val, dict))
+    ):
         if ph_str:
             if val_str == ph_str:
                 return ph_str

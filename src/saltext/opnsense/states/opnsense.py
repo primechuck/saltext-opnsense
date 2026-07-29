@@ -939,6 +939,7 @@ def _get_reconfigure(module: str, controller: str, type_name: str | None, reconf
         )
     return _infer_reconfigure(module, controller, type_name)
 
+
 def _verify_reconfigure_call(module: str, controller: str, action: str = "reconfigure"):
     try:
         res = __salt__["opnsense.reconfigure"](module, controller, action)
@@ -1412,7 +1413,9 @@ def item_present(
                 ret["comment"] += f" – {human}"
             rcfg = _get_reconfigure(module, controller, type, reconfigure)
             if rcfg:
-                ok, err = _verify_reconfigure_call(rcfg["module"], rcfg["controller"], rcfg["action"])
+                ok, err = _verify_reconfigure_call(
+                    rcfg["module"], rcfg["controller"], rcfg["action"]
+                )
                 if not ok:
                     ret["result"] = False
                     ret["comment"] += (

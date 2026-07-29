@@ -86,10 +86,16 @@ def list_aliases_simple(domain=None, parent=None):
         try:
             fn = __salt__["opnsense_unbound.list_aliases"]
             data = fn(domain=domain, parent=parent)
-            return {fqdn: info.get("parent") if isinstance(info, dict) else info for fqdn, info in data.items()}
+            return {
+                fqdn: info.get("parent") if isinstance(info, dict) else info
+                for fqdn, info in data.items()
+            }
         except Exception:
             data = list_aliases(domain=domain, parent=parent)
-            return {fqdn: info.get("parent") if isinstance(info, dict) else str(info) for fqdn, info in data.items()}
+            return {
+                fqdn: info.get("parent") if isinstance(info, dict) else str(info)
+                for fqdn, info in data.items()
+            }
 
 
 def list_aliases_pretty(domain=None, parent=None):
@@ -115,7 +121,9 @@ def list_aliases_pretty(domain=None, parent=None):
         info = data[fqdn]
         if isinstance(info, dict):
             parent_f = info.get("parent", "")
-            en = "enabled" if info.get("enabled") else "disabled" if "enabled" in info else "enabled"
+            en = (
+                "enabled" if info.get("enabled") else "disabled" if "enabled" in info else "enabled"
+            )
             lines.append(f"{fqdn} -> {parent_f} ({en})")
         else:
             lines.append(f"{fqdn} -> {info}")
@@ -151,7 +159,7 @@ def resolve_parent(parent=None):
     if isinstance(cp, dict) and cp.get("hostname"):
         try:
             fn = __salt__["opnsense_unbound.resolve_parent"]
-            fqdn = f"{cp['hostname']}.{cp.get('domain','example.com')}"
+            fqdn = f"{cp['hostname']}.{cp.get('domain', 'example.com')}"
             return fn(fqdn)
         except Exception:
             return None
@@ -166,7 +174,7 @@ def managed_preview(parent=None, aliases=None, purge=None):
         purge = purge_p
     if parent is None:
         if isinstance(parent_p, dict) and parent_p.get("hostname"):
-            parent = f"{parent_p['hostname']}.{parent_p.get('domain','example.com')}"
+            parent = f"{parent_p['hostname']}.{parent_p.get('domain', 'example.com')}"
         else:
             parent = parent_p
     live = list_aliases()

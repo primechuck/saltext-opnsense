@@ -25,6 +25,7 @@ def __virtual__():
 def _get_reconfigure(reconfigure):
     return _common_get_reconfigure(reconfigure, "unbound")
 
+
 def _verify_reconfigure_call(module: str, controller: str, action: str = "reconfigure"):
     try:
         res = __salt__["opnsense.reconfigure"](module, controller, action)
@@ -42,10 +43,11 @@ def _verify_reconfigure_call(module: str, controller: str, action: str = "reconf
         return False, str(exc)
 
 
-
 def _do_search(type_name, search_phrase=""):
     try:
-        res = __salt__["opnsense.search"]("unbound", "settings", type_name, search_phrase=search_phrase, row_count=-1)
+        res = __salt__["opnsense.search"](
+            "unbound", "settings", type_name, search_phrase=search_phrase, row_count=-1
+        )
         return res.get("rows", []) if isinstance(res, dict) else []
     except Exception as exc:
         log.debug("search %s failed: %s", type_name, exc)
@@ -87,7 +89,9 @@ def _resolve_parent(parent):
     return None, f"parent host_override {parent} not found"
 
 
-def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True):
+def managed(
+    name, parent=None, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+):
     """
     Pillar-driven Unbound host alias management — no Jinja loops required.
 
@@ -189,7 +193,9 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
         purge = {}
 
     if not parent:
-        ret["comment"] = "parent required — set opnsense:cluster_parent in pillar or pass parent: cluster.example.com"
+        ret["comment"] = (
+            "parent required — set opnsense:cluster_parent in pillar or pass parent: cluster.example.com"
+        )
         return ret
 
     parent_uuid, err = _resolve_parent(parent)
@@ -253,7 +259,9 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
             if (hn, dom) in existing_map:
                 to_del.append(f"{hn}.{dom}")
         ret["result"] = None
-        ret["comment"] = f"[dns managed:{name}] would ensure {len(desired)} aliases ({len(to_add)} add, {len(to_upd)} upd, {len(to_del)} purge) -> {parent}"
+        ret["comment"] = (
+            f"[dns managed:{name}] would ensure {len(desired)} aliases ({len(to_add)} add, {len(to_upd)} upd, {len(to_del)} purge) -> {parent}"
+        )
         ch = {}
         if to_add:
             ch["would_add"] = to_add
@@ -289,7 +297,9 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
             else:
                 diff = diff_models(existing, desired_data, parent_human=parent)
                 if diff:
-                    __salt__["opnsense.set_item"]("unbound", "settings", "host_alias", existing.get("uuid"), payload)
+                    __salt__["opnsense.set_item"](
+                        "unbound", "settings", "host_alias", existing.get("uuid"), payload
+                    )
                     updated.append(fqdn)
                     changes[fqdn] = {"action": "updated", "parent": parent}
         except Exception as exc:
@@ -300,7 +310,9 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
         existing = existing_map.get((hn, dom))
         if existing:
             try:
-                __salt__["opnsense.delete"]("unbound", "settings", "host_alias", existing.get("uuid"))
+                __salt__["opnsense.delete"](
+                    "unbound", "settings", "host_alias", existing.get("uuid")
+                )
                 fqdn = f"{hn}.{dom}"
                 deleted.append(fqdn)
                 changes[fqdn] = {"action": "deleted"}
@@ -325,21 +337,31 @@ def managed(name, parent=None, aliases=None, purge=None, descriptions=None, enab
                     ret["result"] = False
                     ret["changes"] = changes
                     return ret
-                ret["comment"] = f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent} and reconfigured {rc}"
+                ret["comment"] = (
+                    f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent} and reconfigured {rc}"
+                )
             else:
-                ret["comment"] = f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
+                ret["comment"] = (
+                    f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
+                )
         else:
-            ret["comment"] = f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
+            ret["comment"] = (
+                f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
+            )
         ret["changes"] = changes
         ret["result"] = True
     else:
-        ret["comment"] = f"[dns managed:{name}] {len(desired)} aliases already present -> {parent}, {len(deleted)} purged already absent"
+        ret["comment"] = (
+            f"[dns managed:{name}] {len(desired)} aliases already present -> {parent}, {len(deleted)} purged already absent"
+        )
         ret["result"] = True
 
     return ret
 
 
-def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True):
+def aliases_managed(
+    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+):
     """
     Alias to managed() for backward compat with opnsense_unbound.aliases_managed naming.
 
@@ -355,4 +377,12 @@ def aliases_managed(name, parent, aliases=None, purge=None, descriptions=None, e
     sys.doc:
         salt opnsense-router sys.doc opnsense_dns.aliases_managed
     """
-    return managed(name, parent=parent, aliases=aliases, purge=purge, descriptions=descriptions, enabled=enabled, reconfigure=reconfigure)
+    return managed(
+        name,
+        parent=parent,
+        aliases=aliases,
+        purge=purge,
+        descriptions=descriptions,
+        enabled=enabled,
+        reconfigure=reconfigure,
+    )
