@@ -14,6 +14,7 @@ venv/
 controllers.json.bak
 /tmp/
 tools/tmp/
+docs/_build/
 # generated ergonomic wrappers - dynamic injection covers all, keep repo minimal
 src/saltext/opnsense/modules/opnsense_*.py
 src/saltext/opnsense/states/opnsense_*.py
