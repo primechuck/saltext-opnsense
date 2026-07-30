@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check src tests tools
+      - run: ruff format --check src tests tools
+
+  unit:
+    name: Unit Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pytest pytest-salt-factories requests salt setuptools && pip install -e .
+      - run: PYTHONPATH=src pytest tests/unit -v
+
+  spec-drift:
+    name: Spec Integrity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Verify Spec Consistency
+        run: |
+          CORE_REF=$(python3 -c "import json,pathlib; print(json.loads(pathlib.Path('src/saltext/opnsense/utils/controllers.json').read_text()).get('meta',{}).get('core_ref','25.7'))")
+          echo "Verifying spec against upstream tag: ${CORE_REF}"
+          python tools/generate_spec.py --core-ref "${CORE_REF}" --plugins-ref "${CORE_REF}" --output /tmp/controllers.json
+          diff -u -I '"generated_at"' src/saltext/opnsense/utils/controllers.json /tmp/controllers.json || (echo "controllers.json drift detected — run make bump CORE=${CORE_REF}" && exit 1)
