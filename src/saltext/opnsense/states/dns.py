@@ -7,7 +7,13 @@ from saltext.opnsense.utils.common import (
     is_uuid as _is_uuid,
 )
 from saltext.opnsense.utils.common import (
+    normalize_enabled as _normalize_enabled,
+)
+from saltext.opnsense.utils.common import (
     parse_reconfigure_path as _parse_reconfigure,
+)
+from saltext.opnsense.utils.common import (
+    strip_salt_internal_kwargs as _strip_salt_internal_kwargs,
 )
 from saltext.opnsense.utils.diff import diff_models
 
@@ -17,8 +23,15 @@ __virtualname__ = "opnsense_dns"
 
 
 def __virtual__():
-    if "opnsense.search" in __salt__ or "opnsense_unbound.list_aliases" in __salt__:
-        return __virtualname__
+    """
+    Only load if opnsense execution module is available.
+    """
+    try:
+        salt_dunder = __salt__
+    except NameError:
+        return True
+    if "opnsense.search" in salt_dunder or "opnsense_unbound.list_aliases" in salt_dunder:
+        return True
     return (False, "opnsense execution module not loaded")
 
 
@@ -90,7 +103,7 @@ def _resolve_parent(parent):
 
 
 def managed(
-    name, parent=None, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+    name, parent=None, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
 ):
     """
     Pillar-driven Unbound host alias management — no Jinja loops required.
@@ -163,6 +176,8 @@ def managed(
         salt opnsense-router sys.doc opnsense_dns.managed
         salt opnsense-router sys.doc opnsense_dns.aliases_managed
     """
+    if kwargs:
+        _strip_salt_internal_kwargs(kwargs)
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     descriptions = descriptions or {}
 
@@ -231,9 +246,7 @@ def managed(
             if hn:
                 purge_list.append((hn, dom))
 
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
+    enabled_str = _normalize_enabled(enabled)
 
     if __opts__.get("test"):
         to_add = []
@@ -361,7 +374,7 @@ def managed(
 
 
 def aliases_managed(
-    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
 ):
     """
     Alias to managed() for backward compat with opnsense_unbound.aliases_managed naming.
@@ -378,6 +391,8 @@ def aliases_managed(
     sys.doc:
         salt opnsense-router sys.doc opnsense_dns.aliases_managed
     """
+    if kwargs:
+        _strip_salt_internal_kwargs(kwargs)
     return managed(
         name,
         parent=parent,

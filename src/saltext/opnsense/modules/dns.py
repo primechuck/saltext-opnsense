@@ -1,16 +1,24 @@
 import logging
 
+from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_salt_internal_kwargs
+
 log = logging.getLogger(__name__)
 
 __virtualname__ = "opnsense_dns"
 
 
 def __virtual__():
-    if "opnsense.search" in __salt__ or "opnsense_unbound.list_aliases" in __salt__:
-        return __virtualname__
-    if "opnsense.search" in __salt__:
-        return __virtualname__
+    """
+    Only load if base opnsense execution module is available.
+    """
+    try:
+        salt_dunder = __salt__
+    except NameError:
+        return True
+    if "opnsense.search" in salt_dunder or "opnsense.call" in salt_dunder or "opnsense_unbound.list_aliases" in salt_dunder:
+        return True
     return (False, "opnsense execution module not loaded")
+
 
 
 def _pillar_aliases():

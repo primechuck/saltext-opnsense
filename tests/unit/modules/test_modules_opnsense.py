@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 def test_module_virtual():
     from saltext.opnsense.modules import opnsense as mod
 
-    assert mod.__virtual__() == "opnsense"
+    assert mod.__virtual__() is True
 
 
 @patch("saltext.opnsense.modules.opnsense._get_client")
@@ -18,6 +18,5 @@ def test_call_direct(mock_get_client):
     mod.__opts__ = {}
     mod.__pillar__ = {}
 
-    with patch("salt.utils.platform.is_proxy", return_value=False):
-        result = mod.call("unbound", "settings", "searchHostAlias")
-        assert result == {"rows": []}
+    result = mod.call("unbound", "settings", "searchHostAlias")
+    assert result == {"rows": []}

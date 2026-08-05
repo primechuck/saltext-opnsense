@@ -1,11 +1,14 @@
-import re
-from typing import Any
+from __future__ import annotations
 
-_UUID_RE = re.compile(
+import re
+from types import MappingProxyType
+from typing import Any, Final
+
+_UUID_RE: Final[re.Pattern[str]] = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
 
-RECONFIGURE_DEFAULTS = {
+_RECONFIGURE_DEFAULTS_RAW: Final[dict[str, str]] = {
     "unbound": "unbound/service/reconfigure",
     "bind": "bind/service/reconfigure",
     "kea": "kea/service/reconfigure",
@@ -16,6 +19,16 @@ RECONFIGURE_DEFAULTS = {
     "firewall": "firewall/alias/reconfigure",
     "interfaces": "interfaces/vlan/reconfigure",
 }
+RECONFIGURE_DEFAULTS: Final[MappingProxyType[str, str]] = MappingProxyType(
+    _RECONFIGURE_DEFAULTS_RAW
+)
+
+_ENABLED_TRUE: Final[frozenset[str]] = frozenset(
+    {"1", "true", "yes", "enabled", "on"}
+)
+_ENABLED_FALSE: Final[frozenset[str]] = frozenset(
+    {"0", "false", "no", "disabled", "off"}
+)
 
 
 def camel_to_snake(name: str) -> str:
@@ -32,7 +45,7 @@ def snake_to_pascal(snake: str) -> str:
     return "".join(p.capitalize() for p in snake.split("_") if p)
 
 
-def strip_salt_internal_kwargs(kwargs: dict) -> dict:
+def strip_salt_internal_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if not k.startswith("__")}
 
 
@@ -42,21 +55,27 @@ def is_uuid(v: Any) -> bool:
     return bool(_UUID_RE.match(v.strip()))
 
 
-def get_reconfigure(reconfigure, module: str):
+def get_reconfigure(
+    reconfigure: str | bool | None | dict[str, str] | Any,
+    module: str,
+) -> str | dict[str, str] | None:
     if reconfigure is False:
         return None
     if reconfigure is True or reconfigure is None:
         return RECONFIGURE_DEFAULTS.get(module)
     if isinstance(reconfigure, str):
-        if reconfigure.strip() == "":
+        stripped = reconfigure.strip()
+        if stripped == "":
             return RECONFIGURE_DEFAULTS.get(module)
-        return reconfigure.strip()
+        return stripped
     if isinstance(reconfigure, dict):
         return reconfigure
     return RECONFIGURE_DEFAULTS.get(module)
 
 
-def parse_reconfigure_path(path):
+def parse_reconfigure_path(
+    path: str | dict[str, str] | None,
+) -> dict[str, str] | None:
     if not path:
         return None
     if isinstance(path, dict):
@@ -71,11 +90,11 @@ def parse_reconfigure_path(path):
     return None
 
 
-def fqdn_to_parts(fqdn: str):
+def fqdn_to_parts(fqdn: str) -> tuple[str | None, str | None]:
     if not isinstance(fqdn, str) or "." not in fqdn:
         return None, None
-    parts = fqdn.split(".", 1)
-    return parts[0], parts[1]
+    head, tail = fqdn.split(".", 1)
+    return head, tail
 
 
 def build_fqdn(hostname: str, domain: str) -> str:
@@ -88,14 +107,14 @@ def build_fqdn(hostname: str, domain: str) -> str:
     return f"{hostname}.{domain}"
 
 
-def normalize_enabled(v):
+def normalize_enabled(v: Any) -> str:
     if isinstance(v, bool):
         return "1" if v else "0"
     if isinstance(v, (int, float)):
         return "1" if v else "0"
     s = str(v).lower()
-    if s in ("1", "true", "yes", "enabled", "on"):
+    if s in _ENABLED_TRUE:
         return "1"
-    if s in ("0", "false", "no", "disabled", "off"):
+    if s in _ENABLED_FALSE:
         return "0"
     return "1" if v else "0"

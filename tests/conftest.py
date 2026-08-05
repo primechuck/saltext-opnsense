@@ -12,15 +12,10 @@ except ImportError:
     utils_mock = types.ModuleType("salt.utils")
     sys.modules["salt.utils"] = utils_mock
 
-    platform_mock = types.ModuleType("salt.utils.platform")
-    platform_mock.is_proxy = lambda: False
-    sys.modules["salt.utils.platform"] = platform_mock
-
     json_mock = types.ModuleType("salt.utils.json")
     sys.modules["salt.utils.json"] = json_mock
 
     salt_mock.utils = utils_mock
-    utils_mock.platform = platform_mock
     utils_mock.json = json_mock
 
 

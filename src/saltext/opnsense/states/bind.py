@@ -7,7 +7,13 @@ from saltext.opnsense.utils.common import (
     is_uuid as _is_uuid,
 )
 from saltext.opnsense.utils.common import (
+    normalize_enabled as _normalize_enabled,
+)
+from saltext.opnsense.utils.common import (
     parse_reconfigure_path as _parse_reconfigure,
+)
+from saltext.opnsense.utils.common import (
+    strip_salt_internal_kwargs as _strip_salt_internal_kwargs,
 )
 from saltext.opnsense.utils.diff import diff_models
 
@@ -17,9 +23,38 @@ __virtualname__ = "opnsense_bind"
 
 
 def __virtual__():
-    if "opnsense.search" in __salt__:
-        return __virtualname__
+    """
+    Only load if opnsense execution module is available.
+    """
+    try:
+        salt_dunder = __salt__
+    except NameError:
+        # No Salt dunder in test harness - allow import
+        return True
+    if "opnsense.search" in salt_dunder:
+        return True
     return (False, "opnsense execution module not loaded")
+
+
+def _verify_reconfigure_call(module: str, controller: str, action: str = "reconfigure"):
+    """
+    Consistent reconfigure verification, mirroring opnsense state.
+    Returns (ok, error_message).
+    """
+    try:
+        res = __salt__["opnsense.reconfigure"](module, controller, action)
+        if isinstance(res, dict):
+            status = str(res.get("status", "")).lower()
+            result = str(res.get("result", "")).lower()
+            if status in ("failed", "error") or result in ("failed", "error"):
+                msg = res.get("message") or res.get("error") or res.get("validations") or res
+                return False, str(msg)
+        elif isinstance(res, str):
+            if res.lower() in ("failed", "error"):
+                return False, res
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
 
 
 def _get_reconfigure(reconfigure):
@@ -49,7 +84,13 @@ def _search_domains_all():
     ):
         try:
             rows = _search("domain", t, row_count=-1)
-            all_rows.extend(rows)
+            for r in rows:
+                # Preserve actual bind type for correct delete - fix for domain_absent bug
+                if isinstance(r, dict):
+                    r = dict(r)
+                    r["_bind_type"] = t
+                    r.setdefault("_bind_controller", "domain")
+                all_rows.append(r)
         except Exception:
             continue
     dedup = {}
@@ -58,6 +99,13 @@ def _search_domains_all():
         key = uuid or r.get("domainname") or r.get("domain")
         if key and key not in dedup:
             dedup[key] = r
+        else:
+            # If we already have entry but new entry has more specific _bind_type, keep it
+            if key and key in dedup:
+                existing = dedup[key]
+                # Prefer keeping existing unless it lacks _bind_type
+                if not existing.get("_bind_type") and r.get("_bind_type"):
+                    dedup[key] = r
     return list(dedup.values())
 
 
@@ -112,6 +160,9 @@ def domain_present(
         salt opnsense-router sys.doc opnsense_bind.domain_present
     """
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
+    # Strip Salt internal kwargs (__pub_*, etc.) - salty best practice
+    if kwargs:
+        kwargs = _strip_salt_internal_kwargs(kwargs)
     existing = _find_domain(name)
 
     type_name = "primary_domain"
@@ -124,9 +175,7 @@ def domain_present(
     else:
         type_name = domain_type
 
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
+    enabled_str = _normalize_enabled(enabled)
 
     desc = description or f"managed by salt - {name}"
     data = {
@@ -159,13 +208,11 @@ def domain_present(
             if rc:
                 pr = _parse_reconfigure(rc)
                 if pr:
-                    try:
-                        __salt__["opnsense.reconfigure"](
-                            pr["module"], pr["controller"], pr["action"]
-                        )
+                    ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                    if ok:
                         ret["comment"] += f" and reconfigured {rc}"
-                    except Exception as e:
-                        ret["comment"] += f" but reconfigure failed: {e}"
+                    else:
+                        ret["comment"] += f" but reconfigure {rc} failed: {err}"
                         ret["result"] = False
             return ret
         except Exception as exc:
@@ -195,11 +242,11 @@ def domain_present(
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:
@@ -234,21 +281,39 @@ def domain_absent(name, reconfigure=True):
 
     try:
         uuid = existing.get("uuid")
-        if existing.get("_bind_type"):
-            pass
-        __salt__["opnsense.delete"]("bind", "domain", "primary_domain", uuid)
+        # Fix bug: use actual _bind_type instead of always primary_domain
+        actual_type = existing.get("_bind_type") or existing.get("_bind_type_original") or "primary_domain"
+        # Normalize type - ensure it's one of known types, fallback to primary_domain if invalid
+        if actual_type not in (
+            "primary_domain",
+            "secondary_domain",
+            "forward_domain",
+            "master_domain",
+            "slave_domain",
+            "domain",
+        ):
+            # If type looks like domain_type string (primary/secondary/forward), map it
+            mapping = {
+                "primary": "primary_domain",
+                "secondary": "secondary_domain",
+                "forward": "forward_domain",
+                "master": "master_domain",
+                "slave": "slave_domain",
+            }
+            actual_type = mapping.get(actual_type, "primary_domain")
+        __salt__["opnsense.delete"]("bind", "domain", actual_type, uuid)
         ret["changes"] = {"deleted": name}
         ret["result"] = True
-        ret["comment"] = f"domain {name} deleted"
+        ret["comment"] = f"domain {name} deleted (type {actual_type})"
         rc = _get_reconfigure(reconfigure)
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:
@@ -325,9 +390,7 @@ def record_present(
                     existing = r
                     break
 
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
+    enabled_str = _normalize_enabled(enabled)
 
     data = {
         "enabled": enabled_str,
@@ -358,13 +421,11 @@ def record_present(
             if rc:
                 pr = _parse_reconfigure(rc)
                 if pr:
-                    try:
-                        __salt__["opnsense.reconfigure"](
-                            pr["module"], pr["controller"], pr["action"]
-                        )
+                    ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                    if ok:
                         ret["comment"] += f" and reconfigured {rc}"
-                    except Exception as e:
-                        ret["comment"] += f" but reconfigure failed: {e}"
+                    else:
+                        ret["comment"] += f" but reconfigure {rc} failed: {err}"
                         ret["result"] = False
             return ret
         except Exception as exc:
@@ -394,11 +455,11 @@ def record_present(
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:
@@ -464,11 +525,11 @@ def record_absent(name, domain, type="A", reconfigure=True):
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:

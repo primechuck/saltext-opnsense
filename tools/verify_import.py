@@ -48,11 +48,12 @@ def main():
     if "salt" not in sys.modules:
         salt_mock = types.ModuleType("salt")
         utils_mock = types.ModuleType("salt.utils")
-        platform_mock = types.ModuleType("salt.utils.platform")
-        platform_mock.is_proxy = lambda: False
+        json_mock = types.ModuleType("salt.utils.json")
         sys.modules["salt"] = salt_mock
         sys.modules["salt.utils"] = utils_mock
-        sys.modules["salt.utils.platform"] = platform_mock
+        sys.modules["salt.utils.json"] = json_mock
+        salt_mock.utils = utils_mock
+        utils_mock.json = json_mock
 
     sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
@@ -79,7 +80,7 @@ def main():
 
     print(f"\nPASS: dynamic-only covers all {len(api_mods)} modules, no static wrapper bloat needed.")
     print(
-        "Human can read just 4 files: utils/opnsense.py, proxy/opnsense.py, modules/opnsense.py, states/opnsense.py"
+        "Human can read just 3 files: utils/opnsense.py, modules/opnsense.py, states/opnsense.py"
     )
 
 

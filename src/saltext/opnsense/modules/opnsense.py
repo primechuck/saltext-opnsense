@@ -1,61 +1,69 @@
-import logging
+from __future__ import annotations
 
-import salt.utils.platform
+import logging
+import threading
+from typing import Any, Final
 
 log = logging.getLogger(__name__)
 
-from saltext.opnsense.utils.common import (
-    camel_to_snake as _camel_to_snake,
-)
-from saltext.opnsense.utils.common import (
-    strip_salt_internal_kwargs as _strip_pub_kwargs,
-)
+from saltext.opnsense.utils.common import camel_to_snake as _camel_to_snake
+from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_pub_kwargs
 
 try:
-    from saltext.opnsense.utils.api_spec import (
-        list_actions,
-        list_controllers,
-        list_modules,
-        load_spec,
-    )
+    from saltext.opnsense.utils.api_spec import list_actions
+    from saltext.opnsense.utils.api_spec import list_controllers
+    from saltext.opnsense.utils.api_spec import list_modules
+    from saltext.opnsense.utils.api_spec import load_spec
     from saltext.opnsense.utils.opnsense import OPNsenseClient, get_client_from_opts
 
-    HAS_UTILS = True
-    HAS_UTILS_ERROR = ""
-except ImportError as exc:
-    HAS_UTILS = False
-    HAS_UTILS_ERROR = str(exc)
-    OPNsenseClient = None
-    get_client_from_opts = None
-    list_modules = lambda: []
-    list_controllers = lambda m: []
-    list_actions = lambda m, c: []
-    load_spec = lambda: {}
+    HAS_UTILS: Final[bool] = True
+    HAS_UTILS_ERROR: Final[str] = ""
+except ImportError as exc:  # pragma: no cover - fallback for missing deps
+    HAS_UTILS = False  # type: ignore[no-redef]
+    HAS_UTILS_ERROR = str(exc)  # type: ignore[no-redef]
+    OPNsenseClient = None  # type: ignore[assignment]
+    get_client_from_opts = None  # type: ignore[assignment]
 
-__virtualname__ = "opnsense"
+    def list_modules() -> list[str]:  # type: ignore[no-redef]
+        return []
+
+    def list_controllers(module: str) -> list[str]:  # type: ignore[no-redef]
+        return []
+
+    def list_actions(module: str, controller: str) -> list[str]:  # type: ignore[no-redef]
+        return []
+
+    def load_spec() -> dict[str, Any]:  # type: ignore[no-redef]
+        return {}
 
 
-def __virtual__():
+__virtualname__: Final[str] = "opnsense"
+
+
+def __virtual__() -> bool | tuple[bool, str]:
     if not HAS_UTILS:
         return (False, f"opnsense utils missing: {HAS_UTILS_ERROR}")
-    return __virtualname__
+    return True
 
 
 def _get_client() -> OPNsenseClient:
-    if salt.utils.platform.is_proxy() and "__proxy__" in globals() and "opnsense.call" in __proxy__:
-        raise RuntimeError("proxy mode: use __proxy__ directly")
-    try:
-        client = get_client_from_opts(
-            __opts__, pillar=__pillar__ if "__pillar__" in globals() else None
-        )
-        return client
-    except Exception:
-        if "__proxy__" in globals() and f"{__virtualname__}.call" in __proxy__:
-            return None
-        raise
+    client = get_client_from_opts(
+        __opts__, pillar=__pillar__ if "__pillar__" in globals() else None
+    )
+    if not client:
+        raise RuntimeError("Failed to create OPNsense client from opts/pillar")
+    return client
 
 
-def call(module, controller, action, uuid=None, data=None, method=None, **kwargs):
+def call(
+    module: str,
+    controller: str,
+    action: str,
+    uuid: str | None = None,
+    data: dict[str, Any] | None = None,
+    method: str | None = None,
+    **kwargs: Any,
+) -> Any:
     """
     Execute a raw REST API call to OPNsense.
 
@@ -65,13 +73,18 @@ def call(module, controller, action, uuid=None, data=None, method=None, **kwargs
     kwargs = _strip_pub_kwargs(kwargs)
     if kwargs:
         log.debug("opnsense.call stripping extra kwargs %s", list(kwargs.keys()))
-    if salt.utils.platform.is_proxy() and "opnsense.call" in __proxy__:
-        return __proxy__["opnsense.call"](module, controller, action, uuid, data, method)
     client = _get_client()
     return client.call(module, controller, action, uuid=uuid, data=data, method=method)
 
 
-def search(module, controller, type_name=None, search_phrase="", row_count=-1, **kwargs):
+def search(
+    module: str,
+    controller: str,
+    type_name: str | None = None,
+    search_phrase: str = "",
+    row_count: int = -1,
+    **kwargs: Any,
+) -> Any:
     """
     Query an OPNsense search endpoint and unwrap the resulting rows.
 
@@ -79,73 +92,85 @@ def search(module, controller, type_name=None, search_phrase="", row_count=-1, *
         salt minion opnsense.search unbound settings host_alias search_phrase="www"
     """
     filtered = _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.search" in __proxy__:
-        return __proxy__["opnsense.search"](
-            module,
-            controller,
-            type_name,
-            search_phrase=search_phrase,
-            row_count=row_count,
-            **filtered,
-        )
     client = _get_client()
     return client.search(
-        module, controller, type_name, search_phrase=search_phrase, row_count=row_count, **filtered
+        module,
+        controller,
+        type_name,
+        search_phrase=search_phrase,
+        row_count=row_count,
+        **filtered,
     )
 
 
-def get(module, controller, type_name=None, uuid=None, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.get" in __proxy__:
-        return __proxy__["opnsense.get"](module, controller, type_name, uuid)
+def get(
+    module: str,
+    controller: str,
+    type_name: str | None = None,
+    uuid: str | None = None,
+    **kwargs: Any,
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.get(module, controller, type_name, uuid=uuid)
 
 
-def add(module, controller, type_name, data, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.add" in __proxy__:
-        return __proxy__["opnsense.add"](module, controller, type_name, data)
+def add(
+    module: str, controller: str, type_name: str, data: dict[str, Any], **kwargs: Any
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.add(module, controller, type_name, data)
 
 
-def set_item(module, controller, type_name, uuid, data, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.set_item" in __proxy__:
-        return __proxy__["opnsense.set_item"](module, controller, type_name, uuid, data)
+def set_item(
+    module: str,
+    controller: str,
+    type_name: str,
+    uuid: str,
+    data: dict[str, Any],
+    **kwargs: Any,
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.set(module, controller, type_name, uuid, data)
 
 
-def delete(module, controller, type_name, uuid, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.delete" in __proxy__:
-        return __proxy__["opnsense.delete"](module, controller, type_name, uuid)
+def delete(
+    module: str, controller: str, type_name: str, uuid: str, **kwargs: Any
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.delete(module, controller, type_name, uuid)
 
 
-def toggle(module, controller, type_name, uuid, enabled=None, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.toggle" in __proxy__:
-        return __proxy__["opnsense.toggle"](module, controller, type_name, uuid, enabled)
+def toggle(
+    module: str,
+    controller: str,
+    type_name: str,
+    uuid: str,
+    enabled: bool | None = None,
+    **kwargs: Any,
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.toggle(module, controller, type_name, uuid, enabled)
 
 
-def reconfigure(module, controller, action="reconfigure", data=None, **kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.reconfigure" in __proxy__:
-        return __proxy__["opnsense.reconfigure"](module, controller, action, data)
+def reconfigure(
+    module: str,
+    controller: str,
+    action: str = "reconfigure",
+    data: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> Any:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.reconfigure(module, controller, action, data=data)
 
 
-def ping(**kwargs):
-    _strip_pub_kwargs(kwargs)
-    if salt.utils.platform.is_proxy() and "opnsense.ping" in __proxy__:
-        return __proxy__["opnsense.ping"]()
+def ping(**kwargs: Any) -> bool:
+    kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     for mod, ctrl, typ in [
         ("unbound", "settings", "host_alias"),
@@ -156,7 +181,7 @@ def ping(**kwargs):
         try:
             client.search(mod, ctrl, typ, row_count=1)
             return True
-        except Exception as exc:
+        except Exception as exc:  # pragma: no cover - best-effort probe
             log.debug("ping attempt %s/%s/%s failed: %s", mod, ctrl, typ, exc)
             continue
     try:
@@ -168,33 +193,35 @@ def ping(**kwargs):
             method="POST",
         )
         return True
-    except Exception as exc:
+    except Exception as exc:  # pragma: no cover
         log.debug("ping fallback failed: %s", exc)
         return False
 
 
-def list_api_modules(**kwargs):
-    _strip_pub_kwargs(kwargs)
+def list_api_modules(**kwargs: Any) -> list[str]:
+    kwargs = _strip_pub_kwargs(kwargs)
     return list_modules()
 
 
-def list_api_controllers(module, **kwargs):
-    _strip_pub_kwargs(kwargs)
+def list_api_controllers(module: str, **kwargs: Any) -> list[str]:
+    kwargs = _strip_pub_kwargs(kwargs)
     return list_controllers(module)
 
 
-def list_api_actions(module, controller, **kwargs):
-    _strip_pub_kwargs(kwargs)
+def list_api_actions(module: str, controller: str, **kwargs: Any) -> list[str]:
+    kwargs = _strip_pub_kwargs(kwargs)
     return list_actions(module, controller)
 
 
-def spec(**kwargs):
-    _strip_pub_kwargs(kwargs)
+def spec(**kwargs: Any) -> dict[str, Any]:
+    kwargs = _strip_pub_kwargs(kwargs)
     return load_spec()
 
 
-def _find_existing(module, controller, type_name, match, **kwargs):
-    _strip_pub_kwargs(kwargs)
+def _find_existing(
+    module: str, controller: str, type_name: str, match: dict[str, Any] | None, **kwargs: Any
+) -> dict[str, Any] | None:
+    kwargs = _strip_pub_kwargs(kwargs)
     res = search(module, controller, type_name, row_count=-1)
     rows = res.get("rows", [])
     if not rows:
@@ -214,8 +241,14 @@ def _find_existing(module, controller, type_name, match, **kwargs):
 
 
 def ensure_present(
-    module, controller, type_name, data, match=None, reconfigure_path=None, **kwargs
-):
+    module: str,
+    controller: str,
+    type_name: str,
+    data: dict[str, Any],
+    match: dict[str, Any] | None = None,
+    reconfigure_path: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
     """
     Ensure an item exists (execution module backend for `opnsense.item_present`).
 
@@ -232,12 +265,18 @@ def ensure_present(
             reconfigure(mod, ctrl, act)
         return {"result": result, "changed": True, "action": "added"}
 
-    diff = {}
-    for k, v in (
-        data.get(list(data.keys())[0])
-        if len(data) == 1 and isinstance(list(data.values())[0], dict)
-        else data
-    ).items():
+    if len(data) == 1:
+        first_key = next(iter(data))
+        first_val = data[first_key]
+        if isinstance(first_val, dict):
+            inner_data = first_val
+        else:
+            inner_data = data
+    else:
+        inner_data = data
+
+    diff: dict[str, dict[str, Any]] = {}
+    for k, v in inner_data.items():
         if k in existing and str(existing[k]) != str(v):
             diff[k] = {"old": existing.get(k), "new": v}
         elif k not in existing:
@@ -254,7 +293,14 @@ def ensure_present(
     return {"result": result, "changed": True, "action": "updated", "diff": diff}
 
 
-def ensure_absent(module, controller, type_name, match, reconfigure_path=None, **kwargs):
+def ensure_absent(
+    module: str,
+    controller: str,
+    type_name: str,
+    match: dict[str, Any],
+    reconfigure_path: str | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
     """
     Ensure an item is absent (execution module backend for `opnsense.item_absent`).
 
@@ -262,7 +308,7 @@ def ensure_absent(module, controller, type_name, match, reconfigure_path=None, *
         salt minion opnsense.ensure_absent unbound settings host_alias \\
             match='{"hostname": "www"}'
     """
-    _strip_pub_kwargs(kwargs)
+    kwargs = _strip_pub_kwargs(kwargs)
     existing = _find_existing(module, controller, type_name, match)
     if existing is None:
         return {"changed": False, "action": "absent"}
@@ -274,7 +320,7 @@ def ensure_absent(module, controller, type_name, match, reconfigure_path=None, *
     return {"result": result, "changed": True, "action": "deleted"}
 
 
-def _parse_reconfigure(path):
+def _parse_reconfigure(path: str) -> tuple[str | None, str | None, str | None]:
     if not path:
         return None, None, None
     parts = path.split("/")
@@ -285,42 +331,116 @@ def _parse_reconfigure(path):
     return None, None, None
 
 
-_DYNAMIC_MAP_CACHE = None
+_DYNAMIC_MAP_CACHE: dict[str, tuple[str, str, str, str, str, str]] | None = None
+_CACHE_LOCK: Final[threading.Lock] = threading.Lock()
+_CONTEXT_CACHE_KEY: Final[str] = "opnsense_dynamic_map"
+
+VERB_MAP: Final[dict[str, str]] = {
+    "search": "List and search",
+    "get": "Fetch",
+    "add": "Create",
+    "set": "Update",
+    "del": "Delete",
+    "delete": "Delete",
+    "toggle": "Toggle enable/disable for",
+    "reconfigure": "Apply and reload (reconfigure)",
+    "restart": "Restart",
+    "start": "Start",
+    "stop": "Stop",
+    "status": "Check status of",
+    "apply": "Apply",
+}
+
+ACTION_PREFIXES: Final[tuple[str, ...]] = (
+    "search_",
+    "get_",
+    "add_",
+    "set_",
+    "del_",
+    "delete_",
+    "toggle_",
+    "reconfigure_",
+    "restart_",
+    "start_",
+    "stop_",
+    "status_",
+    "apply_",
+)
+
+GENERIC_ACTIONS: Final[frozenset[str]] = frozenset(
+    {"search", "get", "add", "set", "del", "delete", "toggle", "reconfigure", ""}
+)
 
 
-def _build_dynamic_map():
+def _build_dynamic_map() -> dict[str, tuple[str, str, str, str, str, str]]:
+    ctx = globals().get("__context__")
+    if isinstance(ctx, dict) and _CONTEXT_CACHE_KEY in ctx:
+        cached = ctx[_CONTEXT_CACHE_KEY]
+        if isinstance(cached, dict):
+            return cached
+
     global _DYNAMIC_MAP_CACHE
-    if _DYNAMIC_MAP_CACHE is not None:
-        return _DYNAMIC_MAP_CACHE
-    mapping = {}
-    try:
-        spec_data = load_spec() or {}
-        modules_dict = spec_data.get("modules") or {}
-        for mod_name, controllers in modules_dict.items():
-            if not isinstance(controllers, dict):
-                continue
-            mod_snake = _camel_to_snake(mod_name)
-            for ctrl_name, actions in controllers.items():
-                if not isinstance(actions, list):
+    with _CACHE_LOCK:
+        if isinstance(ctx, dict) and _CONTEXT_CACHE_KEY in ctx:
+            return ctx[_CONTEXT_CACHE_KEY]
+
+        if _DYNAMIC_MAP_CACHE is not None:
+            return _DYNAMIC_MAP_CACHE
+
+        mapping: dict[str, tuple[str, str, str, str, str, str]] = {}
+        try:
+            spec_data = load_spec() or {}
+            modules_dict = spec_data.get("modules") or {}
+            for mod_name, controllers in modules_dict.items():
+                if not isinstance(controllers, dict):
+                    continue
+                mod_snake = _camel_to_snake(mod_name)
+                for ctrl_name, actions in controllers.items():
                     if isinstance(actions, dict):
-                        actions = list(actions.keys())
+                        action_list = list(actions.keys())
+                    elif isinstance(actions, (list, tuple)):
+                        action_list = list(actions)
                     else:
                         continue
-                ctrl_snake = _camel_to_snake(ctrl_name)
-                for action in actions:
-                    action_snake = _camel_to_snake(action)
-                    if not action_snake:
-                        continue
-                    func_name = f"{mod_snake}_{ctrl_snake}_{action_snake}"
-                    mapping[func_name] = (mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake)
-    except Exception as exc:
-        log.debug("Failed to build dynamic map: %s", exc)
-    _DYNAMIC_MAP_CACHE = mapping
-    return mapping
+                    ctrl_snake = _camel_to_snake(ctrl_name)
+                    for action in action_list:
+                        action_snake = _camel_to_snake(action)
+                        if not action_snake:
+                            continue
+                        func_name = f"{mod_snake}_{ctrl_snake}_{action_snake}"
+                        mapping[func_name] = (
+                            mod_name,
+                            ctrl_name,
+                            action,
+                            mod_snake,
+                            ctrl_snake,
+                            action_snake,
+                        )
+        except Exception as exc:
+            log.debug("Failed to build dynamic map: %s", exc)
+
+        if isinstance(ctx, dict):
+            ctx[_CONTEXT_CACHE_KEY] = mapping
+        _DYNAMIC_MAP_CACHE = mapping
+        return mapping
 
 
-def _make_dynamic_wrapper(mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake, func_name):
-    def wrapper(data=None, uuid=None, search_phrase="", row_count=-1, **kwargs):
+def _make_dynamic_wrapper(
+    mod_name: str,
+    ctrl_name: str,
+    action: str,
+    mod_snake: str,
+    ctrl_snake: str,
+    action_snake: str,
+    func_name: str,
+):
+    def wrapper(
+        data: dict[str, Any] | None = None,
+        uuid: str | None = None,
+        search_phrase: str = "",
+        row_count: int = -1,
+        **kwargs: Any,
+    ) -> Any:
         kwargs = _strip_pub_kwargs(kwargs)
         if action.lower().startswith("search"):
             return call(
@@ -339,48 +459,20 @@ def _make_dynamic_wrapper(mod_name, ctrl_name, action, mod_snake, ctrl_snake, ac
             return call(mod_name, ctrl_name, action, uuid=uuid, data=data, method="POST")
         return call(mod_name, ctrl_name, action, uuid=uuid, data={}, method="POST")
 
-    verb_map = {
-        "search": "List and search",
-        "get": "Fetch",
-        "add": "Create",
-        "set": "Update",
-        "del": "Delete",
-        "delete": "Delete",
-        "toggle": "Toggle enable/disable for",
-        "reconfigure": "Apply and reload (reconfigure)",
-        "restart": "Restart",
-        "start": "Start",
-        "stop": "Stop",
-        "status": "Check status of",
-        "apply": "Apply",
-    }
     verb = "Execute"
     al = action.lower()
-    for k, v in verb_map.items():
+    for k, v in VERB_MAP.items():
         if al.startswith(k):
             verb = v
             break
 
     clean = action_snake
-    for prefix in [
-        "search_",
-        "get_",
-        "add_",
-        "set_",
-        "del_",
-        "delete_",
-        "toggle_",
-        "reconfigure_",
-        "restart_",
-        "start_",
-        "stop_",
-        "status_",
-        "apply_",
-    ]:
+    for prefix in ACTION_PREFIXES:
         if clean.startswith(prefix):
             clean = clean[len(prefix) :]
             break
-    if clean in ["search", "get", "add", "set", "del", "delete", "toggle", "reconfigure", ""]:
+
+    if clean in GENERIC_ACTIONS:
         type_human = f"{ctrl_snake} {mod_snake}".replace("_", " ").strip()
         if not type_human:
             type_human = ctrl_snake.replace("_", " ") or mod_snake.replace("_", " ")
@@ -388,6 +480,7 @@ def _make_dynamic_wrapper(mod_name, ctrl_name, action, mod_snake, ctrl_snake, ac
         type_human = clean.replace("_", " ").strip() or ctrl_snake.replace("_", " ")
     if not type_human:
         type_human = f"{mod_snake} {ctrl_snake}"
+
     wrapper.__name__ = func_name
     wrapper.__doc__ = f"""{verb} {type_human} in {mod_snake} {ctrl_snake}.
 Auto-generated from upstream OPNsense spec.
@@ -397,54 +490,48 @@ Docs: https://docs.opnsense.org/development/api/core/{mod_name}.html"""
     return wrapper
 
 
-def __getattr__(name):
+def __getattr__(name: str):  # type: ignore[no-untyped-def]
     mapping = _build_dynamic_map()
     if name in mapping:
         mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake = mapping[name]
-        wrapper = _make_dynamic_wrapper(mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake, name)
+        wrapper = _make_dynamic_wrapper(
+            mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake, name
+        )
         globals()[name] = wrapper
         return wrapper
     raise AttributeError(f"module 'opnsense' has no attribute {name!r}")
 
 
-def __dir__():
+def __dir__() -> list[str]:
     base = list(globals().keys())
     try:
         base.extend(_build_dynamic_map().keys())
-    except Exception:
+    except Exception:  # pragma: no cover
         pass
     return sorted(set(base))
 
 
-def doctor() -> dict:
+def doctor() -> dict[str, Any]:
     """
     Test OPNsense API connectivity, spec version, and credentials.
 
     CLI Example:
         salt opnsense-router opnsense.doctor
     """
-    res = {
+    res: dict[str, Any] = {
         "spec_version": "25.7",
         "loaded_modules_count": len(list_modules()),
-        "proxy_mode": salt.utils.platform.is_proxy(),
         "status": "UNKNOWN",
         "details": {},
     }
-    spec = load_spec()
-    meta = spec.get("meta", {})
+    spec_data = load_spec()
+    meta = spec_data.get("meta", {})
     if meta.get("core_ref"):
         res["spec_version"] = meta["core_ref"]
 
     try:
-        if (
-            salt.utils.platform.is_proxy()
-            and "__proxy__" in globals()
-            and "opnsense.call" in __proxy__
-        ):
-            firmware_res = __proxy__["opnsense.call"]("core", "firmware", "status")
-        else:
-            client = _get_client()
-            firmware_res = client.get("core", "firmware", "status")
+        client = _get_client()
+        firmware_res = client.get("core", "firmware", "status")
         res["status"] = "OK"
         res["firmware_status"] = firmware_res
     except Exception as exc:

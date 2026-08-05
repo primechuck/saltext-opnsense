@@ -1,103 +1,100 @@
 # saltext-opnsense
 
-SaltStack extension for managing OPNsense firewalls via the REST API.
+SaltStack extension for managing OPNsense firewalls via the REST API – **3008+ Salt Resources** fleet-ready.
 
-Manage OPNsense services (Unbound DNS, Kea DHCP, BIND, ACME certs, firewall aliases, interfaces) declaratively with Salt states or programmatically via execution modules. API bindings are generated directly from upstream OPNsense schemas.
+Manage OPNsense services (Unbound DNS, Kea DHCP, BIND, ACME certs, firewall aliases) declaratively with Salt states or programmatically via execution modules. API bindings generated from upstream OPNsense schemas (75 modules, 1,736 endpoints). Resource-based targeting replaces legacy proxy minion.
 
-> **Target Release**: Built for **OPNsense 25.7.11** (75 modules, 1,736 API endpoints – 76 on master).
-> **Core Design Goal**: Maintainer laziness. Never hand-code API wrappers. When OPNsense ships a new release, all 75+ modules and 1,700+ endpoints are regenerated directly from upstream schemas via `make bump CORE=25.7.11`.
-
+> **Breaking 1.0.0**: Proxy minion removed. Requires `salt>=3008`. Use Resources `T@opnsense`. See `docs/RESOURCES.md`.
+> **Target Release**: Built for **OPNsense 25.7.11** (75 modules, 1,736 API endpoints).
+> **Core Design Goal**: Maintainer laziness. Never hand-code API wrappers. `make bump CORE=25.7.11` regenerates all.
 
 ## Features
 
-- **Execution Modules**: Direct API calls to 75 modules (25.7.11) / 1736 endpoints, human-friendly listers (`list_aliases`, `resolve_parent`).
-- **State Modules**: Generic `item_present/absent` for all modules + convenience wrappers `alias_present`, `record_present`, `aliases_managed`, `dns.managed` – idempotent second-run 0 changes via diff engine.
-- **Idempotency Diff Engine** (`utils/diff.py`): Normalizes bool `"1"` ↔ True, UUID ↔ FQDN, CSV ↔ list, trailing dot, numbers – fixes Salt flapping on non-idempotent OPNsense API.
-- **Proxy Minion Support**: Agentless management, Vault `__slot__` for secrets, grains for version targeting.
-- **Auto-Generated Spec**: 75 modules (25.7.11) from upstream `opnsense/core` + `plugins` via `make bump CORE=25.7.11`, no hand-coded wrappers.
-- **Diagnostics (`opnsense.doctor`)**: Quick CLI check for credentials, API connectivity, and firmware status.
-- **Documentation**: `docs/CONVENIENCE.md`, `ARCHITECTURE.md`, `MAINTENANCE.md`, `USAGE.md`.
+- **Execution Modules**: 75 modules / 1736 endpoints, `opnsense.search/call/get/add/set/delete`, human-friendly listers (`list_aliases`, `resolve_alias`), dynamic wrappers via `__getattr__`.
+- **State Modules**: Generic `item_present/absent` for all modules + convenience `alias_present`, `record_present`, `aliases_managed`, `dns.managed` – idempotent second-run 0 changes via diff engine (bool `1`↔True, UUID↔FQDN, CSV↔list).
+- **Idempotency Diff Engine** (`utils/diff.py`): Normalizes flapping API quirks, uses `Final/frozenset`, split helpers.
+- **Salt Resources (3008+)**: Fleet support – one managing minion manages dozens FWs. 2 SRN composition `opnsense:fw-01` (API) + optional `ssh:fw-01` (built-in `ssh` resource with thin requiring `python311` on OPNsense). Target `T@opnsense`, `G@opnsense_version`, `T@opnsense:fw-01 or T@ssh:fw-01`.
+- **Diagnostics (`opnsense.doctor`)**: Connectivity, spec version, firmware status. Client has `close()` + context manager, `Final` constants, substring sensitive masking.
+- **Packaging**: PEP 420 implicit namespace, PEP 561 `py.typed` marker, `setuptools_scm` no-local-version, `optional-dependencies:dev` + `dependency-groups`, `MANIFEST.in` includes `py.typed`, Ruff builtins include `__resource__`.
+- **Documentation**: `docs/RESOURCES.md` (fleet tutorial), `QUICKSTART.md`, `ARCHITECTURE.md`, `MAINTENANCE.md`.
 
-## Quick Start — Novice 15 min
+## Quick Start – Resources (Recommended)
 
-See **[docs/QUICKSTART.md](docs/QUICKSTART.md)** for step-by-step novice path (no Vault, no Jinja).
-
-Summary:
+See **[docs/RESOURCES.md](docs/RESOURCES.md)** for 10-min masterless walk-through and 2 SRN composition.
 
 ### 1. Installation
-
-Install on the Salt Master and Proxy Minion:
 
 ```bash
 salt-pip install saltext-opnsense
 salt '*' saltutil.sync_all
 ```
 
-Or file-based (no pip):
+File-based (no pip):
 
 ```bash
 python3 tools/sync_extmods.py --copy
 salt '*' saltutil.sync_all
 ```
 
-### 2. Configuration (minimal flat file)
+### 2. Configuration – Fleet via Pillar
 
-`/etc/salt/proxy` on master:
-
-```yaml
-proxytype: opnsense
-host: opnsense.example.com
-proto: https
-api_key: "your_api_key"
-api_secret: "your_api_secret"
-```
-
-See [pillar.example](pillar.example) and `docs/tutorials/pillars/file-based-proxy.yaml`.
-
-### 3. Diagnostics
-
-```bash
-salt opnsense-router opnsense.doctor
-# should be OK, spec_version 25.7.11
-```
-
-## Usage
-
-### Execution Module
-
-```bash
-# Search Unbound DNS host aliases
-salt opnsense-router opnsense.search unbound settings host_alias
-
-# Call endpoint directly
-salt opnsense-router opnsense_unbound.search_host_alias
-```
-
-### State Module – convenience wrappers (human FQDN, idempotent)
+`/srv/pillar/resources.sls`:
 
 ```yaml
-# Single alias – human parent auto-resolved to UUID, idempotent diff engine
-www:
-  opnsense_unbound.alias_present:
-    - parent: cluster.example.com
-    - domain: example.com
+resources:
+  opnsense:
+    hosts:
+      fw-01:
+        host: fw-01.example.com
+        api_key: "your_api_key"
+        api_secret: "your_api_secret"
+        verify_ssl: true
+      fw-02:
+        host: fw-02.example.com
+        api_key: "..."
+        api_secret: "..."
+```
 
-# Batch – one state, one reconfigure, pillar-driven
-dns_batch:
-  opnsense_unbound.aliases_managed:
-    - parent: cluster.example.com
-    - aliases:
-        example.com: [www, git, auth]
-    - purge:
-        example.com: [old-git]
+Optional SSH side (2 SRN):
 
-# Fully pillar-driven – zero Jinja
-dns:
-  opnsense_dns.managed:
-    - name: dns
-    - parent: cluster.example.com
+```yaml
+resources:
+  ssh:
+    hosts:
+      fw-01:
+        host: fw-01.example.com
+        user: root
+        priv: /etc/salt/keys/fw-01
+        thin_dir: /tmp/.salt-thin
+```
 
-# Generic fallback for any of 75+ modules (TEST-NET RFC5737)
+### 3. Diagnostics & Targeting
+
+```bash
+salt-call --local saltutil.refresh_pillar
+salt-call -r --tgt 'T@opnsense' --tgt-type compound test.ping
+salt -C 'T@opnsense' opnsense.search unbound settings host_alias
+salt -C 'T@opnsense:fw-01 or T@ssh:fw-01' state.apply fw.base
+salt-run resource.list_grains
+```
+
+## Usage – Execution & States
+
+```bash
+# API search
+salt -C 'T@opnsense' opnsense.search firewall alias item
+
+# Dynamic wrapper (generated)
+salt -C 'T@opnsense:fw-01' opnsense_unbound_settings_search_host_alias search_phrase=www
+
+# SSH side (if configured)
+salt -C 'T@ssh' cmd.run 'opnsense-version'
+```
+
+States:
+
+```yaml
+# Generic – any of 75 modules
 testnet_alias:
   opnsense.item_present:
     - module: firewall
@@ -105,26 +102,48 @@ testnet_alias:
     - type: item
     - match: {name: TESTNET}
     - data: {name: TESTNET, type: network, content: "192.0.2.0/24"}
+
+# Convenience – human FQDN auto-resolved to UUID
+www:
+  opnsense_unbound.alias_present:
+    - parent: cluster.example.com
+    - domain: example.com
+
+# Pillar-driven zero Jinja – one reconfigure
+dns:
+  opnsense_dns.managed:
+    - name: dns
+    - parent: cluster.example.com
 ```
+
+For 2 SRN mixed example see `docs/RESOURCES.md`.
 
 ## Maintenance & Upgrades
 
-API spec bindings are generated from upstream `opnsense/core` and `opnsense/plugins`.
-
-When OPNsense ships a new release (e.g. `26.1`), regenerate bindings with:
+API spec bindings generated from upstream `opnsense/core` + `plugins`:
 
 ```bash
 make bump CORE=26.1
+# regenerates controllers.json/models.json, verifies, runs tests
 ```
 
-For developer documentation and full maintenance details, see [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
+See `docs/MAINTENANCE.md`.
 
 ## Testing
 
 ```bash
-# Run unit tests
 PYTHONPATH=src pytest tests/unit -v
-
-# Verify module imports
 PYTHONPATH=src python3 tools/verify_import.py
 ```
+
+Unit tests cover client retry/masking, diff engine bool/UUID/CSV, resource discovery/init/grains/ping/close, auto-resolve host/subnet/account.
+
+## Packaging Polish – Pythonic & Salty
+
+- `src/saltext/opnsense/py.typed` PEP 561, `.gitignore` untracks `_version.py`, `optional-dependencies:dev` + `dependency-groups`, `readme`/`license` as file objects, `Changelog` URL, `tool.ruff.builtins` includes `__resource__`, `nox` python 3.10-3.14.
+- Client `close()` + `__enter__/__exit__`, `Final/frozenset` constants, typing `TypedDict`, specific exceptions, `encoding=utf-8`, no `Path.cwd()` fallback, no `globals()` mutation in connection module, `lru_cache` for spec, thread-safe `_DYNAMIC_MAP_CACHE` via `__context__` + `Lock`.
+- States `__virtual__` returns `True`, `__context__` caching not globals, no import-time wrapper injection, `normalize_enabled` unified, `bind.domain_absent` bug fixed (preserves actual type), `strip_salt_internal_kwargs` everywhere, reconfigure verification unified.
+
+## License
+
+MIT

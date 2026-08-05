@@ -7,7 +7,13 @@ from saltext.opnsense.utils.common import (
     is_uuid as _is_uuid,
 )
 from saltext.opnsense.utils.common import (
+    normalize_enabled as _normalize_enabled,
+)
+from saltext.opnsense.utils.common import (
     parse_reconfigure_path as _parse_reconfigure,
+)
+from saltext.opnsense.utils.common import (
+    strip_salt_internal_kwargs as _strip_salt_internal_kwargs,
 )
 from saltext.opnsense.utils.diff import diff_models
 
@@ -17,9 +23,33 @@ __virtualname__ = "opnsense_unbound"
 
 
 def __virtual__():
-    if "opnsense.search" in __salt__ or "opnsense.call" in __salt__:
-        return __virtualname__
+    """
+    Only load if opnsense execution module is available.
+    """
+    try:
+        salt_dunder = __salt__
+    except NameError:
+        return True
+    if "opnsense.search" in salt_dunder or "opnsense.call" in salt_dunder:
+        return True
     return (False, "opnsense execution module not loaded")
+
+
+def _verify_reconfigure_call(module: str, controller: str, action: str = "reconfigure"):
+    try:
+        res = __salt__["opnsense.reconfigure"](module, controller, action)
+        if isinstance(res, dict):
+            status = str(res.get("status", "")).lower()
+            result = str(res.get("result", "")).lower()
+            if status in ("failed", "error") or result in ("failed", "error"):
+                msg = res.get("message") or res.get("error") or res.get("validations") or res
+                return False, str(msg)
+        elif isinstance(res, str):
+            if res.lower() in ("failed", "error"):
+                return False, res
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
 
 
 def _get_reconfigure(reconfigure):
@@ -88,7 +118,7 @@ def _find_alias(hostname, domain):
     return None
 
 
-def alias_present(name, parent, domain=None, description=None, enabled=True, reconfigure=True):
+def alias_present(name, parent, domain=None, description=None, enabled=True, reconfigure=True, **kwargs):
     """
     Ensure a single unbound host alias exists.
 
@@ -125,6 +155,8 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
     sys.doc:
         salt opnsense-router sys.doc opnsense_unbound.alias_present
     """
+    if kwargs:
+        _strip_salt_internal_kwargs(kwargs)
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     hostname = name.strip().strip(".")
@@ -151,11 +183,7 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
     existing = _find_alias(hostname, domain)
 
     desc = description or f"managed by salt - {hostname}.{domain}"
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "True", "yes", "enabled") else "0"
-    if isinstance(enabled, int):
-        enabled_str = "1" if enabled else "0"
+    enabled_str = _normalize_enabled(enabled)
 
     desired_data = {
         "enabled": enabled_str,
@@ -181,13 +209,11 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
             if rc:
                 pr = _parse_reconfigure(rc)
                 if pr:
-                    try:
-                        __salt__["opnsense.reconfigure"](
-                            pr["module"], pr["controller"], pr["action"]
-                        )
+                    ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                    if ok:
                         ret["comment"] += f" and reconfigured {rc}"
-                    except Exception as e:
-                        ret["comment"] += f" but reconfigure {rc} failed: {e}"
+                    else:
+                        ret["comment"] += f" but reconfigure {rc} failed: {err}"
                         ret["result"] = False
             return ret
         except Exception as exc:
@@ -217,11 +243,11 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure {rc} failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:
@@ -229,7 +255,7 @@ def alias_present(name, parent, domain=None, description=None, enabled=True, rec
         return ret
 
 
-def alias_absent(name, domain=None, reconfigure=True):
+def alias_absent(name, domain=None, reconfigure=True, **kwargs):
     """
     Ensure an unbound host alias is absent.
 
@@ -253,6 +279,8 @@ def alias_absent(name, domain=None, reconfigure=True):
     sys.doc:
         salt opnsense-router sys.doc opnsense_unbound.alias_absent
     """
+    if kwargs:
+        _strip_salt_internal_kwargs(kwargs)
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
     hostname = name.strip().strip(".")
@@ -291,11 +319,11 @@ def alias_absent(name, domain=None, reconfigure=True):
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] += f" and reconfigured {rc}"
-                except Exception as e:
-                    ret["comment"] += f" but reconfigure failed: {e}"
+                else:
+                    ret["comment"] += f" but reconfigure {rc} failed: {err}"
                     ret["result"] = False
         return ret
     except Exception as exc:
@@ -304,7 +332,7 @@ def alias_absent(name, domain=None, reconfigure=True):
 
 
 def aliases_managed(
-    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True
+    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
 ):
     """
     Batch manage many unbound aliases — one state, one reconfigure.
@@ -359,6 +387,8 @@ def aliases_managed(
         salt opnsense-router sys.doc opnsense_unbound.aliases_managed
         salt opnsense-router sys.doc opnsense_dns.managed
     """
+    if kwargs:
+        _strip_salt_internal_kwargs(kwargs)
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     descriptions = descriptions or {}
 
@@ -432,9 +462,7 @@ def aliases_managed(
             if hn:
                 purge_list.append((hn, dom))
 
-    enabled_str = "1" if enabled else "0"
-    if isinstance(enabled, str):
-        enabled_str = "1" if enabled in ("1", "true", "yes") else "0"
+    enabled_str = _normalize_enabled(enabled)
 
     if __opts__.get("test"):
         to_add = []
@@ -533,13 +561,13 @@ def aliases_managed(
         if rc:
             pr = _parse_reconfigure(rc)
             if pr:
-                try:
-                    __salt__["opnsense.reconfigure"](pr["module"], pr["controller"], pr["action"])
+                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
+                if ok:
                     ret["comment"] = (
                         f"managed {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged and reconfigured {rc}"
                     )
-                except Exception as exc:
-                    ret["comment"] = f"managed aliases but reconfigure {rc} failed: {exc}"
+                else:
+                    ret["comment"] = f"managed aliases but reconfigure {rc} failed: {err}"
                     ret["result"] = False
                     ret["changes"] = changes
                     return ret
