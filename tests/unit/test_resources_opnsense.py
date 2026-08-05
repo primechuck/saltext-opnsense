@@ -124,6 +124,7 @@ def test_connect_caches(resource_module, monkeypatch):
     mod = resource_module
     mod.__context__ = {}
     mod.init({})
+
     # Mock OPNsenseClientConfig.from_dict and OPNsenseClient to avoid real HTTP
     class FakeCfg:
         def __init__(self):
@@ -221,7 +222,17 @@ def test_execution_override_delegation(monkeypatch):
         called["call"] = (module, controller, action)
         return {"result": "ok"}
 
-    def fake_search(module, controller, type_name=None, search_phrase="", row_count=-1, current=1, sort=None, extra=None, **kw):
+    def fake_search(
+        module,
+        controller,
+        type_name=None,
+        search_phrase="",
+        row_count=-1,
+        current=1,
+        sort=None,
+        extra=None,
+        **kw,
+    ):
         called["search"] = True
         return {"total": 0, "rows": []}
 

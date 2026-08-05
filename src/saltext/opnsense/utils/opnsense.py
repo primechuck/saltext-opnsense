@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-import warnings
 from dataclasses import dataclass
 from http.client import RemoteDisconnected
 from typing import Any
@@ -20,7 +19,12 @@ except Exception:  # pragma: no cover
 
 from typing import Final
 
-_RETRYABLE: Final = (RemoteDisconnected, ProtocolError, _ChunkedError, requests.exceptions.ConnectionError)
+_RETRYABLE: Final = (
+    RemoteDisconnected,
+    ProtocolError,
+    _ChunkedError,
+    requests.exceptions.ConnectionError,
+)
 _MAX_RETRIES: Final = 3
 _BACKOFF_BASE: Final = 0.5
 
@@ -35,7 +39,9 @@ _SENSITIVE_KEYS: Final = frozenset(
         "private_key",
     }
 )
-_SENSITIVE_SUBSTRINGS: Final = frozenset({"secret", "passwd", "password", "token", "private_key", "psk"})
+_SENSITIVE_SUBSTRINGS: Final = frozenset(
+    {"secret", "passwd", "password", "token", "private_key", "psk"}
+)
 
 
 def _is_sensitive_key(k: str) -> bool:
@@ -674,7 +680,9 @@ class OPNsenseClient:
         return self.call(module, controller, action, method="POST", data={})
 
 
-def get_client_from_opts(opts: dict, pillar: dict | None = None, resource_id: str | None = None) -> OPNsenseClient:
+def get_client_from_opts(
+    opts: dict, pillar: dict | None = None, resource_id: str | None = None
+) -> OPNsenseClient:
     """
     Get OPNsenseClient from opts/pillar, supporting 3008+ Resources pillar tree.
 
@@ -708,9 +716,17 @@ def get_client_from_opts(opts: dict, pillar: dict | None = None, resource_id: st
             if isinstance(use_opts, dict):
                 tree = salt.utils.resources.pillar_resources_tree(use_opts).get("opnsense", {})
                 hosts = tree.get("hosts", {}) if isinstance(tree, dict) else {}
-                if isinstance(hosts, dict) and rid in hosts and isinstance(hosts[rid], dict) and hosts[rid].get("host"):
+                if (
+                    isinstance(hosts, dict)
+                    and rid in hosts
+                    and isinstance(hosts[rid], dict)
+                    and hosts[rid].get("host")
+                ):
                     cfg_dict = hosts[rid]
-                    log.debug("get_client_from_opts: using resources:opnsense:hosts:%s from pillar_resources_tree", rid)
+                    log.debug(
+                        "get_client_from_opts: using resources:opnsense:hosts:%s from pillar_resources_tree",
+                        rid,
+                    )
                     return OPNsenseClient(OPNsenseClientConfig.from_dict(cfg_dict))
         except Exception as exc:
             log.debug("get_client_from_opts resource path failed for %s: %s", rid, exc)
@@ -762,7 +778,11 @@ def get_client_from_opts(opts: dict, pillar: dict | None = None, resource_id: st
                     merged[field] = merged[a]
                     break
         if field not in merged or not merged[field]:
-            checked = ", ".join(sources_used) if sources_used else "none (no opnsense found in opts/pillar/resources)"
+            checked = (
+                ", ".join(sources_used)
+                if sources_used
+                else "none (no opnsense found in opts/pillar/resources)"
+            )
             example = (
                 "Example minimal config (direct mode):\n"
                 "  opnsense:\n"

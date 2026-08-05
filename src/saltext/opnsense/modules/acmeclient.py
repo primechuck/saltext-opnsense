@@ -1,7 +1,5 @@
 import logging
 
-from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_salt_internal_kwargs
-
 log = logging.getLogger(__name__)
 
 __virtualname__ = "opnsense_acmeclient"
@@ -15,10 +13,13 @@ def __virtual__():
         salt_dunder = __salt__
     except NameError:
         return True
-    if "opnsense.search" in salt_dunder or "opnsense.call" in salt_dunder or "opnsense_unbound.list_aliases" in salt_dunder:
+    if (
+        "opnsense.search" in salt_dunder
+        or "opnsense.call" in salt_dunder
+        or "opnsense_unbound.list_aliases" in salt_dunder
+    ):
         return True
     return (False, "opnsense execution module not loaded")
-
 
 
 def _search(controller, type_name, search_phrase="", row_count=-1):

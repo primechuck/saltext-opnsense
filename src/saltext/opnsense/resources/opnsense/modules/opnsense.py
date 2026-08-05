@@ -25,9 +25,21 @@ def call(module, controller, action, uuid=None, data=None, method=None, **kwargs
     return __resource_funcs__["opnsense.call"](module, controller, action, uuid, data, method)  # type: ignore[name-defined]
 
 
-def search(module, controller, type_name=None, search_phrase="", row_count=-1, current=1, sort=None, extra=None, **kwargs):
+def search(
+    module,
+    controller,
+    type_name=None,
+    search_phrase="",
+    row_count=-1,
+    current=1,
+    sort=None,
+    extra=None,
+    **kwargs,
+):
     _strip(kwargs)
-    return __resource_funcs__["opnsense.search"](module, controller, type_name, search_phrase, row_count, current, sort, extra)  # type: ignore[name-defined]
+    return __resource_funcs__["opnsense.search"](
+        module, controller, type_name, search_phrase, row_count, current, sort, extra
+    )  # type: ignore[name-defined]
 
 
 def get(module, controller, type_name=None, uuid=None, **kwargs):
@@ -113,7 +125,13 @@ def list_api_actions(module, controller, **kwargs):
 def doctor(**kwargs):
     _strip(kwargs)
     try:
-        client_res = __resource_funcs__["opnsense.call"]("core", "firmware", "status", data={}, method="POST")  # type: ignore[name-defined]
+        client_res = __resource_funcs__["opnsense.call"](
+            "core", "firmware", "status", data={}, method="POST"
+        )  # type: ignore[name-defined]
         return {"status": "OK", "firmware_status": client_res, "resource_id": __resource__["id"]}  # type: ignore[name-defined]
     except Exception as exc:
-        return {"status": "ERROR", "error": str(exc), "resource_id": __resource__["id"] if "__resource__" in globals() else "unknown"}  # type: ignore[name-defined]
+        return {
+            "status": "ERROR",
+            "error": str(exc),
+            "resource_id": __resource__["id"] if "__resource__" in globals() else "unknown",
+        }  # type: ignore[name-defined]

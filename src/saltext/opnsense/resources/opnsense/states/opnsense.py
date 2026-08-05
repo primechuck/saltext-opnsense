@@ -36,7 +36,17 @@ try:
 except Exception:
     # Fallback – if salt.utils.functools not available (unit test without salt), define minimal stubs
     def item_present(*args, **kwargs):
-        return {"name": kwargs.get("name") or args[0] if args else "unknown", "result": False, "changes": {}, "comment": "fallback: salt not available"}
+        return {
+            "name": kwargs.get("name") or args[0] if args else "unknown",
+            "result": False,
+            "changes": {},
+            "comment": "fallback: salt not available",
+        }
 
     def item_absent(*args, **kwargs):
-        return {"name": kwargs.get("name") or args[0] if args else "unknown", "result": False, "changes": {}, "comment": "fallback: salt not available"}
+        return {
+            "name": kwargs.get("name") or args[0] if args else "unknown",
+            "result": False,
+            "changes": {},
+            "comment": "fallback: salt not available",
+        }

@@ -243,9 +243,7 @@ def load_spec() -> dict[str, Any]:
 
 def list_modules() -> list[str]:
     spec = load_spec()
-    return sorted(spec.get("modules", {}).keys()) or sorted(
-        set(CORE_MODULES + PLUGIN_MODULES)
-    )
+    return sorted(spec.get("modules", {}).keys()) or sorted(set(CORE_MODULES + PLUGIN_MODULES))
 
 
 def list_controllers(module: str) -> list[str]:

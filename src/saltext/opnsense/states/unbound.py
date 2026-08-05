@@ -118,7 +118,9 @@ def _find_alias(hostname, domain):
     return None
 
 
-def alias_present(name, parent, domain=None, description=None, enabled=True, reconfigure=True, **kwargs):
+def alias_present(
+    name, parent, domain=None, description=None, enabled=True, reconfigure=True, **kwargs
+):
     """
     Ensure a single unbound host alias exists.
 
@@ -332,7 +334,14 @@ def alias_absent(name, domain=None, reconfigure=True, **kwargs):
 
 
 def aliases_managed(
-    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
+    name,
+    parent,
+    aliases=None,
+    purge=None,
+    descriptions=None,
+    enabled=True,
+    reconfigure=True,
+    **kwargs,
 ):
     """
     Batch manage many unbound aliases — one state, one reconfigure.

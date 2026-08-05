@@ -282,7 +282,9 @@ def domain_absent(name, reconfigure=True):
     try:
         uuid = existing.get("uuid")
         # Fix bug: use actual _bind_type instead of always primary_domain
-        actual_type = existing.get("_bind_type") or existing.get("_bind_type_original") or "primary_domain"
+        actual_type = (
+            existing.get("_bind_type") or existing.get("_bind_type_original") or "primary_domain"
+        )
         # Normalize type - ensure it's one of known types, fallback to primary_domain if invalid
         if actual_type not in (
             "primary_domain",

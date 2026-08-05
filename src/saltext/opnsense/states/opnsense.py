@@ -21,8 +21,15 @@ except Exception:  # pragma: no cover - fallback when utils not available
     def _mask_sensitive_data(data):  # type: ignore
         # Minimal fallback: mask everything that looks sensitive, keep structure
         if isinstance(data, dict):
-            return {k: "***" if isinstance(k, str) and any(s in k.lower() for s in ("secret", "password", "token", "key", "psk")) else v for k, v in data.items()}
+            return {
+                k: "***"
+                if isinstance(k, str)
+                and any(s in k.lower() for s in ("secret", "password", "token", "key", "psk"))
+                else v
+                for k, v in data.items()
+            }
         return "***"
+
 
 __virtualname__ = "opnsense"
 

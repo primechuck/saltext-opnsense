@@ -207,9 +207,7 @@ def get_relation_fields_for_array(module: str, array: str) -> dict[str, Any]:
 def get_relation_targets(field_meta: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(field_meta, dict):
         return []
-    if "relation_targets" in field_meta and isinstance(
-        field_meta["relation_targets"], list
-    ):
+    if "relation_targets" in field_meta and isinstance(field_meta["relation_targets"], list):
         return field_meta["relation_targets"]
     if "relation" in field_meta:
         rel = field_meta["relation"]
@@ -279,9 +277,7 @@ def find_model_for_array(module: str, type_name: str) -> tuple[str, str, dict]:
     return m, a, f
 
 
-def find_model_containing_field(
-    module: str, field_name: str
-) -> list[tuple[str, str, dict]]:
+def find_model_containing_field(module: str, field_name: str) -> list[tuple[str, str, dict]]:
     spec = load_spec()
     mods = spec.get("models") or {}
     if module not in mods:

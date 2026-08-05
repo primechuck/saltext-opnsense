@@ -140,7 +140,9 @@ def main():
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w") as f:
-        f.write(f"# Full boring example pillar for ALL {len(mods)} OPNsense modules — auto-generated\n")
+        f.write(
+            f"# Full boring example pillar for ALL {len(mods)} OPNsense modules — auto-generated\n"
+        )
         f.write("# Uses example.com per RFC 2606\n")
         f.write(
             f"# Spec: {len(mods)} modules, {spec.get('meta', {}).get('total_controllers', 0)} controllers, {spec.get('meta', {}).get('total_actions', 0)} actions\n"

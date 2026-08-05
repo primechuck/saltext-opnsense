@@ -85,8 +85,14 @@ def _pillar_tree(opts: dict[str, Any]) -> dict[str, Any]:
             resources = pillar.get("resources", {}) or pillar.get("opnsense", {})
             # support both resources.opnsense and top-level opnsense for masterless
             if "opnsense" in resources and isinstance(resources["opnsense"], dict):
-                return resources["opnsense"] if "hosts" in resources["opnsense"] or "resource_ids" in resources["opnsense"] else resources
-            if isinstance(resources, dict) and ("hosts" in resources or "resource_ids" in resources):
+                return (
+                    resources["opnsense"]
+                    if "hosts" in resources["opnsense"] or "resource_ids" in resources["opnsense"]
+                    else resources
+                )
+            if isinstance(resources, dict) and (
+                "hosts" in resources or "resource_ids" in resources
+            ):
                 return resources
         # last resort: check __opts__ pillar key
         try:
@@ -162,7 +168,9 @@ def _connect(resource_id: str) -> Any:
             cfg_dict = None
 
     if not isinstance(cfg_dict, dict) or not cfg_dict:
-        raise Exception(f"OPNsense resource {resource_id} config not found in pillar resources:opnsense:hosts")
+        raise Exception(
+            f"OPNsense resource {resource_id} config not found in pillar resources:opnsense:hosts"
+        )
 
     try:
         cfg = OPNsenseClientConfig.from_dict(cfg_dict)
@@ -266,7 +274,11 @@ def grains():
     try:
         info = client.call("core", "firmware", "status", data={}, method="POST")
         if isinstance(info, dict):
-            ver = info.get("product_version") or info.get("product_version_string") or info.get("product_version_string", "unknown")
+            ver = (
+                info.get("product_version")
+                or info.get("product_version_string")
+                or info.get("product_version_string", "unknown")
+            )
             if ver:
                 out["opnsense_version"] = ver
     except Exception:
@@ -342,12 +354,28 @@ def ping():
 # Exposed execution functions – callable via __resource_funcs__["opnsense.call"]
 
 
-def call(module: str, controller: str, action: str, uuid: str | None = None, data: dict | None = None, method: str | None = None):
+def call(
+    module: str,
+    controller: str,
+    action: str,
+    uuid: str | None = None,
+    data: dict | None = None,
+    method: str | None = None,
+):
     client = _connect(__resource__["id"])  # type: ignore[name-defined]
     return client.call(module, controller, action, uuid=uuid, data=data, method=method)
 
 
-def search(module: str, controller: str, type_name: str | None = None, search_phrase: str = "", row_count: int = -1, current: int = 1, sort: dict | None = None, extra: dict | None = None):
+def search(
+    module: str,
+    controller: str,
+    type_name: str | None = None,
+    search_phrase: str = "",
+    row_count: int = -1,
+    current: int = 1,
+    sort: dict | None = None,
+    extra: dict | None = None,
+):
     client = _connect(__resource__["id"])  # type: ignore[name-defined]
     return client.search(
         module,
@@ -386,6 +414,8 @@ def toggle(module: str, controller: str, type_name: str, uuid: str, enabled: str
     return client.toggle(module, controller, type_name, uuid, enabled)
 
 
-def reconfigure(module: str, controller: str, action: str = "reconfigure", data: dict | None = None):
+def reconfigure(
+    module: str, controller: str, action: str = "reconfigure", data: dict | None = None
+):
     client = _connect(__resource__["id"])  # type: ignore[name-defined]
     return client.reconfigure(module, controller, action, data=data)

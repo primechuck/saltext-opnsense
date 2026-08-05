@@ -23,12 +23,8 @@ RECONFIGURE_DEFAULTS: Final[MappingProxyType[str, str]] = MappingProxyType(
     _RECONFIGURE_DEFAULTS_RAW
 )
 
-_ENABLED_TRUE: Final[frozenset[str]] = frozenset(
-    {"1", "true", "yes", "enabled", "on"}
-)
-_ENABLED_FALSE: Final[frozenset[str]] = frozenset(
-    {"0", "false", "no", "disabled", "off"}
-)
+_ENABLED_TRUE: Final[frozenset[str]] = frozenset({"1", "true", "yes", "enabled", "on"})
+_ENABLED_FALSE: Final[frozenset[str]] = frozenset({"0", "false", "no", "disabled", "off"})
 
 
 def camel_to_snake(name: str) -> str:

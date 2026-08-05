@@ -4,15 +4,12 @@ Centralized diff engine and value normalization for OPNsense state modules.
 
 from __future__ import annotations
 
-import operator
 from typing import Any, Final
 
 from saltext.opnsense.utils.common import is_uuid
 
 BOOL_TRUE: Final[frozenset[str]] = frozenset({"1", "true", "yes", "enabled", "on"})
-BOOL_FALSE: Final[frozenset[str]] = frozenset(
-    {"0", "false", "no", "disabled", "off", ""}
-)
+BOOL_FALSE: Final[frozenset[str]] = frozenset({"0", "false", "no", "disabled", "off", ""})
 
 RELATION_KEYS: Final[frozenset[str]] = frozenset(
     {
@@ -30,9 +27,7 @@ RELATION_KEYS: Final[frozenset[str]] = frozenset(
 )
 
 
-def _is_bool_context(
-    key: Any, val: Any, field_meta: dict[str, Any] | None = None
-) -> bool:
+def _is_bool_context(key: Any, val: Any, field_meta: dict[str, Any] | None = None) -> bool:
     if isinstance(val, bool):
         return True
     if isinstance(key, str):
@@ -148,8 +143,7 @@ def _normalize_relation(
     ph_str: str | None,
 ) -> str | None:
     is_rel = _is_relation_key(key, field_meta) or (
-        ph_str is not None
-        and (val_str == ph_str or is_uuid(val_str) or isinstance(val, dict))
+        ph_str is not None and (val_str == ph_str or is_uuid(val_str) or isinstance(val, dict))
     )
     if not is_rel:
         return None

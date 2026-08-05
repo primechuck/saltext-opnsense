@@ -78,10 +78,10 @@ def main():
         assert any(f in name for name in dynamic_exec), f"dynamic exec missing {f}"
         print(f"  OK dynamic exec includes {f}")
 
-    print(f"\nPASS: dynamic-only covers all {len(api_mods)} modules, no static wrapper bloat needed.")
     print(
-        "Human can read just 3 files: utils/opnsense.py, modules/opnsense.py, states/opnsense.py"
+        f"\nPASS: dynamic-only covers all {len(api_mods)} modules, no static wrapper bloat needed."
     )
+    print("Human can read just 3 files: utils/opnsense.py, modules/opnsense.py, states/opnsense.py")
 
 
 if __name__ == "__main__":

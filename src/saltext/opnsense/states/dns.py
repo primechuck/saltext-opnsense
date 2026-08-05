@@ -103,7 +103,14 @@ def _resolve_parent(parent):
 
 
 def managed(
-    name, parent=None, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
+    name,
+    parent=None,
+    aliases=None,
+    purge=None,
+    descriptions=None,
+    enabled=True,
+    reconfigure=True,
+    **kwargs,
 ):
     """
     Pillar-driven Unbound host alias management — no Jinja loops required.
@@ -374,7 +381,14 @@ def managed(
 
 
 def aliases_managed(
-    name, parent, aliases=None, purge=None, descriptions=None, enabled=True, reconfigure=True, **kwargs
+    name,
+    parent,
+    aliases=None,
+    purge=None,
+    descriptions=None,
+    enabled=True,
+    reconfigure=True,
+    **kwargs,
 ):
     """
     Alias to managed() for backward compat with opnsense_unbound.aliases_managed naming.

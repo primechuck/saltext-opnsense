@@ -39,7 +39,9 @@ def test_list_api_modules_returns_76_and_includes_free():
     from saltext.opnsense.utils.api_spec import list_modules
 
     mods = list_modules()
-    assert len(mods) >= 70, f"expected >=70 modules from spec (25.7.11 has 75, master 76), got {len(mods)}: {mods}"
+    assert len(mods) >= 70, (
+        f"expected >=70 modules from spec (25.7.11 has 75, master 76), got {len(mods)}: {mods}"
+    )
     free_must_exist = [
         "caddy",
         "haproxy",
@@ -94,7 +96,9 @@ def test_generic_modules_importable():
     virt = generic.__virtual__()
     assert virt is True or virt == "opnsense", f"expected True or 'opnsense', got {virt}"
     virt_state = generic_state.__virtual__()
-    assert virt_state is True or virt_state == "opnsense", f"expected True or 'opnsense', got {virt_state}"
+    assert virt_state is True or virt_state == "opnsense", (
+        f"expected True or 'opnsense', got {virt_state}"
+    )
 
 
 def test_free_modules_demo_state_exists():

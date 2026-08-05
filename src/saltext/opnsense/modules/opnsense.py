@@ -10,10 +10,12 @@ from saltext.opnsense.utils.common import camel_to_snake as _camel_to_snake
 from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_pub_kwargs
 
 try:
-    from saltext.opnsense.utils.api_spec import list_actions
-    from saltext.opnsense.utils.api_spec import list_controllers
-    from saltext.opnsense.utils.api_spec import list_modules
-    from saltext.opnsense.utils.api_spec import load_spec
+    from saltext.opnsense.utils.api_spec import (
+        list_actions,
+        list_controllers,
+        list_modules,
+        load_spec,
+    )
     from saltext.opnsense.utils.opnsense import OPNsenseClient, get_client_from_opts
 
     HAS_UTILS: Final[bool] = True
@@ -115,9 +117,7 @@ def get(
     return client.get(module, controller, type_name, uuid=uuid)
 
 
-def add(
-    module: str, controller: str, type_name: str, data: dict[str, Any], **kwargs: Any
-) -> Any:
+def add(module: str, controller: str, type_name: str, data: dict[str, Any], **kwargs: Any) -> Any:
     kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.add(module, controller, type_name, data)
@@ -136,9 +136,7 @@ def set_item(
     return client.set(module, controller, type_name, uuid, data)
 
 
-def delete(
-    module: str, controller: str, type_name: str, uuid: str, **kwargs: Any
-) -> Any:
+def delete(module: str, controller: str, type_name: str, uuid: str, **kwargs: Any) -> Any:
     kwargs = _strip_pub_kwargs(kwargs)
     client = _get_client()
     return client.delete(module, controller, type_name, uuid)
