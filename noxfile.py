@@ -1,9 +1,9 @@
 import nox
 
 
-@nox.session(python=["3.10", "3.11", "3.12"])
+@nox.session(python=["3.10", "3.11", "3.12", "3.13", "3.14"])
 def tests(session):
-    session.install(".[dev]" if False else ".")
+    session.install(".[dev]")
     session.install("pytest", "pytest-salt-factories", "requests", "salt>=3008")
     session.run("pytest", "tests/unit", "-v")
 

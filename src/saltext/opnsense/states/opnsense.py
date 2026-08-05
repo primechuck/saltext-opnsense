@@ -9,7 +9,27 @@ from saltext.opnsense.utils.common import (
 from saltext.opnsense.utils.common import (
     is_uuid as _is_uuid,
 )
+from saltext.opnsense.utils.common import (
+    normalize_enabled as _normalize_enabled,
+)
 from saltext.opnsense.utils.diff import diff_models
+
+try:
+    from saltext.opnsense.utils.opnsense import _mask_sensitive_data
+except Exception:  # pragma: no cover - fallback when utils not available
+
+    def _mask_sensitive_data(data):  # type: ignore
+        # Minimal fallback: mask everything that looks sensitive, keep structure
+        if isinstance(data, dict):
+            return {
+                k: "***"
+                if isinstance(k, str)
+                and any(s in k.lower() for s in ("secret", "password", "token", "key", "psk"))
+                else v
+                for k, v in data.items()
+            }
+        return "***"
+
 
 __virtualname__ = "opnsense"
 
@@ -210,21 +230,26 @@ def _do_search(module: str, controller: str, typ: str, search_phrase: str = ""):
         return []
 
 
-_MODELS_UTILS = None
-_MODELS_DATA = None
-
-
 def _load_models_utils():
-    global _MODELS_UTILS
-    if _MODELS_UTILS is not None:
-        return _MODELS_UTILS
+    try:
+        ctx = __context__
+    except NameError:
+        ctx = {}
+    key = "opnsense.models_utils"
+    if key in ctx:
+        return ctx[key]
     for cand in ("saltext.opnsense.utils.models",):
         try:
             import importlib
 
             m = importlib.import_module(cand)
             if hasattr(m, "get_relation_fields"):
-                _MODELS_UTILS = m
+                try:
+                    __context__.setdefault(key, m)
+                except NameError:
+                    ctx[key] = m
+                else:
+                    ctx[key] = m
                 return m
         except Exception:
             continue
@@ -232,29 +257,53 @@ def _load_models_utils():
         import importlib
 
         m = importlib.import_module("saltext.opnsense.utils.models")
-        _MODELS_UTILS = m
+        try:
+            __context__.setdefault(key, m)
+        except NameError:
+            ctx[key] = m
+        else:
+            ctx[key] = m
         return m
     except Exception as exc:
         log.debug("load models utils failed: %s", exc)
+    try:
+        __context__.setdefault(key, None)
+    except NameError:
+        ctx[key] = None
     return None
 
 
 def _load_models_data_dict():
-    global _MODELS_DATA
-    if _MODELS_DATA is not None:
-        return _MODELS_DATA
+    try:
+        ctx = __context__
+    except NameError:
+        ctx = {}
+    key = "opnsense.models_data"
+    if key in ctx:
+        cached = ctx[key]
+        if cached is not None:
+            return cached if isinstance(cached, dict) else {}
     try:
         mu = _load_models_utils()
         if mu and hasattr(mu, "load_spec"):
             spec = mu.load_spec()
             models = spec.get("models") or {}
             if models:
-                _MODELS_DATA = models
+                try:
+                    __context__.setdefault(key, models)
+                except NameError:
+                    ctx[key] = models
+                else:
+                    ctx[key] = models
                 return models
     except Exception as exc:
         log.debug("load models dict via utils failed: %s", exc)
-    _MODELS_DATA = {}
-    return {}
+    empty: dict = {}
+    try:
+        __context__.setdefault(key, empty)
+    except NameError:
+        ctx[key] = empty
+    return empty
 
 
 def _find_model_for_type(module: str, type_name: str):
@@ -801,25 +850,59 @@ def _auto_resolve_dict(
                     new_list.append(item)
             if changed:
                 flat_data[k] = new_list
-        elif isinstance(v, (str, dict)):
-            rv = _resolve_reference(k, v, parent_module, parent_controller, parent_type)
-            if rv != v:
+                # Avoid leaking values; log only field name and context
                 log.debug(
-                    "Auto-resolved field %s: %r -> %r in %s/%s/%s",
+                    "Auto-resolved list field %s in %s/%s/%s",
                     k,
-                    v,
-                    rv,
                     parent_module,
                     parent_controller,
                     parent_type,
+                )
+        elif isinstance(v, (str, dict)):
+            rv = _resolve_reference(k, v, parent_module, parent_controller, parent_type)
+            if rv != v:
+                try:
+                    # Mask sensitive values for logging
+                    masked_before = _mask_sensitive_data({k: v}).get(k, "***")
+                    masked_after = _mask_sensitive_data({k: rv}).get(k, "***")
+                except Exception:
+                    masked_before = "***"
+                    masked_after = "***"
+                log.debug(
+                    "Auto-resolved field %s in %s/%s/%s (masked %r -> %r)",
+                    k,
+                    parent_module,
+                    parent_controller,
+                    parent_type,
+                    masked_before,
+                    masked_after,
                 )
                 flat_data[k] = rv
     return flat_data
 
 
 def __virtual__():
-    if "opnsense.call" in __salt__ or "opnsense.search" in __salt__:
-        return __virtualname__
+    try:
+        salt_dunder = __salt__
+    except NameError:
+        salt_dunder = {}
+    # In test harnesses without Salt, allow True for importability
+    if not salt_dunder:
+        try:
+            _ensure_dynamic_wrappers()
+        except Exception as exc:
+            log.debug("Dynamic wrapper ensure failed in __virtual__ (no salt): %s", exc)
+        return True
+    if "opnsense.call" in salt_dunder or "opnsense.search" in salt_dunder:
+        try:
+            # Lazy injection of dynamic wrappers, cached via __context__
+            _ensure_dynamic_wrappers()
+        except NameError:
+            # _ensure_dynamic_wrappers not yet defined at import time in some test harnesses, ignore
+            pass
+        except Exception as exc:
+            log.debug("Dynamic wrapper ensure failed in __virtual__: %s", exc)
+        return True
     return (False, "opnsense execution module not loaded")
 
 
@@ -1042,8 +1125,8 @@ def _human_diff(type_name, match, diff, data, found=None, module=None, controlle
             if "enabled" in diff and len(diff) == 1:
                 old = diff["enabled"]["old"]
                 new = diff["enabled"]["new"]
-                s_old = "enabled" if str(old) in ("1", "true", "True") else "disabled"
-                s_new = "enabled" if str(new) in ("1", "true", "True") else "disabled"
+                s_old = "enabled" if _normalize_enabled(old) == "1" else "disabled"
+                s_new = "enabled" if _normalize_enabled(new) == "1" else "disabled"
                 return f"{alias_fqdn} {s_old} -> {s_new}"
 
         if type_name == "host_override":
@@ -2002,4 +2085,57 @@ Example:
         log.debug("Dynamic state wrapper injection failed: %s", exc)
 
 
-_inject_dynamic_state_wrappers()
+def _ensure_dynamic_wrappers():
+    """
+    Lazy wrapper for _inject_dynamic_state_wrappers to avoid import-time side effects.
+    Uses __context__ caching to inject only once per Salt run.
+    """
+    try:
+        ctx = __context__
+    except NameError:
+        ctx = {}
+    flag = "opnsense.dynamic_wrappers_injected"
+    if flag in ctx and ctx[flag]:
+        return True
+    try:
+        _inject_dynamic_state_wrappers()
+    except Exception as exc:
+        log.debug("ensure dynamic wrappers failed: %s", exc)
+        return False
+    try:
+        __context__.setdefault(flag, True)
+    except NameError:
+        ctx[flag] = True
+    else:
+        # Ensure fallback dict also has flag for test harnesses without __context__
+        if isinstance(ctx, dict):
+            ctx[flag] = True
+    return True
+
+
+# No import-time side effect: injection is lazy via _ensure_dynamic_wrappers()
+# called from __virtual__ and from item_present/item_absent entry points.
+# Guarded direct execution path for debugging only:
+if __name__ == "__main__":  # pragma: no cover
+    _inject_dynamic_state_wrappers()
+
+
+# PEP 562 lazy attribute access - ensures dynamic wrappers are available
+# on demand while avoiding heavy import-time side effects.
+def __getattr__(name: str):
+    if name.endswith("_present") or name.endswith("_absent"):
+        try:
+            _ensure_dynamic_wrappers()
+        except Exception as exc:
+            log.debug("__getattr__ ensure wrappers failed for %s: %s", name, exc)
+        if name in globals():
+            return globals()[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    try:
+        _ensure_dynamic_wrappers()
+    except Exception as exc:
+        log.debug("__dir__ ensure wrappers failed: %s", exc)
+    return sorted(globals().keys())

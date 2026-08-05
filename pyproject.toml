@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "saltext-opnsense"
 description = "Salt extension for managing OPNsense via its API - templated, 3008+ ready, with dynamic wrappers, file-based install, and Vault support"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 authors = [{name = "David Bierce", email = "david@bierce.org"}]
 maintainers = [{name = "David Bierce", email = "david@bierce.org"}]
 keywords = ["salt", "salt-extension", "saltext", "opnsense", "firewall", "api", "unbound", "bind", "kea", "acme"]
@@ -17,7 +17,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Topic :: System :: Networking :: Firewalls",
   "Topic :: System :: Systems Administration",
-  "Operating System :: POSIX :: Linux",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
@@ -41,6 +41,16 @@ Homepage = "https://github.com/primechuck/saltext-opnsense"
 Repository = "https://github.com/primechuck/saltext-opnsense"
 Issues = "https://github.com/primechuck/saltext-opnsense/issues"
 Documentation = "https://primechuck.github.io/saltext-opnsense/"
+Changelog = "https://github.com/primechuck/saltext-opnsense/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7",
+  "pytest-salt-factories",
+  "nox",
+  "ruff",
+  "towncrier",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -61,7 +71,7 @@ local_scheme = "no-local-version"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-builtins = ["__opts__", "__salt__", "__proxy__", "__context__", "__grains__", "__utils__", "__pillar__"]
+builtins = ["__opts__", "__salt__", "__context__", "__grains__", "__utils__", "__pillar__", "__resource__", "__resource_funcs__", "__minion__"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N"]
