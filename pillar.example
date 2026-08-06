@@ -31,6 +31,36 @@ opnsense:
   timeout: 30
 
   # ---------------------------------------------------------------------------
+  # P2 Slim Bloat - Allowlist Filtering (NEW)
+  # ---------------------------------------------------------------------------
+  # saltext-opnsense ships 75 modules + 1736 dynamic wrappers from controllers.json,
+  # but most fleets use only unbound+bind. Filter via allowlist to reduce loader
+  # memory/time.
+  #
+  # Supported sources (precedence):
+  #   1. Env var OPNSENSE_ALLOWED_MODULES=unbound,bind (comma-separated)
+  #   2. Env var file OPNSENSE_ALLOWED_MODULES_FILE=/etc/salt/opnsense/allowlist
+  #   3. Salt opts: opnsense_allowed_modules or opnsense:allowed_modules
+  #   4. Pillar: opnsense:allowed_modules (this file)
+  #
+  # Example: only load unbound and bind (fleet uses only those)
+  allowed_modules:
+    - unbound
+    - bind
+    # - firewall  # optionally add if you manage firewall aliases
+    # - kea       # for DHCP reservations
+    # - acmeclient
+
+  # Optional: configure sync_extmods.py allowlist for file-based extmods (gitfs)
+  # via env var in master config:
+  #   OPNSENSE_ALLOWED_MODULES=unbound,bind python tools/sync_extmods.py --dest /srv/salt/states --copy
+  # or CLI:
+  #   python tools/sync_extmods.py --allowlist unbound,bind --dest /srv/salt/states --copy
+  #
+  # This reduces _modules from 7 wrappers to 3 (opnsense+unbound+bind) and dynamic
+  # wrappers from 1736 to ~200 (only unbound+bind controllers), saving ~80% loader time.
+
+  # ---------------------------------------------------------------------------
   # 2. Pillar-Driven Unbound DNS Aliases (used by `opnsense_dns.managed`)
   # ---------------------------------------------------------------------------
   cluster_parent:
@@ -94,4 +124,35 @@ opnsense:
     certificates:
       - name: "*.example.com"
         description: "Wildcard SSL Certificate"
+
+# -----------------------------------------------------------------------------
+# 6. Salt Master Config Example for Allowlist (master.d/opnsense.conf)
+# -----------------------------------------------------------------------------
+# To set allowlist at master level (applies to all minions):
+#
+# opnsense:
+#   allowed_modules:
+#     - unbound
+#     - bind
+#
+# Or env var in master service:
+#   Environment=OPNSENSE_ALLOWED_MODULES=unbound,bind
+#   in /etc/systemd/system/salt-master.service.d/override.conf
+#
+# Then sync extmods with same allowlist:
+#   OPNSENSE_ALLOWED_MODULES=unbound,bind python tools/sync_extmods.py --dest /srv/salt/states --copy
+
+# -----------------------------------------------------------------------------
+# 7. Docker / GitFS Example
+# -----------------------------------------------------------------------------
+# For file-based install (no pip) with gitfs:
+#   python tools/sync_extmods.py --allowlist unbound,bind --dest /srv/salt/states --copy
+#   salt-run saltutil.sync_all
+#
+# Verification:
+#   salt minion opnsense.list_api_modules
+#   # with allowlist should return only ['bind', 'unbound'] not 75
+#
+#   salt minion opnsense.spec
+#   # check _filtered_module_count
 

@@ -1,4 +1,6 @@
 import logging
+import pathlib
+import os
 
 import salt.utils.platform
 
@@ -285,19 +287,105 @@ def _parse_reconfigure(path):
     return None, None, None
 
 
+
+def _get_allowed_modules() -> set[str] | None:
+    """
+    Resolve allowed modules from multiple sources (precedence order):
+    1. Env var OPNSENSE_ALLOWED_MODULES (comma-separated)
+    2. Env var file OPNSENSE_ALLOWED_MODULES_FILE
+    3. Salt opts: __opts__.get("opnsense_allowed_modules") or __opts__.get("opnsense", {}).get("allowed_modules")
+    4. Pillar: __pillar__.get("opnsense", {}).get("allowed_modules")
+
+    Returns None if no allowlist (no filtering), else set of lowercase names.
+    P2 slim: fleet uses only unbound+bind, but 75 modules loaded by default.
+    """
+    # 1. env var
+    raw = os.environ.get("OPNSENSE_ALLOWED_MODULES", "").strip()
+    file_path = os.environ.get("OPNSENSE_ALLOWED_MODULES_FILE", "").strip()
+    if not raw and file_path:
+        try:
+            p = pathlib.Path(file_path)
+            if p.exists():
+                raw = p.read_text(encoding="utf-8")
+        except Exception:
+            raw = ""
+
+    # 2. opts
+    if not raw:
+        try:
+            opts = globals().get("__opts__", {})
+            if isinstance(opts, dict):
+                # direct key
+                v = opts.get("opnsense_allowed_modules")
+                if v:
+                    if isinstance(v, (list, set, tuple)):
+                        raw = ",".join(str(x) for x in v)
+                    else:
+                        raw = str(v)
+                else:
+                    # nested opnsense:allowed_modules
+                    opnsense_cfg = opts.get("opnsense", {})
+                    if isinstance(opnsense_cfg, dict):
+                        v = opnsense_cfg.get("allowed_modules")
+                        if v:
+                            if isinstance(v, (list, set, tuple)):
+                                raw = ",".join(str(x) for x in v)
+                            else:
+                                raw = str(v)
+        except Exception:
+            pass
+
+    # 3. pillar
+    if not raw:
+        try:
+            pillar = globals().get("__pillar__", {})
+            if isinstance(pillar, dict):
+                opnsense_pillar = pillar.get("opnsense", {})
+                if isinstance(opnsense_pillar, dict):
+                    v = opnsense_pillar.get("allowed_modules")
+                    if v:
+                        if isinstance(v, (list, set, tuple)):
+                            raw = ",".join(str(x) for x in v)
+                        else:
+                            raw = str(v)
+        except Exception:
+            pass
+
+    if not raw:
+        return None
+
+    parts = []
+    for token in str(raw).replace("\n", ",").split(","):
+        token = token.strip().lower()
+        if token:
+            parts.append(token)
+
+    if not parts:
+        return None
+
+    return set(parts)
+
+
 _DYNAMIC_MAP_CACHE = None
+
 
 
 def _build_dynamic_map():
     global _DYNAMIC_MAP_CACHE
-    if _DYNAMIC_MAP_CACHE is not None:
+    # P2 slim: check allowlist each time? We cache raw but filter after
+    # If allowlist active, we should not return cached full map blindly - check env
+    allowed = _get_allowed_modules()
+    if _DYNAMIC_MAP_CACHE is not None and not allowed:
         return _DYNAMIC_MAP_CACHE
     mapping = {}
     try:
         spec_data = load_spec() or {}
         modules_dict = spec_data.get("modules") or {}
+        allowed = _get_allowed_modules()
         for mod_name, controllers in modules_dict.items():
             if not isinstance(controllers, dict):
+                continue
+            if allowed and mod_name.lower() not in allowed:
                 continue
             mod_snake = _camel_to_snake(mod_name)
             for ctrl_name, actions in controllers.items():
@@ -315,6 +403,8 @@ def _build_dynamic_map():
                     mapping[func_name] = (mod_name, ctrl_name, action, mod_snake, ctrl_snake, action_snake)
     except Exception as exc:
         log.debug("Failed to build dynamic map: %s", exc)
+    if _get_allowed_modules():
+        log.info("Dynamic map filtered to %d wrappers via allowlist %s (was %d modules raw)", len(mapping), sorted(_get_allowed_modules() or []), len((load_spec() or {}).get('modules', {})) if 'load_spec' in globals() else 0)
     _DYNAMIC_MAP_CACHE = mapping
     return mapping
 
