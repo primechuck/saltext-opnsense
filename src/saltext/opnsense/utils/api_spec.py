@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import pathlib
 from typing import Any
 
@@ -146,14 +147,82 @@ ACME_CONTROLLERS = {
 
 
 _HERE = pathlib.Path(__file__).parent
-# Primary source: controllers.json co-located with this file (declared as
-# package-data in pyproject.toml so it is always present after install).
 _CONTROLLERS_JSON = _HERE / "controllers.json"
 
 
+def _get_allowed_modules_from_env() -> set[str] | None:
+    """
+    Read allowlist from env var OPNSENSE_ALLOWED_MODULES.
+
+    P2 slim bloat: saltext-opnsense ships 75 modules + 1736 dynamic wrappers, but
+    only unbound+bind are used in this fleet. Allow filtering via env var to reduce
+    memory and Salt loader time.
+
+    Env var format: comma-separated, e.g. "unbound,bind,firewall"
+    Returns None if not set (no filtering), or set of lowercase module names.
+
+    Also respects OPNSENSE_ALLOWED_MODULES_FILE for file-based list (one per line).
+    """
+    raw = os.environ.get("OPNSENSE_ALLOWED_MODULES", "").strip()
+    if not raw:
+        # Optional file-based allowlist for containerized deployments
+        file_path = os.environ.get("OPNSENSE_ALLOWED_MODULES_FILE", "")
+        if file_path:
+            try:
+                p = pathlib.Path(file_path)
+                if p.exists():
+                    raw = p.read_text(encoding="utf-8")
+            except Exception as exc:
+                log.debug("Failed to read allowlist file %s: %s", file_path, exc)
+                raw = ""
+
+    if not raw:
+        return None
+
+    parts = []
+    for token in raw.replace("\n", ",").split(","):
+        token = token.strip().lower()
+        if token:
+            parts.append(token)
+
+    if not parts:
+        return None
+
+    allowed = set(parts)
+    log.info("OPNSENSE_ALLOWED_MODULES filtering to %s (from env)", sorted(allowed))
+    return allowed
+
+
+def _filter_spec_by_allowlist(spec: dict[str, Any], allowed: set[str] | None) -> dict[str, Any]:
+    if not allowed:
+        return spec
+
+    modules = spec.get("modules", {})
+    if not modules:
+        return spec
+
+    filtered_modules = {k: v for k, v in modules.items() if k.lower() in allowed}
+    # If allowlist contains modules not in spec, log warning but don't fail
+    missing = allowed - {k.lower() for k in modules.keys()}
+    if missing:
+        log.warning("Allowlist contains unknown modules not in spec: %s", sorted(missing))
+
+    # Always keep core fallback modules if they were requested? No, strict filter per P2.
+    spec_filtered = dict(spec)
+    spec_filtered["modules"] = filtered_modules
+    spec_filtered["_filtered_by_allowlist"] = sorted(allowed)
+    spec_filtered["_original_module_count"] = len(modules)
+    spec_filtered["_filtered_module_count"] = len(filtered_modules)
+    log.info(
+        "Filtered spec from %d to %d modules via allowlist %s",
+        len(modules),
+        len(filtered_modules),
+        sorted(allowed),
+    )
+    return spec_filtered
+
+
 def _load_via_filesystem() -> dict[str, Any] | None:
-    # Try the package JSON first (canonical single source of truth), then a
-    # few fallback locations for unusual in-tree or gitfs installations.
     candidates = [
         _CONTROLLERS_JSON,
         pathlib.Path.cwd() / "src" / "saltext" / "opnsense" / "utils" / "controllers.json",
@@ -189,45 +258,82 @@ def _load_via_filesystem() -> dict[str, Any] | None:
     return None
 
 
-def load_spec() -> dict[str, Any]:
+def load_spec(allowlist: list[str] | set[str] | None = None) -> dict[str, Any]:
+    """
+    Load OPNsense API spec, with optional allowlist filtering.
+
+    P2 slim: supports filtering via:
+    - explicit allowlist param (list/set of module names)
+    - env var OPNSENSE_ALLOWED_MODULES (comma-separated)
+    - env var OPNSENSE_ALLOWED_MODULES_FILE (file path, one per line)
+
+    Example:
+        load_spec(allowlist=["unbound", "bind"])
+        # or
+        OPNSENSE_ALLOWED_MODULES=unbound,bind python -m ...
+
+    Returns spec dict with 'modules' filtered if allowlist present.
+    """
     try:
         data = _load_via_filesystem()
         if data and data.get("modules"):
-            return data
+            spec = data
+        else:
+            raise ValueError("No filesystem spec")
     except Exception as exc:
-        log.debug("_load_via_filesystem failed: %s", exc)
+        log.debug("_load_via_filesystem failed: %s, falling back to curated", exc)
+        spec = {
+            "generated": False,
+            "modules": {
+                "unbound": UNBOUND_CONTROLLERS,
+                "bind": BIND_CONTROLLERS,
+                "firewall": FIREWALL_CONTROLLERS,
+                "interfaces": INTERFACES_CONTROLLERS,
+                "kea": KEA_CONTROLLERS,
+                "acmeclient": ACME_CONTROLLERS,
+            },
+            "core_modules": CORE_MODULES,
+            "plugin_modules": PLUGIN_MODULES,
+        }
 
-    log.debug("Falling back to curated 6-module spec")
-    return {
-        "generated": False,
-        "modules": {
-            "unbound": UNBOUND_CONTROLLERS,
-            "bind": BIND_CONTROLLERS,
-            "firewall": FIREWALL_CONTROLLERS,
-            "interfaces": INTERFACES_CONTROLLERS,
-            "kea": KEA_CONTROLLERS,
-            "acmeclient": ACME_CONTROLLERS,
-        },
-        "core_modules": CORE_MODULES,
-        "plugin_modules": PLUGIN_MODULES,
-    }
+    # Resolve allowlist: explicit param takes precedence over env
+    allowed: set[str] | None = None
+    if allowlist is not None:
+        allowed = {str(m).strip().lower() for m in allowlist if str(m).strip()}
+    else:
+        allowed = _get_allowed_modules_from_env()
+
+    if allowed:
+        spec = _filter_spec_by_allowlist(spec, allowed)
+
+    return spec
 
 
-def list_modules() -> list[str]:
-    spec = load_spec()
+def list_modules(allowlist: list[str] | set[str] | None = None) -> list[str]:
+    # allowlist param for direct call, else env var via load_spec
+    if allowlist is not None:
+        spec = load_spec(allowlist=allowlist)
+    else:
+        spec = load_spec()
     return sorted(spec.get("modules", {}).keys()) or sorted(set(CORE_MODULES + PLUGIN_MODULES))
 
 
-def list_controllers(module: str) -> list[str]:
-    spec = load_spec()
+def list_controllers(module: str, allowlist: list[str] | set[str] | None = None) -> list[str]:
+    if allowlist is not None:
+        spec = load_spec(allowlist=allowlist)
+    else:
+        spec = load_spec()
     mods = spec.get("modules", {})
     if module in mods:
         return sorted(mods[module].keys())
     return []
 
 
-def list_actions(module: str, controller: str) -> list[str]:
-    spec = load_spec()
+def list_actions(module: str, controller: str, allowlist: list[str] | set[str] | None = None) -> list[str]:
+    if allowlist is not None:
+        spec = load_spec(allowlist=allowlist)
+    else:
+        spec = load_spec()
     mods = spec.get("modules", {})
     if module in mods and controller in mods[module]:
         val = mods[module][controller]
