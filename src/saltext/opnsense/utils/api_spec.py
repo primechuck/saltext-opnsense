@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import json
 import logging
 import pathlib
-from typing import Any
+from functools import lru_cache
+from typing import Any, Final
 
 log = logging.getLogger(__name__)
 
 try:
     from saltext.opnsense.utils.common import camel_to_snake
-except Exception:
+except (ImportError, ModuleNotFoundError):
 
     def camel_to_snake(name: str) -> str:
         import re
@@ -19,7 +22,7 @@ except Exception:
         return re.sub(r"__+", "_", s1).strip("_")
 
 
-CORE_MODULES = [
+CORE_MODULES: Final[tuple[str, ...]] = (
     "auth",
     "captiveportal",
     "core",
@@ -45,9 +48,9 @@ CORE_MODULES = [
     "trust",
     "unbound",
     "wireguard",
-]
+)
 
-PLUGIN_MODULES = [
+PLUGIN_MODULES: Final[tuple[str, ...]] = (
     "acmeclient",
     "apcupsd",
     "bind",
@@ -67,10 +70,10 @@ PLUGIN_MODULES = [
     "telegraf",
     "wireguard",
     "zerotier",
-]
+)
 
-UNBOUND_CONTROLLERS = {
-    "settings": [
+UNBOUND_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "settings": (
         "searchHostOverride",
         "getHostOverride",
         "addHostOverride",
@@ -87,12 +90,12 @@ UNBOUND_CONTROLLERS = {
         "set",
         "search_host_override",
         "search_host_alias",
-    ],
-    "service": ["reconfigure", "restart", "status"],
+    ),
+    "service": ("reconfigure", "restart", "status"),
 }
 
-BIND_CONTROLLERS = {
-    "domain": [
+BIND_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "domain": (
         "searchPrimaryDomain",
         "getPrimaryDomain",
         "addPrimaryDomain",
@@ -101,13 +104,20 @@ BIND_CONTROLLERS = {
         "get",
         "set",
         "search_primary_domain",
-    ],
-    "record": ["searchRecord", "getRecord", "addRecord", "setRecord", "delRecord", "search_record"],
-    "service": ["reconfigure", "restart", "status"],
+    ),
+    "record": (
+        "searchRecord",
+        "getRecord",
+        "addRecord",
+        "setRecord",
+        "delRecord",
+        "search_record",
+    ),
+    "service": ("reconfigure", "restart", "status"),
 }
 
-FIREWALL_CONTROLLERS = {
-    "alias": [
+FIREWALL_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "alias": (
         "searchItem",
         "getItem",
         "addItem",
@@ -115,17 +125,38 @@ FIREWALL_CONTROLLERS = {
         "delItem",
         "toggleItem",
         "search_item",
-    ],
-    "filter": ["searchRule", "getRule", "addRule", "setRule", "delRule", "search_rule"],
+    ),
+    "filter": (
+        "searchRule",
+        "getRule",
+        "addRule",
+        "setRule",
+        "delRule",
+        "search_rule",
+    ),
 }
 
-INTERFACES_CONTROLLERS = {
-    "vlan": ["searchItem", "getItem", "addItem", "setItem", "delItem", "search_item"],
-    "vip": ["searchItem", "getItem", "addItem", "setItem", "delItem", "search_item"],
+INTERFACES_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "vlan": (
+        "searchItem",
+        "getItem",
+        "addItem",
+        "setItem",
+        "delItem",
+        "search_item",
+    ),
+    "vip": (
+        "searchItem",
+        "getItem",
+        "addItem",
+        "setItem",
+        "delItem",
+        "search_item",
+    ),
 }
 
-KEA_CONTROLLERS = {
-    "dhcpv4": [
+KEA_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "dhcpv4": (
         "searchSubnet",
         "getSubnet",
         "addSubnet",
@@ -134,67 +165,64 @@ KEA_CONTROLLERS = {
         "searchReservation",
         "search_subnet",
         "search_reservation",
-    ],
-    "service": ["reconfigure", "status"],
+    ),
+    "service": ("reconfigure", "status"),
 }
 
-ACME_CONTROLLERS = {
-    "accounts": ["search", "get", "add", "set", "del"],
-    "certificates": ["search", "get", "add", "set", "del"],
-    "validations": ["search", "get", "add", "set", "del"],
+ACME_CONTROLLERS: Final[dict[str, tuple[str, ...]]] = {
+    "accounts": ("search", "get", "add", "set", "del"),
+    "certificates": ("search", "get", "add", "set", "del"),
+    "validations": ("search", "get", "add", "set", "del"),
 }
 
 
-_HERE = pathlib.Path(__file__).parent
-# Primary source: controllers.json co-located with this file (declared as
-# package-data in pyproject.toml so it is always present after install).
-_CONTROLLERS_JSON = _HERE / "controllers.json"
+_HERE: Final[pathlib.Path] = pathlib.Path(__file__).parent
+_CONTROLLERS_JSON: Final[pathlib.Path] = _HERE / "controllers.json"
 
 
 def _load_via_filesystem() -> dict[str, Any] | None:
-    # Try the package JSON first (canonical single source of truth), then a
-    # few fallback locations for unusual in-tree or gitfs installations.
-    candidates = [
-        _CONTROLLERS_JSON,
-        pathlib.Path.cwd() / "src" / "saltext" / "opnsense" / "utils" / "controllers.json",
-    ]
-
     try:
         from importlib.resources import files as res_files
 
-        for pkg in ["saltext.opnsense.utils", "saltext.opnsense"]:
+        for pkg in ("saltext.opnsense.utils", "saltext.opnsense"):
             try:
                 pkg_files = res_files(pkg)
-                for name in ["controllers.json", "utils/controllers.json"]:
+                for name in ("controllers.json", "utils/controllers.json"):
                     candidate = pkg_files.joinpath(name)
                     if candidate.is_file():
-                        data = json.loads(candidate.read_text())
+                        text = candidate.read_text(encoding="utf-8")
+                        data = json.loads(text)
                         if data.get("modules"):
                             return data
-            except Exception:
+            except (FileNotFoundError, OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                log.debug("Failed to load %s/%s via resources: %s", pkg, name, exc)
                 continue
-    except Exception as exc:
-        log.debug("importlib.resources load failed: %s", exc)
+            except (ModuleNotFoundError, AttributeError, TypeError) as exc:
+                log.debug("importlib.resources failure for %s: %s", pkg, exc)
+                continue
+    except (ImportError, ModuleNotFoundError, AttributeError) as exc:
+        log.debug("importlib.resources not available: %s", exc)
 
-    for path in candidates:
-        try:
-            if path.exists():
-                data = json.loads(path.read_text())
-                if data.get("modules"):
-                    log.debug("Loaded spec from %s", path)
-                    return data
-        except Exception as exc:
-            log.debug("Failed to load %s: %s", path, exc)
-            continue
+    try:
+        if _CONTROLLERS_JSON.exists():
+            text = _CONTROLLERS_JSON.read_text(encoding="utf-8")
+            data = json.loads(text)
+            if data.get("modules"):
+                log.debug("Loaded spec from %s", _CONTROLLERS_JSON)
+                return data
+    except (FileNotFoundError, OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        log.debug("Failed to load %s: %s", _CONTROLLERS_JSON, exc)
+
     return None
 
 
+@lru_cache(maxsize=1)
 def load_spec() -> dict[str, Any]:
     try:
         data = _load_via_filesystem()
         if data and data.get("modules"):
             return data
-    except Exception as exc:
+    except (OSError, json.JSONDecodeError) as exc:
         log.debug("_load_via_filesystem failed: %s", exc)
 
     log.debug("Falling back to curated 6-module spec")
@@ -234,5 +262,7 @@ def list_actions(module: str, controller: str) -> list[str]:
         if isinstance(val, dict):
             return sorted(val.keys())
         if isinstance(val, list):
+            return sorted(val)
+        if isinstance(val, tuple):
             return sorted(val)
     return []

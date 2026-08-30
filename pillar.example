@@ -1,27 +1,66 @@
-# Example Salt Pillar configuration for saltext-opnsense
-# Place in /srv/pillar/opnsense.sls and target your Proxy Minion or Minions.
+# Example Salt Pillar configuration for saltext-opnsense 1.0+ (Salt Resources, 3008+)
+# Place in /srv/pillar/opnsense.sls and target your managing minion.
+#
+# BREAKING CHANGE 1.0.0: Proxy minion removed. Use Salt Resources (T@opnsense).
+# See docs/RESOURCES.md for full tutorial.
+#
+# This file shows 3 modes:
+# 1. API-only fleet via Resources (default, recommended)
+# 2. + SSH optional via built-in ssh resource (2 SRN composition)
+# 3. Direct single-host for masterless salt-call --local
 
 # -----------------------------------------------------------------------------
-# 1. Connection Configuration
+# 1. Resources Fleet – API-only (Default, Recommended)
 # -----------------------------------------------------------------------------
+# One managing minion manages N firewalls. Target via T@opnsense, G@...
+resources:
+  opnsense:
+    hosts:
+      fw-01:
+        host: fw-01.example.com
+        proto: https
+        api_key: "your_api_key_here"
+        api_secret: "your_api_secret_here"
+        verify_ssl: true
+        timeout: 30
+        # Optional Vault Slot Integration (requires Vault engine):
+        # api_key: __slot__:salt:vault.read(secret/opnsense/fw-01/api_key)
+        # api_secret: __slot__:salt:vault.read(secret/opnsense/fw-01/api_secret)
+      fw-02:
+        host: fw-02.example.com
+        proto: https
+        api_key: "your_api_key_here"
+        api_secret: "your_api_secret_here"
+        verify_ssl: true
+        timeout: 30
 
-# Option A: Proxy Minion Configuration (Recommended)
-# Target: opnsense-router (Proxy Minion ID)
-proxy:
-  proxytype: opnsense
-  host: opnsense.example.com
-  proto: https
-  api_key: "your_api_key_here"
-  api_secret: "your_api_secret_here"
-  verify_ssl: true
-  timeout: 30
+  # -------------------------------------------------------------------------
+  # 1b. Optional SSH side – 2 SRN composition (API + shell)
+  # -------------------------------------------------------------------------
+  # Same human ID fw-01 appears in both types. Requires python3 on OPNsense
+  # (pkg install python311) for thin bundle. Gives cmd.run, file.managed, etc.
+  # See docs/RESOURCES.md for target examples.
+  ssh:
+    hosts:
+      fw-01:
+        host: fw-01.example.com
+        user: root
+        priv: /etc/salt/keys/fw-01
+        port: 22
+        thin_dir: /tmp/.salt-thin
+        # sudo: false
+        # no_host_keys: false
+      fw-02:
+        host: fw-02.example.com
+        user: root
+        priv: /etc/salt/keys/fw-02
+        thin_dir: /tmp/.salt-thin
 
-  # Optional Vault Slot Integration (if Vault engine is enabled in Salt):
-  # api_key: __slot__:salt:vault.read(secret/opnsense/api_key)
-  # api_secret: __slot__:salt:vault.read(secret/opnsense/api_secret)
-
-# Option B: Direct Execution Configuration (Salt Master / Minion)
-# Can be placed in Minion config or Pillar under the 'opnsense' key
+# -----------------------------------------------------------------------------
+# 2. Direct Execution – single host (masterless or non-resources)
+# -----------------------------------------------------------------------------
+# For salt-call --local -r or simple setups without master registry
+# Can be placed in Minion config or Pillar under opnsense key
 opnsense:
   host: opnsense.example.com
   proto: https
@@ -30,9 +69,12 @@ opnsense:
   verify_ssl: true
   timeout: 30
 
-  # ---------------------------------------------------------------------------
-  # 2. Pillar-Driven Unbound DNS Aliases (used by `opnsense_dns.managed`)
-  # ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 3. Pillar-Driven Unbound DNS Aliases (used by opnsense_dns.managed)
+# -----------------------------------------------------------------------------
+# This section unchanged from 0.x – still works with Resources via
+# state.apply merged mode, one reconfigure per resource.
+opnsense_dns_config:
   cluster_parent:
     hostname: cluster
     domain: example.com
@@ -56,9 +98,9 @@ opnsense:
     www.example.com: "Primary Web Ingress"
     git.example.com: "Internal Forgejo Git"
 
-  # ---------------------------------------------------------------------------
-  # 3. Firewall Aliases & Rules
-  # ---------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # 4. Firewall Aliases & Rules
+  # -------------------------------------------------------------------------
   firewall:
     aliases:
       - name: k8s_nodes
@@ -70,9 +112,9 @@ opnsense:
         content: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         description: "Private RFC1918 Networks"
 
-  # ---------------------------------------------------------------------------
-  # 4. Kea DHCP Subnets & Reservations
-  # ---------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # 5. Kea DHCP Subnets & Reservations
+  # -------------------------------------------------------------------------
   kea:
     subnets:
       - subnet: "10.0.0.0/24"
@@ -83,9 +125,9 @@ opnsense:
         ip_address: "10.0.0.10"
         subnet: "10.0.0.0/24"
 
-  # ---------------------------------------------------------------------------
-  # 5. ACME Client SSL Certificates
-  # ---------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # 6. ACME Client SSL Certificates
+  # -------------------------------------------------------------------------
   acmeclient:
     accounts:
       - name: "letsencrypt-prod"
@@ -94,4 +136,3 @@ opnsense:
     certificates:
       - name: "*.example.com"
         description: "Wildcard SSL Certificate"
-

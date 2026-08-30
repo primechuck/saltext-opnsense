@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-import warnings
 from dataclasses import dataclass
 from http.client import RemoteDisconnected
 from typing import Any
@@ -18,29 +17,58 @@ try:
 except Exception:  # pragma: no cover
     _ChunkedError = ProtocolError  # type: ignore
 
-_RETRYABLE = (RemoteDisconnected, ProtocolError, _ChunkedError, requests.exceptions.ConnectionError)
-_MAX_RETRIES = 3
-_BACKOFF_BASE = 0.5
+from typing import Final
 
-_SENSITIVE_KEYS = {
-    "api_secret",
-    "password",
-    "key",
-    "token",
-    "psk",
-    "secret",
-    "private_key",
-}
+_RETRYABLE: Final = (
+    RemoteDisconnected,
+    ProtocolError,
+    _ChunkedError,
+    requests.exceptions.ConnectionError,
+)
+_MAX_RETRIES: Final = 3
+_BACKOFF_BASE: Final = 0.5
+
+_SENSITIVE_KEYS: Final = frozenset(
+    {
+        "api_secret",
+        "password",
+        "key",
+        "token",
+        "psk",
+        "secret",
+        "private_key",
+    }
+)
+_SENSITIVE_SUBSTRINGS: Final = frozenset(
+    {"secret", "passwd", "password", "token", "private_key", "psk"}
+)
+
+
+def _is_sensitive_key(k: str) -> bool:
+    lk = k.lower()
+    if lk in _SENSITIVE_KEYS:
+        return True
+    # Exclude common plural container names that are not themselves sensitive
+    if lk in ("tokens", "keys", "secrets", "passwords", "api_keys"):
+        return False
+    for sub in _SENSITIVE_SUBSTRINGS:
+        if sub in lk:
+            # Avoid flagging plural container like "tokens" for "token"
+            if lk == sub + "s":
+                continue
+            return True
+    return False
 
 
 def _mask_sensitive_data(data: Any) -> Any:
     """
     Mask sensitive keys in dict/list payloads with "***" for logging.
+    Uses exact match + substring heuristic for safety.
     """
     if isinstance(data, dict):
-        masked = {}
+        masked: dict[Any, Any] = {}
         for k, v in data.items():
-            if isinstance(k, str) and k.lower() in _SENSITIVE_KEYS:
+            if isinstance(k, str) and _is_sensitive_key(k):
                 masked[k] = "***"
             else:
                 masked[k] = _mask_sensitive_data(v)
@@ -102,15 +130,15 @@ class OPNsenseClient:
     def __init__(self, config: OPNsenseClientConfig):
         self.config = config
         if not config.verify_ssl:
-            warnings.simplefilter("ignore", InsecureRequestWarning)
+            # Scoped warning suppression – don't mutate global warnings registry
             try:
                 import urllib3
 
                 urllib3.disable_warnings(InsecureRequestWarning)
-            except Exception:
+            except (ImportError, AttributeError):
                 try:
                     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)  # type: ignore
-                except Exception:
+                except (ImportError, AttributeError, Exception):
                     pass
 
         self.session = requests.Session()
@@ -123,6 +151,25 @@ class OPNsenseClient:
         )
         self.session.verify = config.verify_ssl
         self._base = config.base_url()
+
+    def close(self) -> None:
+        try:
+            self.session.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def url_for(self, module: str, controller: str, action: str, uuid: str | None = None) -> str:
         module = module.strip("/").lower()
@@ -633,20 +680,79 @@ class OPNsenseClient:
         return self.call(module, controller, action, method="POST", data={})
 
 
-def get_client_from_opts(opts: dict, pillar: dict | None = None) -> OPNsenseClient:
-    cfg_sources = []
+def get_client_from_opts(
+    opts: dict, pillar: dict | None = None, resource_id: str | None = None
+) -> OPNsenseClient:
+    """
+    Get OPNsenseClient from opts/pillar, supporting 3008+ Resources pillar tree.
+
+    Resolution order (first match wins):
+    1. If running in resource context (__resource__["id"] or resource_id arg),
+       read resources:opnsense:hosts[id] via salt.utils.resources.pillar_resources_tree
+    2. Direct config from pillar:opnsense or opts:opnsense (for masterless / direct execution)
+    3. Legacy: if pillar itself looks like a host config (contains host/api_key), use it
+
+    No longer merges proxy configs – proxy removed in 1.0.0, reason for salt>=3008.
+    """
+    # 0 – resource context via __resource__ dunder or explicit arg
+    rid = resource_id
+    if rid is None:
+        try:
+            if "__resource__" in globals():
+                r = globals()["__resource__"]
+                if isinstance(r, dict) and r.get("type") == "opnsense":
+                    rid = r.get("id")
+        except Exception:
+            rid = None
+
+    if rid:
+        try:
+            import salt.utils.resources
+
+            # Use provided opts, fallback to local __opts__ if present
+            use_opts = opts
+            if not use_opts and "__opts__" in globals():
+                use_opts = globals()["__opts__"]  # type: ignore
+            if isinstance(use_opts, dict):
+                tree = salt.utils.resources.pillar_resources_tree(use_opts).get("opnsense", {})
+                hosts = tree.get("hosts", {}) if isinstance(tree, dict) else {}
+                if (
+                    isinstance(hosts, dict)
+                    and rid in hosts
+                    and isinstance(hosts[rid], dict)
+                    and hosts[rid].get("host")
+                ):
+                    cfg_dict = hosts[rid]
+                    log.debug(
+                        "get_client_from_opts: using resources:opnsense:hosts:%s from pillar_resources_tree",
+                        rid,
+                    )
+                    return OPNsenseClient(OPNsenseClientConfig.from_dict(cfg_dict))
+        except Exception as exc:
+            log.debug("get_client_from_opts resource path failed for %s: %s", rid, exc)
+
+    cfg_sources: list[tuple[str, dict[str, Any]]] = []
 
     if pillar and isinstance(pillar, dict):
-        if "opnsense" in pillar:
-            cfg_sources.append(("pillar:opnsense", pillar["opnsense"]))
-        if "proxy" in pillar:
-            cfg_sources.append(("pillar:proxy", pillar["proxy"]))
+        if "opnsense" in pillar and isinstance(pillar["opnsense"], dict) and pillar["opnsense"]:
+            # pillar:opnsense can be either single host config (has host) or nested hosts dict? distinguish
+            opns_cfg = pillar["opnsense"]
+            if opns_cfg.get("host"):
+                cfg_sources.append(("pillar:opnsense", opns_cfg))
+            elif isinstance(opns_cfg.get("hosts"), dict) and rid and rid in opns_cfg["hosts"]:
+                cfg_sources.append((f"pillar:opnsense:hosts:{rid}", opns_cfg["hosts"][rid]))
 
     if isinstance(opts, dict):
-        if "opnsense" in opts:
-            cfg_sources.append(("opts:opnsense", opts["opnsense"]))
-        if "proxy" in opts:
-            cfg_sources.append(("opts:proxy", opts["proxy"]))
+        if "opnsense" in opts and isinstance(opts["opnsense"], dict) and opts["opnsense"]:
+            opns_opts = opts["opnsense"]
+            if opns_opts.get("host"):
+                cfg_sources.append(("opts:opnsense", opns_opts))
+            elif isinstance(opns_opts.get("hosts"), dict) and rid and rid in opns_opts["hosts"]:
+                cfg_sources.append((f"opts:opnsense:hosts:{rid}", opns_opts["hosts"][rid]))
+
+    # Direct pillar itself is host config (masterless salt-call --local with pillar file containing host)
+    if pillar and isinstance(pillar, dict) and pillar.get("host") and pillar.get("api_key"):
+        cfg_sources.append(("pillar:host_direct", pillar))
 
     merged: dict[str, Any] = {}
     sources_used: list[str] = []
@@ -656,9 +762,10 @@ def get_client_from_opts(opts: dict, pillar: dict | None = None) -> OPNsenseClie
             sources_used.append(src_name)
 
     if not merged:
-        merged = opts if isinstance(opts, dict) else {}
-        if merged:
-            sources_used.append("opts:root")
+        # Last resort: opts itself might be host config (legacy direct)
+        if isinstance(opts, dict) and opts.get("host") and opts.get("api_key"):
+            merged = opts
+            sources_used.append("opts:host_direct")
 
     log.debug("OPNsense config sources merged %s keys=%s", sources_used, list(merged.keys()))
 
@@ -671,20 +778,26 @@ def get_client_from_opts(opts: dict, pillar: dict | None = None) -> OPNsenseClie
                     merged[field] = merged[a]
                     break
         if field not in merged or not merged[field]:
-            checked = ", ".join(sources_used) if sources_used else "none (no opnsense/proxy found in opts/pillar)"
+            checked = (
+                ", ".join(sources_used)
+                if sources_used
+                else "none (no opnsense found in opts/pillar/resources)"
+            )
             example = (
-                "Example minimal config:\n"
-                "  proxy:\n"
-                "    proxytype: opnsense\n"
+                "Example minimal config (direct mode):\n"
+                "  opnsense:\n"
                 "    host: opnsense.example.com\n"
                 "    api_key: <your-key>\n"
                 "    api_secret: <your-secret>\n"
-                "Or flat file /etc/salt/proxy:\n"
-                "  proxytype: opnsense\n"
-                "  host: opnsense.example.com\n"
-                "  api_key: ...\n"
-                "  api_secret: ...\n"
-                "See docs/QUICKSTART.md"
+                "For Resources (fleet, recommended):\n"
+                "  resources:\n"
+                "    opnsense:\n"
+                "      hosts:\n"
+                "        fw-01:\n"
+                "          host: fw-01.example.com\n"
+                "          api_key: ...\n"
+                "          api_secret: ...\n"
+                "See docs/RESOURCES.md and docs/QUICKSTART.md"
             )
             raise OPNsenseAPIError(
                 f"missing OPNsense config {field}; checked sources [{checked}] "

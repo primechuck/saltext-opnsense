@@ -1,79 +1,102 @@
-# QUICKSTART — 15 min novice path
+# QUICKSTART — 15 min novice path (Salt Resources, 3008+)
 
-This guide gets a novice from zero to first successful state without Vault, without Jinja, without tribal knowledge.
+This guide gets a novice from zero to first successful state without Vault, without Jinja, using Salt Resources (fleet-ready) instead of proxy minion.
+
+> Breaking 1.0.0: Proxy removed. Use Resources T@opnsense. See docs/RESOURCES.md.
 
 ## Prerequisites
 
-- Salt Master running (3006+)
-- OPNsense box with API key/secret: System → Access → Users → API key (create in OPNsense UI)
-- `python3` on master
+- Salt Master + managing minion running 3008+
+- OPNsense box with API key/secret: System → Access → Users → API key
+- `python3` on master/managing minion
 
 ## 1. Install
 
-File-based (no pip, recommended for novices, uses gitfs):
-
-```bash
-# Example if extension is in your Salt file roots via gitfs, otherwise copy:
-python3 tools/sync_extmods.py --copy  # copies to _modules/_states/_proxy for file-based
-salt '*' saltutil.sync_all
-salt opnsense-router saltutil.sync_all  # if proxy minion id is opnsense-router
-```
-
-Pip (production):
+Pip (production, recommended):
 
 ```bash
 salt-pip install saltext-opnsense
 salt '*' saltutil.sync_all
 ```
 
+File-based (no pip, gitfs):
+
+```bash
+# copies to _modules/_states/_utils/saltext/...
+python3 tools/sync_extmods.py --copy
+salt '*' saltutil.sync_all
+```
+
 Verify:
 
 ```bash
-salt opnsense-router opnsense.list_api_modules | head
+salt -C 'T@opnsense' --tgt-type compound opnsense.list_api_modules | head
 # 75 modules
+salt-run resource.list_grains
 ```
 
-## 2. Minimal config — flat file (simplest)
+## 2. Minimal config – Resources pillar (simplest fleet)
 
-On Salt Master, create `/etc/salt/proxy`:
+`/srv/pillar/resources.sls`:
 
 ```yaml
-proxytype: opnsense
-host: opnsense.example.com   # your OPNsense hostname/IP
-proto: https
-verify_ssl: true
-api_key: YOUR_KEY
-api_secret: YOUR_SECRET
-timeout: 30
+resources:
+  opnsense:
+    hosts:
+      fw-01:
+        host: opnsense.example.com
+        proto: https
+        verify_ssl: true
+        api_key: YOUR_KEY
+        api_secret: YOUR_SECRET
+        timeout: 30
 ```
 
-Use TEST-NET RFC5737 for examples: `192.0.2.10`, `198.51.100.10` – never your real lab IP in docs.
+`/srv/pillar/top.sls`:
 
-Start proxy:
+```yaml
+base:
+  '*':
+    - resources
+  # or specific managing minion:
+  'managing-minion-id':
+    - resources
+```
+
+Refresh:
 
 ```bash
-salt-proxy --proxyid=opnsense-router -l info -d
-sleep 2
-salt opnsense-router test.ping
-salt opnsense-router opnsense.ping
-salt opnsense-router opnsense.doctor
+salt managing-minion-id saltutil.refresh_pillar
+salt managing-minion-id pillar.get resources:opnsense:hosts unmask=True
+salt -C 'T@opnsense' test.ping
+salt -C 'T@opnsense:fw-01' opnsense.ping
+salt -C 'T@opnsense' opnsense.doctor
 ```
 
 `doctor` should return `status: OK` with `spec_version: 25.7.11`.
 
-If error `missing OPNsense config host`: check file exists, mode 600, YAML flat (no outer `proxy:` wrapper). See `docs/tutorials/pillars/file-based-proxy.yaml`.
+If `missing OPNsense config host`: check pillar path is `resources:opnsense:hosts:fw-01:host`, not flat `/etc/salt/proxy` (proxy removed in 1.0.0). See `docs/RESOURCES.md`.
 
-## 3. Pillar minimal (for DNS aliases)
+Optional SSH 2 SRN side (requires python311 on OPNsense):
+
+```yaml
+resources:
+  ssh:
+    hosts:
+      fw-01:
+        host: opnsense.example.com
+        user: root
+        priv: /etc/salt/keys/fw-01
+        thin_dir: /tmp/.salt-thin
+```
+
+Then `salt -C 'T@ssh' cmd.run 'opnsense-version'`.
+
+## 3. Pillar for DNS aliases
 
 `/srv/pillar/opnsense.sls`:
 
 ```yaml
-proxy:
-  proxytype: opnsense
-  host: opnsense.example.com
-  api_key: YOUR_KEY
-  api_secret: YOUR_SECRET
-
 opnsense:
   cluster_parent:
     hostname: cluster
@@ -87,22 +110,23 @@ opnsense:
       - old-www
 ```
 
-`/srv/pillar/top.sls`:
+Add to top for managing minion:
 
 ```yaml
 base:
-  'opnsense-router':
+  'managing-minion-id':
+    - resources
     - opnsense
 ```
 
 Run:
 
 ```bash
-salt opnsense-router saltutil.refresh_pillar
-salt opnsense-router pillar.get opnsense:aliases
+salt managing-minion-id saltutil.refresh_pillar
+salt -C 'T@opnsense:fw-01' pillar.get opnsense:aliases
 ```
 
-## 4. First state — zero Jinja
+## 4. First state – zero Jinja, merged mode
 
 `srv/salt/opnsense/quickstart.sls`:
 
@@ -111,39 +135,45 @@ dns:
   opnsense_dns.managed:
     - name: dns
     - parent: cluster.example.com
-    # aliases reads from pillar automatically
 ```
 
-Dry-run:
+Dry-run via Resources merged mode:
 
 ```bash
-salt opnsense-router state.apply opnsense.quickstart test=True --out=table
+salt -C 'T@opnsense:fw-01' state.apply opnsense.quickstart test=True --out=table
 ```
 
-If `parent host_override cluster.example.com not found`: create parent first in OPNsense UI → Services → Unbound → Host Overrides → `cluster.example.com -> 192.0.2.10`.
+If `parent host_override cluster.example.com not found`: create parent in OPNsense UI → Services → Unbound → Host Overrides.
 
 Apply:
 
 ```bash
-salt opnsense-router state.apply opnsense.quickstart
-salt opnsense-router opnsense_dns.list_aliases_pretty --out=table
+salt -C 'T@opnsense:fw-01' state.apply opnsense.quickstart
+salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
 ```
 
-Second run should be 0 changes (idempotent).
+Second run should be 0 changes (idempotent diff engine).
+
+Masterless test (no master registry):
+
+```bash
+salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense.quickstart test=True
+```
 
 ## 5. Next steps
 
-- For pro features, batch management, diff engine, see `docs/CONVENIENCE.md`
-- For all 75 modules, see `docs/USAGE.md`
-- For Vault/OpenBao secrets, see `docs/tutorials/pillars/` and move to `vault.example.com` – not needed for quickstart
-- For firewall safety (no auto-rollback since 25.7), see `docs/FIREWALL_SAFETY.md`
+- Full fleet tutorial `docs/RESOURCES.md` – 2 SRN composition, targeting `G@`, `resource.refresh`, `list_grains`
+- Convenience wrappers `docs/CONVENIENCE.md`
+- All 75 modules `docs/USAGE.md`
+- Vault secrets `docs/tutorials/pillars/` – use `__slot__:salt:vault.read(...)`
+- Firewall safety `docs/FIREWALL_SAFETY.md`
 
-## Troubleshooting quick
+## Troubleshooting
 
-- `opnsense.utils missing`: run `PYTHONPATH=src python3 tools/verify_import.py`
-- `Proxy config missing`: ensure `/etc/salt/proxy` flat YAML, not nested `proxy:` 
-- `parent resolve failed`: use `opnsense_unbound.resolve_parent cluster.example.com` to debug
-- `Invalid JSON`: OPNsense API needs POST – client does this by default; check `verify_ssl: false` for self-signed
-- Pillar not seen: `salt opnsense-router pillar.get proxy` must show resolved dict, not `__slot__` placeholder
+- `Function X not supported for opnsense` → managing minion `saltutil.sync_all` + `refresh_pillar`
+- `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense_unbound.resolve_parent cluster.example.com`
+- `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, use `unmask=True`
+- Pillar not seen → `salt managing-minion pillar.get resources:opnsense:hosts unmask=True`
+- Thin copy fails for ssh → ensure `python311` on OPNsense, `thin_dir` writable, key 600
 
-All example IPs in docs use RFC5737 TEST-NET: `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`. Replace with your real networks.
+All example IPs use RFC5737 TEST-NET: `192.0.2.0/24`. Replace with real networks.

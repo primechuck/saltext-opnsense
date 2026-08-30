@@ -35,19 +35,8 @@ def test_dynamic_wrappers_cover_all():
 
 def test_dynamic_search_calls():
     mod, mocks = _setup_generic()
-    import sys
-    import types
 
-    if "salt" not in sys.modules:
-        salt_mock = types.ModuleType("salt")
-        utils_mock = types.ModuleType("salt.utils")
-        platform_mock = types.ModuleType("salt.utils.platform")
-        platform_mock.is_proxy = lambda: False
-        sys.modules["salt"] = salt_mock
-        sys.modules["salt.utils"] = utils_mock
-        sys.modules["salt.utils.platform"] = platform_mock
-
-    mod.__opts__ = {"proxy": {}}
+    mod.__opts__ = {}
     mod.__pillar__ = {}
 
     from unittest.mock import patch
