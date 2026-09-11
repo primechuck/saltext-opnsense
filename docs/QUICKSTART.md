@@ -1,6 +1,6 @@
-# QUICKSTART — 15 min novice path (Salt Resources, 3008+)
+# QUICKSTART — 15 min novice path (Salt 3008+ Resources)
 
-This guide gets a novice from zero to first successful state without Vault, without Jinja, using Salt Resources (fleet-ready) instead of proxy minion.
+Requires salt>=3008. No proxy minion. For full fleet tutorial see `docs/RESOURCES.md`.
 
 > Breaking 1.0.0: Proxy removed. Use Resources T@opnsense. See docs/RESOURCES.md.
 
@@ -10,16 +10,16 @@ This guide gets a novice from zero to first successful state without Vault, with
 - OPNsense box with API key/secret: System → Access → Users → API key
 - `python3` on master/managing minion
 
-## 1. Install
+## 1. Install (PyPI canonical)
 
-Pip (production, recommended):
+Pip (production, recommended — public novice path):
 
 ```bash
 salt-pip install saltext-opnsense
 salt '*' saltutil.sync_all
 ```
 
-File-based (no pip, gitfs):
+File-based fallback (no pip, gitfs/air-gapped):
 
 ```bash
 # copies to _modules/_states/_utils/saltext/...
@@ -30,8 +30,9 @@ salt '*' saltutil.sync_all
 Verify:
 
 ```bash
-salt -C 'T@opnsense' --tgt-type compound opnsense.list_api_modules | head
+salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | head
 # 75 modules
+salt -C 'T@opnsense' opnsense.doctor
 salt-run resource.list_grains
 ```
 
@@ -44,7 +45,7 @@ resources:
   opnsense:
     hosts:
       fw-01:
-        host: opnsense.example.com
+        host: fw-01.example.com
         proto: https
         verify_ssl: true
         api_key: YOUR_KEY
@@ -66,8 +67,8 @@ base:
 Refresh:
 
 ```bash
-salt managing-minion-id saltutil.refresh_pillar
-salt managing-minion-id pillar.get resources:opnsense:hosts unmask=True
+salt -C 'T@opnsense' saltutil.refresh_pillar
+salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts unmask=True
 salt -C 'T@opnsense' test.ping
 salt -C 'T@opnsense:fw-01' opnsense.ping
 salt -C 'T@opnsense' opnsense.doctor
@@ -84,13 +85,13 @@ resources:
   ssh:
     hosts:
       fw-01:
-        host: opnsense.example.com
+        host: fw-01.example.com
         user: root
         priv: /etc/salt/keys/fw-01
         thin_dir: /tmp/.salt-thin
 ```
 
-Then `salt -C 'T@ssh' cmd.run 'opnsense-version'`.
+Then `salt -C 'T@ssh:fw-01' cmd.run 'opnsense-version'`.
 
 ## 3. Pillar for DNS aliases
 
@@ -122,7 +123,7 @@ base:
 Run:
 
 ```bash
-salt managing-minion-id saltutil.refresh_pillar
+salt -C 'T@opnsense:fw-01' saltutil.refresh_pillar
 salt -C 'T@opnsense:fw-01' pillar.get opnsense:aliases
 ```
 
@@ -173,7 +174,7 @@ salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense
 - `Function X not supported for opnsense` → managing minion `saltutil.sync_all` + `refresh_pillar`
 - `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense_unbound.resolve_parent cluster.example.com`
 - `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, use `unmask=True`
-- Pillar not seen → `salt managing-minion pillar.get resources:opnsense:hosts unmask=True`
+- Pillar not seen → `salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts unmask=True`
 - Thin copy fails for ssh → ensure `python311` on OPNsense, `thin_dir` writable, key 600
 
 All example IPs use RFC5737 TEST-NET: `192.0.2.0/24`. Replace with real networks.

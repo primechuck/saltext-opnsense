@@ -24,7 +24,7 @@ help:
 	@echo "  gen-models    - Parse Model XML -> src/.../utils/models.json"
 	@echo "  gen-wrappers  - Spec -> 76 exec + 76 state wrappers (auto-generated)"
 	@echo "  bump          - Upstream version sprint: make bump CORE=25.7"
-	@echo "  sync          - Copy src -> extmods directories for gitfs file-based install"
+	@echo "  sync          - Copy src -> extmods for gitfs (Resources-only, salt>=3008, no _proxy/_grains)"
 	@echo "  verify        - Prove all 76 modules import (exec+state+dynamic)"
 	@echo "  test          - pytest tests/unit -q"
 	@echo "  lint          - ruff check src tests tools"
@@ -86,7 +86,7 @@ endif
 clean:
 	rm -rf /tmp/opnsense-spec tools/tmp __pycache__ src/__pycache__ .pytest_cache .nox build dist *.egg-info src/*.egg-info
 	rm -rf src/saltext/opnsense/__pycache__ src/saltext/opnsense/modules/__pycache__ src/saltext/opnsense/states/__pycache__ src/saltext/opnsense/utils/__pycache__
-	rm -rf src/saltext/opnsense/proxy/__pycache__ src/saltext/opnsense/grains/__pycache__ tests/__pycache__ tests/unit/__pycache__
+	rm -rf tests/__pycache__ tests/unit/__pycache__
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@echo "Cleaned caches. Generated wrappers/json kept."

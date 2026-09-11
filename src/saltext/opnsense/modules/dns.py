@@ -38,9 +38,9 @@ def list_aliases(domain=None, parent=None):
     Convenience alternative to raw search. Returns sorted dict keyed by FQDN.
 
     Example:
-        salt opnsense-router opnsense_dns.list_aliases
-        salt opnsense-router opnsense_dns.list_aliases domain=example.com
-        salt opnsense-router opnsense_dns.list_aliases parent=cluster.example.com
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases domain=example.com
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases parent=cluster.example.com
     """
     try:
         fn = __salt__["opnsense_unbound.list_aliases"]
@@ -71,7 +71,7 @@ def list_aliases_detailed(domain=None, parent=None):
     Alias to list_aliases returning full info dict.
 
     Example:
-        salt opnsense-router opnsense_dns.list_aliases_detailed
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_detailed
     """
     try:
         fn = __salt__["opnsense_unbound.list_aliases"]
@@ -85,8 +85,8 @@ def list_aliases_simple(domain=None, parent=None):
     Simple mapping fqdn -> parent FQDN. Great for CLI --out=table.
 
     Example:
-        salt opnsense-router opnsense_dns.list_aliases_simple --out=table
-        salt opnsense-router opnsense_dns.list_aliases_simple domain=example.com
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_simple --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_simple domain=example.com
     """
     try:
         fn = __salt__["opnsense_unbound.list_aliases_simple"]
@@ -112,8 +112,8 @@ def list_aliases_pretty(domain=None, parent=None):
     Pretty list of "fqdn -> parent (enabled)" for human output. Works with --out=table.
 
     Example:
-        salt opnsense-router opnsense_dns.list_aliases_pretty --out=table
-        salt opnsense-router opnsense_dns.list_aliases_pretty domain=example.com --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty domain=example.com --out=table
     """
     try:
         fn = __salt__["opnsense_unbound.list_aliases_pretty"]

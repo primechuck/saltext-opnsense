@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "saltext-opnsense"
-description = "Salt extension for managing OPNsense via its API - templated, 3008+ ready, with dynamic wrappers, file-based install, and Vault support"
+description = "Salt extension for managing OPNsense via its API - Salt 3008+ Resources only (no proxy, no pre-3008), with dynamic wrappers, file-based install, and Vault support"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -15,6 +15,7 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: System Administrators",
   "License :: OSI Approved :: MIT License",
+  "Framework :: Salt",
   "Topic :: System :: Networking :: Firewalls",
   "Topic :: System :: Systems Administration",
   "Operating System :: OS Independent",

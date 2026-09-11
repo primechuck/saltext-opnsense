@@ -49,11 +49,27 @@ def __virtual__() -> bool | tuple[bool, str]:
 
 
 def _get_client() -> OPNsenseClient:
-    client = get_client_from_opts(
-        __opts__, pillar=__pillar__ if "__pillar__" in globals() else None
-    )
+    try:
+        from salt.exceptions import SaltInvocationError as SaltExc  # noqa: N813
+    except ImportError:  # pragma: no cover - fallback when not in Salt runtime (unit tests)
+        SaltExc = RuntimeError  # type: ignore  # noqa: N806
+
+    try:
+        client = get_client_from_opts(
+            __opts__, pillar=__pillar__ if "__pillar__" in globals() else None
+        )
+    except Exception as exc:
+        # get_client_from_opts already includes checked sources + example pillar
+        raise SaltExc(str(exc)) from exc
+
     if not client:
-        raise RuntimeError("Failed to create OPNsense client from opts/pillar")
+        raise SaltExc(
+            "Failed to create OPNsense client from opts/pillar. "
+            "Check pillar resources:opnsense:hosts:fw-01:host (Resources fleet) "
+            "or pillar opnsense:host (direct masterless). "
+            "See docs/RESOURCES.md and docs/QUICKSTART.md. "
+            "Verify with: salt -C 'T@opnsense:fw-01' opnsense.ping"
+        )
     return client
 
 
@@ -483,7 +499,7 @@ def _make_dynamic_wrapper(
     wrapper.__doc__ = f"""{verb} {type_human} in {mod_snake} {ctrl_snake}.
 Auto-generated from upstream OPNsense spec.
 Endpoint: POST /api/{mod_name}/{ctrl_name}/{action}
-CLI: salt opnsense-router opnsense.{func_name} row_count=1 --out=table
+CLI: salt -C 'T@opnsense:fw-01' opnsense.{func_name} row_count=1 --out=table
 Docs: https://docs.opnsense.org/development/api/core/{mod_name}.html"""
     return wrapper
 
@@ -514,7 +530,7 @@ def doctor() -> dict[str, Any]:
     Test OPNsense API connectivity, spec version, and credentials.
 
     CLI Example:
-        salt opnsense-router opnsense.doctor
+        salt -C 'T@opnsense:fw-01' opnsense.doctor
     """
     res: dict[str, Any] = {
         "spec_version": "25.7",

@@ -1,4 +1,6 @@
-# Salt Resources for saltext-opnsense (3008+)
+# Salt Resources for saltext-opnsense (3008+ only)
+
+Requires salt>=3008. PyPI install `salt-pip install saltext-opnsense` is canonical public path (see INSTALL.md). No proxy minion.
 
 > **BREAKING 1.0.0:** Proxy minion removed. Resources are the supported mode. Reason for `salt>=3008` requirement.
 

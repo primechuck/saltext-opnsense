@@ -39,9 +39,9 @@ nginx_upstream_demo:
     {% if not demo_enabled %} - onlyif: /bin/false {% endif %}
 
 # Dynamic exec wrappers from generic opnsense module (312+ funcs):
-# salt opnsense-router opnsense.caddy_reverse_proxy_search_access_list
-# salt opnsense-router opnsense.haproxy_settings_search_backends
-# salt opnsense-router opnsense.nginx_settings_search_upstream
+# salt -C 'T@opnsense:fw-01' opnsense.caddy_reverse_proxy_search_access_list
+# salt -C 'T@opnsense:fw-01' opnsense.haproxy_settings_search_backends
+# salt -C 'T@opnsense:fw-01' opnsense.nginx_settings_search_upstream
 # All injected via _inject_dynamic_wrappers() reading controllers.json
 
 verify_dynamic:

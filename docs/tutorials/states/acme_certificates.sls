@@ -102,7 +102,7 @@ acme_certificate_{{ cert.name | replace('.', '_') | replace('*', 'wildcard') }}:
         description: {{ cert.description | default("managed by salt - " + cert.name) }}
         altNames: {{ cert.altNames | default('') }}
         # New: human names auto-resolve — no need to pre-lookup UUIDs
-        # Previously required manual: salt opnsense-router opnsense.search acmeclient accounts account search_phrase=letsencrypt-prod
+        # Previously required manual: salt -C 'T@opnsense:fw-01' opnsense.search acmeclient accounts account search_phrase=letsencrypt-prod
         account: {{ cert.account }}
         validationMethod: {{ cert.validationMethod }}
         keyLength: {{ cert.keyLength | default("key_4096") }}

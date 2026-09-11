@@ -157,7 +157,7 @@ def domain_present(
             - domain_type: primary
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_bind.domain_present
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_bind.domain_present
     """
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     # Strip Salt internal kwargs (__pub_*, etc.) - salty best practice
@@ -264,7 +264,7 @@ def domain_absent(name, reconfigure=True):
             - name: old.example.com
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_bind.domain_absent
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_bind.domain_absent
     """
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     existing = _find_domain(name)
@@ -358,11 +358,11 @@ def record_present(
         # pillar opnsense:bind_zone: {example.com: {A: {www: 192.0.2.10}}}
 
     CLI:
-        salt opnsense-router opnsense_bind.list_records domain=example.com
-        salt opnsense-router opnsense_bind.list_records_pretty domain=example.com --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_bind.list_records domain=example.com
+        salt -C 'T@opnsense:fw-01' opnsense_bind.list_records_pretty domain=example.com --out=table
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_bind.record_present
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_bind.record_present
     """
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 
@@ -481,7 +481,7 @@ def record_absent(name, domain, type="A", reconfigure=True):
             - type: A
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_bind.record_absent
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_bind.record_absent
     """
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
 

@@ -119,7 +119,7 @@ def managed(
     passed explicitly. A single state block with no args manages all DNS
     aliases declaratively from pillar.
 
-    Pillar example (pillars/hosts/opnsense-router.sls):
+    Pillar example (pillars/resources.sls (resources:opnsense:hosts:fw-01)):
         opnsense:
           cluster_parent:
             hostname: cluster
@@ -168,20 +168,20 @@ def managed(
                   - old-git
 
     CLI:
-        salt opnsense-router state.apply opnsense.convenience_aliases
-        salt opnsense-router state.apply opnsense.convenience_aliases test=True --out=table
+        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases
+        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases test=True --out=table
         # deprecated shim still works: aliases_delightful
-        salt opnsense-router opnsense_dns.managed_preview
-        salt opnsense-router opnsense_dns.list_aliases_pretty --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_dns.managed_preview
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
 
     Prometheus metrics integration (see docs/METRICS.md):
-        metrics are exposed via grains opnsense_unbound_alias_count and
+        metrics are exposed via resource grain opnsense_unbound_alias_count via `resource.show_grains` and
         opnsense_version, then written to node_exporter textfile by state
         opnsense.metrics or examples/states/metrics.sls.
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_dns.managed
-        salt opnsense-router sys.doc opnsense_dns.aliases_managed
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.managed
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.aliases_managed
     """
     if kwargs:
         _strip_salt_internal_kwargs(kwargs)
@@ -403,7 +403,7 @@ def aliases_managed(
                 example.com: [www, git]
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_dns.aliases_managed
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.aliases_managed
     """
     if kwargs:
         _strip_salt_internal_kwargs(kwargs)

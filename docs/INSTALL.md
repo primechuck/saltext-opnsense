@@ -1,28 +1,8 @@
-# Installation
+# Installation (Salt 3008+ only)
 
-Three supported ways, pick one. File-based is fastest for novices.
+Requires salt>=3008. No proxy minion, no pre-3008.
 
-## Option A: File-based via gitfs (15-min novice path, no pip)
-
-Your Salt master file roots is a gitfs repo. Extension files live in `src/` and are exposed via `_modules/`, `_states/`, `_proxy/`, `_grains/`, `_utils/`.
-
-```bash
-# In your salt repo that is gitfs root:
-# Copy extension extmods for file-based (keeps symlinks safe)
-python3 tools/sync_extmods.py --copy
-# Or on master:
-salt '*' saltutil.sync_all
-salt opnsense-router saltutil.sync_all  # proxy id
-salt opnsense-router opnsense.list_api_modules
-```
-
-- No `salt-pip` needed
-- Master picks up commit via `fileserver.update`
-- Verify: `salt salt-master saltutil.list_extmods | grep opnsense`
-
-See `docs/tutorials/pillars/file-based-proxy.yaml` for flat `/etc/salt/proxy` format.
-
-## Option B: Pip as saltext (production)
+## Option A: Pip (production, canonical public path)
 
 ```bash
 salt-pip install saltext-opnsense
@@ -30,38 +10,28 @@ salt-pip install saltext-opnsense
 salt-pip install -e /path/to/saltext-opnsense
 
 salt '*' saltutil.sync_all
-salt opnsense-router opnsense.list_api_modules
+salt -C 'T@opnsense:fw-01' opnsense.list_api_modules
 ```
 
-`pyproject.toml` entry point `saltext.opnsense` exposes to loader. Works with onedir `/opt/saltstack/salt`.
+Works with onedir /opt/saltstack/salt. Entry-point `saltext.opnsense` auto-discovers. Failure mode via `__virtual__` hides functions cleanly; `doctor/ping` returns dict OK/ERROR. Use `salt -C 'T@opnsense:fw-01' opnsense.ping` to verify.
 
-Benefits: versioned, dependency managed. Drawback: need pip upgrade after bump.
-
-Alternative `master.d`:
-
-```yaml
-# /etc/salt/master.d/opnsense.conf
-extension_modules: /path/to/saltext-opnsense/src
-```
-
-## Option C: Salt file roots copy (air-gapped)
+## Option B: File-based via gitfs (no pip, fallback)
 
 ```bash
-# Copy src/saltext/opnsense/* into your file_roots extmods:
-# _modules/opnsense.py, _states/opnsense.py, _proxy/opnsense.py, _grains/opnsense.py, _utils/...
-python3 tools/sync_extmods.py --copy --dest /srv/salt/_modules
+python3 tools/sync_extmods.py --copy
 salt '*' saltutil.sync_all
+salt -C 'T@opnsense:fw-01' opnsense.list_api_modules
 ```
 
-## Verify install
+## Verify
 
 ```bash
 PYTHONPATH=src python3 tools/verify_import.py
-# expect 75 modules, >=300 dynamic exec funcs
-
-salt opnsense-router opnsense.doctor
-# spec_version 25.7.11, loaded_modules_count 75, status OK
+salt -C 'T@opnsense:fw-01' opnsense.doctor
+salt-run resource.list_grains
 ```
+
+If missing config host: check `resources:opnsense:hosts:fw-01:host` exists (Resources fleet) or `opnsense:host` direct. See `docs/RESOURCES.md`.
 
 ## Upgrade
 
@@ -75,11 +45,4 @@ make test
 git commit -m "bump 26.1" src/saltext/opnsense/utils/controllers.json
 ```
 
-See `docs/MAINTENANCE.md`.
-
-## Uninstall
-
-```bash
-salt-pip uninstall saltext-opnsense
-# or remove file-based extmods and sync_all
-```
+See docs/MAINTENANCE.md.
