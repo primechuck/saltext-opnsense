@@ -1,7 +1,7 @@
+import logging
 import os
 import sys
 import types
-import logging
 
 # Reset root logger like template
 logging.root.setLevel(logging.WARNING)

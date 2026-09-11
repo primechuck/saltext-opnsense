@@ -8,7 +8,7 @@ try:
 except (ImportError, ModuleNotFoundError, FileNotFoundError):  # pragma: no cover
     __version__ = "0.0.0.not-installed"
     try:
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError, version
 
         try:
             __version__ = version("saltext-opnsense")
@@ -16,7 +16,7 @@ except (ImportError, ModuleNotFoundError, FileNotFoundError):  # pragma: no cove
             pass
     except ImportError:
         try:
-            from pkg_resources import get_distribution, DistributionNotFound
+            from pkg_resources import DistributionNotFound, get_distribution
 
             try:
                 __version__ = get_distribution("saltext-opnsense").version
