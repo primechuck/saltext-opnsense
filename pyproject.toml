@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=68", "setuptools-scm>=8"]
+requires = [
+    "wheel",
+    "setuptools>=50.3.2",
+    "setuptools_scm[toml]>=3.4",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,13 +16,8 @@ authors = [{name = "David Bierce", email = "david@bierce.org"}]
 maintainers = [{name = "David Bierce", email = "david@bierce.org"}]
 keywords = ["salt", "salt-extension", "saltext", "opnsense", "firewall", "api", "unbound", "bind", "kea", "acme"]
 classifiers = [
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: System Administrators",
-  "License :: OSI Approved :: MIT License",
-  "Framework :: Salt",
-  "Topic :: System :: Networking :: Firewalls",
-  "Topic :: System :: Systems Administration",
-  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Cython",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
@@ -26,6 +25,14 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: System Administrators",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Framework :: Salt",
+  "Topic :: System :: Networking :: Firewalls",
+  "Topic :: System :: Systems Administration",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
   "salt>=3008",
@@ -43,47 +50,126 @@ Repository = "https://github.com/primechuck/saltext-opnsense"
 Issues = "https://github.com/primechuck/saltext-opnsense/issues"
 Documentation = "https://primechuck.github.io/saltext-opnsense/"
 Changelog = "https://github.com/primechuck/saltext-opnsense/blob/main/CHANGELOG.md"
+Source = "https://github.com/primechuck/saltext-opnsense"
 
 [project.optional-dependencies]
+changelog = ["towncrier==25.8.0"]
 dev = [
+  "nox[uv]>=2024.3,!=2025.05.01",
+  "pre-commit>=2.21.0",
   "pytest>=7",
-  "pytest-salt-factories",
-  "nox",
+  "pytest-salt-factories>=1.0.0",
+  "pytest-instafail",
   "ruff",
   "towncrier",
+]
+dev_extra = [
+  "black==26.5.1",
+  "isort==8.0.1",
+  "coverage==7.16.0",
+]
+docs = [
+  "sphinx",
+  "sphinx-prompt",
+  "sphinxcontrib-spelling",
+  "sphinx-copybutton",
+  "towncrier==25.8.0",
+  "sphinxcontrib-towncrier",
+  "myst_parser",
+  "furo",
+  "sphinx-inline-tabs",
+]
+docsauto = ["sphinx-autobuild"]
+lint = [
+  "pylint==4.0.4",
+  "ruff",
+]
+tests = [
+  "pytest>=7.2.0",
+  "pytest-salt-factories>=1.0.0",
+  "pytest-instafail",
 ]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
+zip-safe = false
+platforms = ["any"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+exclude = ["tests"]
 
 [tool.setuptools.package-data]
 "saltext.opnsense.utils" = ["controllers.json", "models.json", "*.json"]
 "saltext.opnsense" = ["py.typed"]
 
-
 [tool.setuptools_scm]
 write_to = "src/saltext/opnsense/version/_version.py"
+write_to_template = "__version__ = \"{version}\"\n"
 local_scheme = "no-local-version"
+
+[tool.distutils.bdist_wheel]
+universal = 1
+
+[tool.distutils.sdist]
+owner = "root"
+group = "root"
+
+[tool.build_sphinx]
+source_dir = "docs"
+build_dir = "build/sphinx"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+force_single_line = true
+skip = ["src/saltext/opnsense/__init__.py"]
+profile = "black"
+line_length = 100
+
+[tool.uv]
+# Salt's legacy setup.py requires old setuptools. Since uv 0.6.0, it does not fall back to reading requirements from egg-info.
+build-constraint-dependencies = ["setuptools<69"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-builtins = ["__opts__", "__salt__", "__context__", "__grains__", "__utils__", "__pillar__", "__resource__", "__resource_funcs__", "__minion__"]
+builtins = [
+  "__opts__",
+  "__salt__",
+  "__pillar__",
+  "__grains__",
+  "__context__",
+  "__runner__",
+  "__ret__",
+  "__env__",
+  "__low__",
+  "__states__",
+  "__lowstate__",
+  "__running__",
+  "__active_provider_name__",
+  "__master_opts__",
+  "__jid_event__",
+  "__instance_id__",
+  "__salt_system_encoding__",
+  "__proxy__",
+  "__serializers__",
+  "__reg__",
+  "__executors__",
+  "__events__",
+  "__resource__",
+  "__resource_funcs__",
+  "__utils__",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N"]
 ignore = ["E501", "N807", "E731", "N814", "E402"]
 
-
-
 [tool.ruff.lint.mccabe]
 max-complexity = 50
-
-
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -94,11 +180,20 @@ name = "saltext-opnsense"
 version = {attr = "saltext.opnsense.version.__version__"}
 filename = "CHANGELOG.md"
 directory = "changelog"
+template = "changelog/.template.jinja"
+start_string = "# Changelog\n"
+underlines = ["", "", ""]
+title_format = "## {version} ({project_date})"
 type = [
+  {directory = "breaking", name = "Breaking changes", showcontent = true},
   {directory = "feature", name = "Features", showcontent = true},
   {directory = "bugfix", name = "Bug Fixes", showcontent = true},
   {directory = "doc", name = "Improved Documentation", showcontent = true},
   {directory = "removal", name = "Removals and De-precations", showcontent = true},
+  {directory = "security", name = "Security", showcontent = true},
+  {directory = "added", name = "Added", showcontent = true},
+  {directory = "changed", name = "Changed", showcontent = true},
+  {directory = "deprecated", name = "Deprecated", showcontent = true},
   {directory = "misc", name = "Miscellaneous", showcontent = false},
 ]
 

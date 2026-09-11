@@ -1,0 +1,56 @@
+[MAIN]
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the number of processors available to use.
+jobs=0
+
+# Pickle collected data for later comparisons.
+persistent=no
+
+# List of plugins (as comma separated values of python module names) to load, e.g., the file name you can use to check spelling
+# extension-pkg-allow-list=
+# Fail above 10.0 like template
+fail-under=10.0
+
+# Files or directories to be skipped. They should be base names, not paths.
+ignore=CVS
+
+ignore-patterns=^\\.#
+
+[BASIC]
+# Good variable names which should always be accepted, separated by a comma.
+good-names=i,j,k,ex,Run,_,ip,vm,fs,fd,opts
+
+[MESSAGES CONTROL]
+# Disable the message, report, category or checker with the given id(s).
+disable=duplicate-code,
+        fixme,
+        keyword-arg-before-vararg,
+        line-too-long,
+        logging-fstring-interpolation,
+        missing-class-docstring,
+        missing-function-docstring,
+        missing-module-docstring,
+        protected-access,
+        too-few-public-methods,
+        too-many-positional-arguments,
+        ungrouped-imports,
+        wrong-import-position
+
+[REPORTS]
+# Set the output format. Available formats are text, parseable, colorized, msvs (visual studio) and html
+output-format=text
+
+# Tells whether to display a full report or only the messages.
+reports=no
+
+[TYPECHECK]
+ignored-modules=salt
+
+[FORMAT]
+max-line-length=100
+
+[SIMILARITIES]
+min-similarity-lines=5
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+ignore-signatures=yes
