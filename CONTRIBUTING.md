@@ -126,3 +126,23 @@ See `docs/MAINTENANCE.md` for OPNsense release sprint workflow.
 - Builtins allowed: `__opts__`, `__salt__`, `__proxy__`, `__context__`, `__grains__`, `__utils__` (declared in `pyproject.toml`)
 - No comments unless comstream — rely on docstrings in generated wrappers
 - Prefer `file-based` vs `pip install` note in docs when adding new modules
+
+## Keeping up with salt-extension-copier
+
+This project was bootstrapped from https://github.com/salt-extensions/salt-extension-copier.
+
+We sync safety-critical boilerplate via:
+
+```bash
+pipx install copier
+copier update --trust --skip-answered
+```
+
+Or if first-time:
+
+```bash
+pipx install copier
+copier copy --trust https://github.com/salt-extensions/salt-extension-copier .
+```
+
+Excludes: `tests/**/test_*.py` and `src/**/*_mod.py` (dynamic wrappers) are protected in copier.yml. Review conflicts for `noxfile.py`, `pyproject.toml`, and `.github/workflows/*`.
