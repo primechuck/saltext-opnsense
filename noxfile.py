@@ -17,6 +17,8 @@ def lint(session):
 @nox.session
 def gen_all(session):
     """
+    Requires salt>=3008 — Resources only.
+
     Full codegen pipeline: spec -> models -> wrappers -> verify -> tests
 
     Usage:

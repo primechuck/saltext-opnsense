@@ -6,9 +6,9 @@
 # Salt delight: grains already live from API, file.managed Jinja writes prom file directly
 #
 # Usage:
-#   salt opnsense-router state.apply opnsense.metrics
-#   salt opnsense-router grains.get opnsense_unbound_alias_count
-#   salt opnsense-router opnsense.ping
+#   salt -C 'T@opnsense:fw-01' state.apply opnsense.metrics
+#   salt -C 'T@opnsense:fw-01' grains.get opnsense_unbound_alias_count
+#   salt -C 'T@opnsense:fw-01' opnsense.ping
 #   cat /var/lib/node_exporter/textfile_collector/opnsense.prom
 #   curl localhost:9100/metrics | grep opnsense_
 #
@@ -17,7 +17,7 @@
 {% set version = salt['grains.get']('opnsense_version', 'unknown') %}
 {% set alias_count = salt['grains.get']('opnsense_unbound_alias_count', 0) %}
 {% set bind_count = salt['grains.get']('opnsense_bind_domain_count', 0) %}
-{% set host = salt['grains.get']('opnsense_host', grains.get('id', 'opnsense-router')) %}
+{% set host = salt['grains.get']('opnsense_host', grains.get('id', 'fw-01.example.com (via T@opnsense)')) %}
 {% set ping_ok = salt['opnsense.ping']() if 'opnsense.ping' in salt else False %}
 
 {% set desired = salt['pillar.get']('opnsense:aliases', {}) %}

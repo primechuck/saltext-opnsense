@@ -151,11 +151,11 @@ def alias_present(
             - description: "www dashboard"
 
     CLI:
-        salt opnsense-router state.apply opnsense.convenience_aliases
-        salt opnsense-router opnsense_unbound.list_aliases_pretty --out=table
+        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_pretty --out=table
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_unbound.alias_present
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_unbound.alias_present
     """
     if kwargs:
         _strip_salt_internal_kwargs(kwargs)
@@ -279,7 +279,7 @@ def alias_absent(name, domain=None, reconfigure=True, **kwargs):
             - name: old-git.example.com
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_unbound.alias_absent
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_unbound.alias_absent
     """
     if kwargs:
         _strip_salt_internal_kwargs(kwargs)
@@ -388,13 +388,13 @@ def aliases_managed(
             # parent/aliases/purge auto-read from pillar
 
     CLI preview:
-        salt opnsense-router opnsense_dns.managed_preview
-        salt opnsense-router state.apply opnsense.convenience_aliases test=True
+        salt -C 'T@opnsense:fw-01' opnsense_dns.managed_preview
+        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases test=True
         # deprecated shim still works: opnsense.aliases_delightful
 
     sys.doc:
-        salt opnsense-router sys.doc opnsense_unbound.aliases_managed
-        salt opnsense-router sys.doc opnsense_dns.managed
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_unbound.aliases_managed
+        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.managed
     """
     if kwargs:
         _strip_salt_internal_kwargs(kwargs)

@@ -68,8 +68,8 @@ def list_host_overrides():
     List unbound host overrides keyed by FQDN with IP and metadata.
 
     CLI:
-        salt opnsense-router opnsense_unbound.list_host_overrides
-        salt opnsense-router opnsense_unbound.list_host_overrides --out=yaml
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides --out=yaml
     """
     rows = _list_host_overrides_raw()
     result = {}
@@ -96,7 +96,7 @@ def list_host_overrides_simple():
     Simple mapping FQDN -> IP. Perfect for table outputter.
 
     CLI:
-        salt opnsense-router opnsense_unbound.list_host_overrides_simple --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides_simple --out=table
     """
     data = list_host_overrides()
     return {fqdn: info["ip"] for fqdn, info in data.items()}
@@ -107,8 +107,8 @@ def list_host_overrides_pretty():
     Pretty list of "fqdn -> ip (enabled) [uuid8]" for humans.
 
     CLI:
-        salt opnsense-router opnsense_unbound.list_host_overrides_pretty --out=table
-        salt opnsense-router opnsense_unbound.list_host_overrides_pretty | xargs -I{} echo {}
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides_pretty --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides_pretty | xargs -I{} echo {}
     """
     data = list_host_overrides()
     lines = []
@@ -128,9 +128,9 @@ def list_aliases(domain=None, parent=None):
         parent: filter by parent FQDN or UUID like cluster.example.com
 
     CLI:
-        salt opnsense-router opnsense_unbound.list_aliases
-        salt opnsense-router opnsense_unbound.list_aliases domain=example.com
-        salt opnsense-router opnsense_unbound.list_aliases parent=cluster.example.com --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases domain=example.com
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases parent=cluster.example.com --out=table
     """
     uuid_to_fqdn, fqdn_to_uuid, _ = _build_host_map()
     rows = _list_aliases_raw()
@@ -182,8 +182,8 @@ def list_aliases_simple(domain=None, parent=None):
     Simple mapping FQDN -> parent FQDN. Chef/Puppet friendly, easy table output.
 
     CLI:
-        salt opnsense-router opnsense_unbound.list_aliases_simple --out=table
-        salt opnsense-router opnsense_unbound.list_aliases_simple domain=example.com parent=cluster.example.com
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_simple --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_simple domain=example.com parent=cluster.example.com
     """
     data = list_aliases(domain=domain, parent=parent)
     return {fqdn: info["parent"] for fqdn, info in data.items()}
@@ -201,8 +201,8 @@ def list_aliases_pretty(domain=None, parent=None):
     Pretty list of "fqdn -> parent (enabled)" for humans. Use with --out=table.
 
     This is the convenience CLI helper that users expect:
-        salt opnsense-router opnsense_unbound.list_aliases_pretty --out=table
-        salt opnsense-router opnsense_dns.list_aliases_pretty --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_pretty --out=table
+        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
 
     Returns list of strings like "www.example.com -> cluster.example.com (enabled)"
     Salt's table outputter formats it nicely.
