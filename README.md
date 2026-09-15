@@ -2,15 +2,15 @@
 
 SaltStack extension for managing OPNsense firewalls via the REST API – **3008+ Salt Resources** fleet-ready.
 
-Manage OPNsense services (Unbound DNS, Kea DHCP, BIND, ACME certs, firewall aliases) declaratively with Salt states or programmatically via execution modules. API bindings generated from upstream OPNsense schemas (75 modules, 1,736 endpoints). Resource-based targeting replaces legacy proxy minion.
+Manage OPNsense services (Unbound DNS, Kea DHCP, BIND, ACME certs, firewall aliases) declaratively with Salt states or programmatically via execution modules. API bindings generated from upstream OPNsense schemas (76 modules, 1,815 endpoints). Resource-based targeting replaces legacy proxy minion.
 
 > **Breaking 1.0.0**: Proxy minion removed. Requires `salt>=3008`. Use Resources `T@opnsense`. See `docs/RESOURCES.md`.
-> **Target Release**: Built for **OPNsense 25.7.11** (75 modules, 1,736 API endpoints).
-> **Core Design Goal**: Maintainer laziness. Never hand-code API wrappers. `make bump CORE=25.7.11` regenerates all.
+> **Target Release**: Built for **OPNsense 26.7.3** (76 modules, 1,815 API endpoints).
+> **Core Design Goal**: Maintainer laziness. Never hand-code API wrappers. `make bump CORE=26.7.3` regenerates all.
 
 ## Features
 
-- **Execution Modules**: 75 modules / 1736 endpoints, `opnsense.search/call/get/add/set/delete`, human-friendly listers (`list_aliases`, `resolve_alias`), dynamic wrappers via `__getattr__`.
+- **Execution Modules**: 76 modules / 1815 endpoints, `opnsense.search/call/get/add/set/delete`, human-friendly listers (`list_aliases`, `resolve_alias`), dynamic wrappers via `__getattr__`.
 - **State Modules**: Generic `item_present/absent` for all modules + convenience `alias_present`, `record_present`, `aliases_managed`, `dns.managed` – idempotent second-run 0 changes via diff engine (bool `1`↔True, UUID↔FQDN, CSV↔list).
 - **Idempotency Diff Engine** (`utils/diff.py`): Normalizes flapping API quirks, uses `Final/frozenset`, split helpers.
 - **Salt Resources (3008+)**: Fleet support – one managing minion manages dozens FWs. 2 SRN composition `opnsense:fw-01` (API) + optional `ssh:fw-01` (built-in `ssh` resource with thin requiring `python311` on OPNsense). Target `T@opnsense`, `G@opnsense_version`, `T@opnsense:fw-01 or T@ssh:fw-01`.

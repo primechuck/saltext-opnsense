@@ -3,8 +3,8 @@
 # See docs/MAINTENANCE.md for full sprint checklist
 
 PYTHON ?= python3
-CORE_REF ?= 25.7
-PLUGINS_REF ?= 25.7
+CORE_REF ?= 26.7.3
+PLUGINS_REF ?= 26.7.3
 CORE ?= $(CORE_REF)
 ARGS ?=
 DRY ?=

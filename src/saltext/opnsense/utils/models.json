@@ -1,11 +1,11 @@
 {
   "meta": {
-    "core_ref": "25.7.11",
-    "generated_at": "2026-07-30T02:32:45.579382+00:00",
-    "plugins_ref": "25.7.11",
-    "total_arrays": 191,
-    "total_models": 84,
-    "total_modules": 47
+    "core_ref": "26.7.3",
+    "generated_at": "2026-09-15T02:19:30.210618+00:00",
+    "plugins_ref": "26.7.3",
+    "total_arrays": 197,
+    "total_models": 88,
+    "total_modules": 49
   },
   "models": {
     "acmeclient": {
@@ -241,6 +241,25 @@
             "required": "N",
             "type": "TextField"
           },
+          "acme_ruckus_host": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "HostnameField"
+          },
+          "acme_ruckus_pass": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "acme_ruckus_user": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
           "acme_synology_dsm_create": {
             "default": "1",
             "help": "",
@@ -328,6 +347,54 @@
             "required": "N",
             "type": "OptionField"
           },
+          "acme_truenas_ws_apikey": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "acme_truenas_ws_hostname": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "localhost",
+            "help": "",
+            "required": "N",
+            "type": "HostnameField"
+          },
+          "acme_truenas_ws_protocol": {
+            "OptionValues": {
+              "ws": "ws [default]",
+              "wss": "wss"
+            },
+            "default": "ws",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "acme_truenasws_apikey": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "acme_truenasws_hostname": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "localhost",
+            "help": "",
+            "required": "N",
+            "type": "HostnameField"
+          },
+          "acme_truenasws_protocol": {
+            "OptionValues": {
+              "ws": "ws [default]",
+              "wss": "wss"
+            },
+            "default": "ws",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "acme_unifi_keystore": {
             "default": "/usr/local/share/java/unifi/data/keystore",
             "help": "",
@@ -357,6 +424,37 @@
           "acme_vault_url": {
             "ValidationMessage": "Should be a string between 1 and 1024 characters.",
             "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "acme_zyxel_gs1900_host": {
+            "ValidationMessage": "Should be a string between 1 and 1024 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "HostnameField"
+          },
+          "acme_zyxel_gs1900_insecure": {
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "BooleanField"
+          },
+          "acme_zyxel_gs1900_password": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "acme_zyxel_gs1900_reboot": {
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "BooleanField"
+          },
+          "acme_zyxel_gs1900_user": {
+            "default": "admin",
             "help": "",
             "required": "N",
             "type": "TextField"
@@ -676,9 +774,16 @@
             "required": "N",
             "type": "BooleanField"
           },
+          "profile": {
+            "ValidationMessage": "Should be a string between 1 and 255 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
           "renewInterval": {
             "MaximumValue": "5000",
-            "MinimumValue": "1",
+            "MinimumValue": "0",
             "default": "60",
             "help": "",
             "required": "Y",
@@ -823,7 +928,13 @@
             "required": "N",
             "type": "TextField"
           },
-          "dns_active24_token": {
+          "dns_active24_api_key": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_active24_api_secret": {
             "default": "",
             "help": "",
             "required": "N",
@@ -1358,6 +1469,12 @@
             "type": "TextField"
           },
           "dns_googledomains_zone": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_he_ddns_key": {
             "default": "",
             "help": "",
             "required": "N",
@@ -2171,6 +2288,7 @@
               "dns_gdnsdk": "GratisDNS.dk",
               "dns_googledomains": "Google Domains",
               "dns_he": "Hurricane Electric",
+              "dns_he_ddns": "Hurricane Electric DDNS",
               "dns_hetzner": "Hetzner",
               "dns_hetznercloud": "Hetzner Cloud",
               "dns_hexonet": "hexonet.com",
@@ -2225,6 +2343,9 @@
               "dns_selfhost": "Selfhost",
               "dns_servercow": "Servercow",
               "dns_simply": "Simply.com",
+              "dns_spaceship": "Spaceship",
+              "dns_technitium": "Technitium",
+              "dns_timeweb": "Timeweb Cloud",
               "dns_transip": "Transip",
               "dns_udr": "united-domains Reselling",
               "dns_unoeuro": "UnoEuro",
@@ -2311,11 +2432,53 @@
             "required": "Y",
             "type": "IntegerField"
           },
+          "dns_spaceship_api_key": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_spaceship_api_secret": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_spaceship_root_domain": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_technitium_hostname": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_technitium_token": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "dns_timeweb_token": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
           "dns_transip_key": {
             "default": "",
             "help": "",
             "required": "N",
             "type": "TextField"
+          },
+          "dns_transip_token_global_key": {
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "BooleanField"
           },
           "dns_transip_username": {
             "default": "",
@@ -2630,7 +2793,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "JsonField"
           },
           "descr": {
             "default": "",
@@ -2663,6 +2826,7 @@
             "type": ".\\GroupMembershipField"
           },
           "landing_page": {
+            "ValidationMessage": "Must be a valid relative path without backslashes or URL schemes.",
             "default": "",
             "help": "",
             "required": "0",
@@ -2673,6 +2837,12 @@
             "help": "",
             "required": "0",
             "type": "JsonKeyValueStoreField"
+          },
+          "menu_favorites": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonField"
           },
           "name": {
             "Constraints": {
@@ -3033,8 +3203,8 @@
           },
           "RequestMatcher": {
             "OptionValues": {
-              "client_ip": "client_ip",
-              "remote_ip": "remote_ip"
+              "client_ip": "",
+              "remote_ip": ""
             },
             "default": "client_ip",
             "help": "",
@@ -3097,8 +3267,8 @@
           },
           "HandleDirective": {
             "OptionValues": {
-              "redir": "redir",
-              "reverse_proxy": "reverse_proxy"
+              "redir": "",
+              "reverse_proxy": ""
             },
             "default": "reverse_proxy",
             "help": "",
@@ -3114,8 +3284,8 @@
           },
           "HandleType": {
             "OptionValues": {
-              "handle": "handle",
-              "handle_path": "handle_path"
+              "handle": "",
+              "handle_path": ""
             },
             "default": "handle",
             "help": "",
@@ -3130,19 +3300,7 @@
             "required": "0",
             "type": "IntegerField"
           },
-          "HttpNtlm": {
-            "Constraints": {
-              "check001": ""
-            },
-            "default": "",
-            "help": "",
-            "required": "0",
-            "type": "BooleanField"
-          },
           "HttpTls": {
-            "Constraints": {
-              "check001": ""
-            },
             "OptionValues": {
               "h2c": "h2c://",
               "http": "http://",
@@ -3390,12 +3548,12 @@
           },
           "lb_policy": {
             "OptionValues": {
-              "client_ip_hash": "client_ip_hash",
-              "first": "first",
-              "ip_hash": "ip_hash",
-              "least_conn": "least_conn",
-              "round_robin": "round_robin",
-              "uri_hash": "uri_hash"
+              "client_ip_hash": "",
+              "first": "",
+              "ip_hash": "",
+              "least_conn": "",
+              "round_robin": "",
+              "uri_hash": ""
             },
             "default": "",
             "help": "",
@@ -3482,8 +3640,8 @@
           },
           "HeaderUpDown": {
             "OptionValues": {
-              "header_down": "header_down",
-              "header_up": "header_up"
+              "header_down": "",
+              "header_up": ""
             },
             "default": "header_up",
             "help": "",
@@ -3505,6 +3663,31 @@
           }
         },
         "layer4": {
+          "ActiveHealthInterval": {
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "ActiveHealthPort": {
+            "MaximumValue": "65535",
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a valid port between 1 and 65535 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "ActiveHealthTimeout": {
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
           "FromDomain": {
             "ValidationMessage": "Please enter one or multiple hostnames or FQDNs.",
             "default": "",
@@ -3514,13 +3697,13 @@
           },
           "FromOpenvpnModes": {
             "OptionValues": {
-              "auth_sha256_inverse": "tls-auth_sha256_inverse",
-              "auth_sha256_normal": "tls-auth_sha256_normal",
-              "auth_sha512_inverse": "tls-auth_sha512_inverse",
-              "auth_sha512_normal": "tls-auth_sha512_normal",
-              "crypt": "tls-crypt",
-              "crypt2_client": "tls-crypt2_client",
-              "crypt2_server": "tls-crypt2_server"
+              "auth_sha256_inverse": "",
+              "auth_sha256_normal": "",
+              "auth_sha512_inverse": "",
+              "auth_sha512_normal": "",
+              "crypt": "",
+              "crypt2_client": "",
+              "crypt2_server": ""
             },
             "default": "",
             "help": "",
@@ -3586,6 +3769,16 @@
             "required": "Y",
             "type": "OptionField"
           },
+          "OriginateTls": {
+            "OptionValues": {
+              "tls": "TLS (Verify certificate)",
+              "tls_insecure_skip_verify": "TLS (Skip verification)"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
           "PassiveHealthFailDuration": {
             "MinimumValue": "1",
             "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
@@ -3595,8 +3788,16 @@
             "type": "IntegerField"
           },
           "PassiveHealthMaxFails": {
-            "MinimumValue": "2",
-            "ValidationMessage": "Please enter a minimum value of 2 or leave empty for defaults.",
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "PassiveHealthUnhealthyConnectionCount": {
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
             "default": "",
             "help": "",
             "required": "0",
@@ -3684,17 +3885,32 @@
           },
           "lb_policy": {
             "OptionValues": {
-              "client_ip_hash": "client_ip_hash",
-              "first": "first",
-              "ip_hash": "ip_hash",
-              "least_conn": "least_conn",
-              "round_robin": "round_robin",
-              "uri_hash": "uri_hash"
+              "first": "",
+              "ip_hash": "",
+              "least_conn": "",
+              "random_choose": "",
+              "round_robin": ""
             },
             "default": "",
             "help": "",
             "required": "0",
             "type": "OptionField"
+          },
+          "lb_try_duration": {
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "lb_try_interval": {
+            "MinimumValue": "1",
+            "ValidationMessage": "Please enter a minimum value of 1 or leave empty for defaults.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
           }
         },
         "layer4openvpn": {
@@ -3729,9 +3945,9 @@
           },
           "ClientAuthMode": {
             "OptionValues": {
-              "request": "request",
-              "require": "require",
-              "verify_if_given": "verify_if_given"
+              "request": "",
+              "require": "",
+              "verify_if_given": ""
             },
             "default": "",
             "help": "",
@@ -3855,9 +4071,9 @@
           },
           "ClientAuthMode": {
             "OptionValues": {
-              "request": "request",
-              "require": "require",
-              "verify_if_given": "verify_if_given"
+              "request": "",
+              "require": "",
+              "verify_if_given": ""
             },
             "default": "",
             "help": "",
@@ -4082,6 +4298,12 @@
             "required": "Y",
             "type": "InterfaceField"
           },
+          "roaming": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
           "servername": {
             "ValidationMessage": "Please enter a valid servername, ip address or leave this option blank.",
             "default": "",
@@ -4259,6 +4481,12 @@
             "required": "0",
             "type": "VirtualIPField"
           },
+          "circuit_id": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "StrictTextField"
+          },
           "destination": {
             "default": "",
             "help": "",
@@ -4290,6 +4518,12 @@
             "help": "",
             "required": "Y",
             "type": "InterfaceField"
+          },
+          "remote_id": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "StrictTextField"
           }
         }
       }
@@ -4410,7 +4644,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "description": {
             "default": "",
@@ -4422,7 +4656,7 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "interface": {
             "default": "",
@@ -4434,7 +4668,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "tag": {
             "default": "",
@@ -4544,7 +4778,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           }
         },
         "dhcp_ranges": {
@@ -4596,7 +4830,7 @@
           },
           "mode": {
             "OptionValues": {
-              "static": "static"
+              "static": ""
             },
             "default": "",
             "help": "",
@@ -4625,12 +4859,12 @@
           },
           "ra_mode": {
             "OptionValues": {
-              "off-link": "off-link",
-              "ra-advrouter": "ra-advrouter",
-              "ra-names": "ra-names",
-              "ra-only": "ra-only",
-              "ra-stateless": "ra-stateless",
-              "slaac": "slaac"
+              "off-link": "",
+              "ra-advrouter": "",
+              "ra-names": "",
+              "ra-only": "",
+              "ra-stateless": "",
+              "slaac": ""
             },
             "default": "",
             "help": "",
@@ -4701,7 +4935,7 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "DescriptionField"
           }
         },
         "domainoverrides": {
@@ -4893,6 +5127,192 @@
             "default": "",
             "help": "",
             "required": "Y",
+            "type": "TextField"
+          }
+        }
+      },
+      "DNat": {
+        "rule": {
+          "address": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\NetworkMappedField"
+          },
+          "associated-rule-id": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\DNatAssociatedRuleField"
+          },
+          "categories": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\CategoryMapField"
+          },
+          "category": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\CategoryField"
+          },
+          "descr": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "DescriptionField"
+          },
+          "description": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "disabled": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "interface": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "InterfaceField"
+          },
+          "ipprotocol": {
+            "OptionValues": {
+              "inet": "IPv4",
+              "inet46": "IPv4+IPv6",
+              "inet6": "IPv6"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "local-port": {
+            "ValidationMessage": "Please specify a valid port number or alias.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "PortField"
+          },
+          "log": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "natreflection": {
+            "OptionValues": {
+              "disable": "Disable",
+              "purenat": "Enable"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "network": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\NetworkMappedField"
+          },
+          "nordr": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "nosync": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "not": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "pass": {
+            "OptionValues": {
+              "pass": "Pass",
+              "rule": "Register rule"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "poolopts": {
+            "OptionValues": {
+              "bitmask": "Bitmask",
+              "random": "Random",
+              "randomsa": "Random with Sticky Address",
+              "rr": "Round Robin",
+              "rrsa": "Round Robin with Sticky Address",
+              "source-hash": "Source Hash"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "port": {
+            "ValidationMessage": "Please specify a valid port number, well-known name, alias or range.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\PortMappedField"
+          },
+          "protocol": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "ProtocolField"
+          },
+          "sequence": {
+            "MaximumValue": "999999",
+            "MinimumValue": "1",
+            "ValidationMessage": "Sequence shall be between 1 and 999999.",
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": ".\\DNatSequenceField"
+          },
+          "tag": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "StrictTextField"
+          },
+          "tagged": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "StrictTextField"
+          },
+          "target": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkAliasField"
+          },
+          "time": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "username": {
+            "default": "",
+            "help": "",
+            "required": "0",
             "type": "TextField"
           }
         }
@@ -5591,6 +6011,17 @@
             "help": "",
             "required": "Y",
             "type": "BooleanField"
+          },
+          "schedule": {
+            "OptionValues": {
+              "dly": "Daily",
+              "mly": "Monthly",
+              "wly": "Weekly"
+            },
+            "default": "wly",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
           }
         }
       }
@@ -5647,6 +6078,12 @@
             "help": "",
             "required": "N",
             "type": "BooleanField"
+          },
+          "converter": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
           },
           "cust_hdr": {
             "ValidationMessage": "Should be a string between 1 and 1024 characters.",
@@ -5733,60 +6170,158 @@
           },
           "expression": {
             "OptionValues": {
-              "cust_hdr": "HTTP Header matches",
-              "cust_hdr_beg": "HTTP Header starts with",
-              "cust_hdr_end": "HTTP Header ends with",
-              "cust_hdr_reg": "HTTP Header regex",
-              "cust_hdr_sub": "HTTP Header contains",
+              "cust_hdr": "hdr - specified HTTP Header matches",
+              "cust_hdr_beg": "hdr_beg - specified HTTP Header starts with",
+              "cust_hdr_end": "hdr_end - specified HTTP Header ends with",
+              "cust_hdr_reg": "hdr_reg - specified HTTP Header regex",
+              "cust_hdr_sub": "hdr_sub - specified HTTP Header contains",
               "custom_acl": "Custom condition (option pass-through)",
-              "hdr": "Host matches",
-              "hdr_beg": "Host starts with",
-              "hdr_end": "Host ends with",
-              "hdr_reg": "Host regex",
-              "hdr_sub": "Host contains",
-              "http_auth": "HTTP Basic Auth: username/password from client matches selected User/Group",
-              "nbsrv": "Minimum number of usable servers in backend",
-              "path": "Path matches",
-              "path_beg": "Path starts with",
-              "path_dir": "Path contains subdir",
-              "path_end": "Path ends with",
-              "path_reg": "Path regex",
-              "path_sub": "Path contains string",
-              "src": "Source IP matches specified IP",
-              "src_bytes_in_rate": "Source IP: incoming bytes rate",
-              "src_bytes_out_rate": "Source IP: outgoing bytes rate",
-              "src_conn_cnt": "Source IP: cumulative number of connections",
-              "src_conn_cur": "Source IP: concurrent connections",
-              "src_conn_rate": "Source IP: connection rate",
-              "src_http_err_cnt": "Source IP: cumulative number of HTTP errors",
-              "src_http_err_rate": "Source IP: rate of HTTP errors",
-              "src_http_req_cnt": "Source IP: number of HTTP requests",
-              "src_http_req_rate": "Source IP: rate of HTTP requests",
-              "src_is_local": "Source IP is local",
-              "src_kbytes_in": "Source IP: amount of data received (in kilobytes)",
-              "src_kbytes_out": "Source IP: amount of data sent (in kilobytes)",
-              "src_port": "Source IP: TCP source port",
-              "src_sess_cnt": "Source IP: cumulative number of sessions",
-              "src_sess_rate": "Source IP: session rate",
-              "ssl_c_ca_commonname": "SSL Client certificate issued by CA common-name",
-              "ssl_c_verify": "SSL Client certificate is valid",
-              "ssl_c_verify_code": "SSL Client certificate verify error result",
-              "ssl_fc": "Traffic is SSL (locally deciphered)",
-              "ssl_fc_sni": "SNI TLS extension matches (locally deciphered)",
-              "ssl_hello_type": "SSL Hello Type",
-              "ssl_sni": "SNI TLS extension matches (TCP request content inspection)",
-              "ssl_sni_beg": "SNI TLS extension starts with (TCP request content inspection)",
-              "ssl_sni_end": "SNI TLS extension ends with (TCP request content inspection)",
-              "ssl_sni_reg": "SNI TLS extension regex (TCP request content inspection)",
-              "ssl_sni_sub": "SNI TLS extension contains (TCP request content inspection)",
-              "traffic_is_http": "Traffic is HTTP",
-              "traffic_is_ssl": "Traffic is SSL (TCP request content inspection)",
-              "url_param": "URL parameter contains"
+              "hdr": "hdr - HTTP Host Header matches",
+              "hdr_beg": "hdr_beg - HTTP Host Header starts with",
+              "hdr_end": "hdr_end - HTTP Host Header ends with",
+              "hdr_reg": "hdr_reg - HTTP Host Header regex",
+              "hdr_sub": "hdr_sub - HTTP Host Header contains",
+              "http_auth": "http_auth - HTTP Basic Auth: username/password from client matches selected User/Group",
+              "http_method": "http_method - HTTP Method",
+              "nbsrv": "nbsrv - Minimum number of usable servers in backend",
+              "path": "path - Path matches",
+              "path_beg": "path_beg - Path starts with",
+              "path_dir": "path_dir - Path contains subdir",
+              "path_end": "path_end - Path ends with",
+              "path_reg": "path_reg - Path regex",
+              "path_sub": "path_sub - Path contains string",
+              "quic_enabled": "quic_enabled - QUIC transport protocol is enabled",
+              "sc0_clr_gpc0": "sc0_clr_gpc0 - Sticky counter: clear General Purpose Counter",
+              "sc0_clr_gpc1": "sc0_clr_gpc1 - Sticky counter: clear General Purpose Counter",
+              "sc0_get_gpc0": "sc0_get_gpc0 - Sticky counter: get General Purpose Counter value",
+              "sc0_get_gpc1": "sc0_get_gpc1 - Sticky counter: get General Purpose Counter value",
+              "sc0_get_gpt0": "sc0_get_gpt0 - Sticky counter: get General Purpose Tag value",
+              "sc0_gpc0_rate": "sc0_gpc0_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc0_gpc1_rate": "sc0_gpc1_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc0_inc_gpc0": "sc0_inc_gpc0 - Sticky counter: increment General Purpose Counter",
+              "sc0_inc_gpc1": "sc0_inc_gpc1 - Sticky counter: increment General Purpose Counter",
+              "sc1_clr_gpc": "sc1_clr_gpc - Sticky counter: clear General Purpose Counter",
+              "sc1_clr_gpc0": "sc1_clr_gpc0 - Sticky counter: clear General Purpose Counter",
+              "sc1_clr_gpc1": "sc1_clr_gpc1 - Sticky counter: clear General Purpose Counter",
+              "sc1_get_gpc0": "sc1_get_gpc0 - Sticky counter: get General Purpose Counter value",
+              "sc1_get_gpc1": "sc1_get_gpc1 - Sticky counter: get General Purpose Counter value",
+              "sc1_get_gpt0": "sc1_get_gpt0 - Sticky counter: get General Purpose Tag value",
+              "sc1_gpc0_rate": "sc1_gpc0_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc1_gpc1_rate": "sc1_gpc1_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc1_inc_gpc0": "sc1_inc_gpc0 - Sticky counter: increment General Purpose Counter",
+              "sc1_inc_gpc1": "sc1_inc_gpc1 - Sticky counter: increment General Purpose Counter",
+              "sc2_clr_gpc": "sc2_clr_gpc - Sticky counter: clear General Purpose Counter",
+              "sc2_clr_gpc0": "sc2_clr_gpc0 - Sticky counter: clear General Purpose Counter",
+              "sc2_clr_gpc1": "sc2_clr_gpc1 - Sticky counter: clear General Purpose Counter",
+              "sc2_get_gpc0": "sc2_get_gpc0 - Sticky counter: get General Purpose Counter value",
+              "sc2_get_gpc1": "sc2_get_gpc1 - Sticky counter: get General Purpose Counter value",
+              "sc2_get_gpt0": "sc2_get_gpt0 - Sticky counter: get General Purpose Tag value",
+              "sc2_gpc0_rate": "sc2_gpc0_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc2_gpc1_rate": "sc2_gpc1_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc2_inc_gpc0": "sc2_inc_gpc0 - Sticky counter: increment General Purpose Counter",
+              "sc2_inc_gpc1": "sc2_inc_gpc1 - Sticky counter: increment General Purpose Counter",
+              "sc_bytes_in_rate": "sc_bytes_in_rate - Sticky counter: incoming bytes rate",
+              "sc_bytes_out_rate": "sc_bytes_out_rate - Sticky counter: outgoing bytes rate",
+              "sc_clr_gpc": "sc_clr_gpc - Sticky counter: clear General Purpose Counter",
+              "sc_clr_gpc0": "sc_clr_gpc0 - Sticky counter: clear General Purpose Counter",
+              "sc_clr_gpc1": "sc_clr_gpc1 - Sticky counter: clear General Purpose Counter",
+              "sc_conn_cnt": "sc_conn_cnt - Sticky counter: cumulative number of connections",
+              "sc_conn_cur": "sc_conn_cur - Sticky counter: concurrent connections",
+              "sc_conn_rate": "sc_conn_rate - Sticky counter: connection rate",
+              "sc_get_gpc": "sc_get_gpc - Sticky counter: get General Purpose Counter value",
+              "sc_get_gpc0": "sc_get_gpc0 - Sticky counter: get General Purpose Counter value",
+              "sc_get_gpc1": "sc_get_gpc1 - Sticky counter: get General Purpose Counter value",
+              "sc_get_gpt": "sc_get_gpt - Sticky counter: get General Purpose Tag value",
+              "sc_get_gpt0": "sc_get_gpt0 - Sticky counter: get General Purpose Tag value",
+              "sc_glitch_cnt": "sc_glitch_cnt - Sticky counter: cumulative number of glitches",
+              "sc_glitch_rate": "sc_glitch_rate - Sticky counter: rate of glitches",
+              "sc_gpc0_rate": "sc_gpc0_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc_gpc1_rate": "sc_gpc1_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc_gpc_rate": "sc_gpc_rate - Sticky counter: increment rate of General Purpose Counter",
+              "sc_http_err_cnt": "sc_http_err_cnt - Sticky counter: cumulative number of HTTP errors",
+              "sc_http_err_rate": "sc_http_err_rate - Sticky counter: rate of HTTP errors",
+              "sc_http_fail_cnt": "sc_http_fail_cnt - Sticky counter: cumulative number of HTTP failures",
+              "sc_http_fail_rate": "sc_http_fail_rate - Sticky counter: rate of HTTP failures",
+              "sc_http_req_cnt": "sc_http_req_cnt - Sticky counter: cumulative number of HTTP requests",
+              "sc_http_req_rate": "sc_http_req_rate - Sticky counter: rate of HTTP requests",
+              "sc_inc_gpc": "sc_inc_gpc - Sticky counter: increment General Purpose Counter",
+              "sc_inc_gpc0": "sc_inc_gpc0 - Sticky counter: increment General Purpose Counter",
+              "sc_inc_gpc1": "sc_inc_gpc1 - Sticky counter: increment General Purpose Counter",
+              "sc_sess_cnt": "sc_sess_cnt - Sticky counter: cumulative number of sessions",
+              "sc_sess_rate": "sc_sess_rate - Sticky counter: session rate",
+              "src": "src - Source IP matches specified IP",
+              "src_bytes_in_rate": "src_bytes_in_rate - Source IP: incoming bytes rate",
+              "src_bytes_out_rate": "src_bytes_out_rate - Source IP: outgoing bytes rate",
+              "src_clr_gpc": "src_clr_gpc - Source IP: clear General Purpose Counter",
+              "src_clr_gpc0": "src_clr_gpc0 - Source IP: clear General Purpose Counter",
+              "src_clr_gpc1": "src_clr_gpc1 - Source IP: clear General Purpose Counter",
+              "src_conn_cnt": "src_conn_cnt - Source IP: cumulative number of connections",
+              "src_conn_cur": "src_conn_cur - Source IP: concurrent connections",
+              "src_conn_rate": "src_conn_rate - Source IP: connection rate",
+              "src_get_gpc": "src_get_gpc - Source IP: get General Purpose Counter value",
+              "src_get_gpc0": "src_get_gpc0 - Source IP: get General Purpose Counter value",
+              "src_get_gpc1": "src_get_gpc1 - Source IP: get General Purpose Counter value",
+              "src_get_gpt": "src_get_gpt - Source IP: get General Purpose Tag value",
+              "src_glitch_cnt": "src_glitch_cnt - Source IP: cumulative number of glitches",
+              "src_glitch_rate": "src_glitch_rate - Source IP: rate of glitches",
+              "src_gpc0_rate": "src_gpc0_rate - Source IP: increment rate of General Purpose Counter",
+              "src_gpc1_rate": "src_gpc1_rate - Source IP: increment rate of General Purpose Counter",
+              "src_gpc_rate": "src_gpc_rate - Source IP: increment rate of General Purpose Counter",
+              "src_http_err_cnt": "src_http_err_cnt - Source IP: cumulative number of HTTP errors",
+              "src_http_err_rate": "src_http_err_rate - Source IP: rate of HTTP errors",
+              "src_http_fail_cnt": "src_http_fail_cnt - Source IP: cumulative number of HTTP failures",
+              "src_http_fail_rate": "src_http_fail_rate - Source IP: rate of HTTP failures",
+              "src_http_req_cnt": "src_http_req_cnt - Source IP: number of HTTP requests",
+              "src_http_req_rate": "src_http_req_rate - Source IP: rate of HTTP requests",
+              "src_inc_gpc": "src_inc_gpc - Source IP: increment General Purpose Counter",
+              "src_inc_gpc0": "src_inc_gpc0 - Source IP: increment General Purpose Counter",
+              "src_inc_gpc1": "src_inc_gpc1 - Source IP: increment General Purpose Counter",
+              "src_is_local": "src_is_local - Source IP is local",
+              "src_kbytes_in": "src_kbytes_in - Source IP: amount of data received (in kilobytes)",
+              "src_kbytes_out": "src_kbytes_out - Source IP: amount of data sent (in kilobytes)",
+              "src_port": "src_port - Source IP: TCP source port",
+              "src_sess_cnt": "src_sess_cnt - Source IP: cumulative number of sessions",
+              "src_sess_rate": "src_sess_rate - Source IP: session rate",
+              "ssl_c_ca_commonname": "ssl_c_ca_commonname - SSL Client certificate issued by CA common-name",
+              "ssl_c_verify": "ssl_c_verify - SSL Client certificate is valid",
+              "ssl_c_verify_code": "ssl_c_verify_code - SSL Client certificate verify error result",
+              "ssl_fc": "ssl_fc - Traffic is SSL (locally deciphered)",
+              "ssl_fc_sni": "ssl_fc_sni - SNI TLS extension matches (locally deciphered)",
+              "ssl_hello_type": "ssl_hello_type - SSL Hello Type",
+              "ssl_sni": "ssl_sni - SNI TLS extension matches (TCP request content inspection)",
+              "ssl_sni_beg": "ssl_sni_beg - SNI TLS extension starts with (TCP request content inspection)",
+              "ssl_sni_end": "ssl_sni_end - SNI TLS extension ends with (TCP request content inspection)",
+              "ssl_sni_reg": "ssl_sni_reg - SNI TLS extension regex (TCP request content inspection)",
+              "ssl_sni_sub": "ssl_sni_sub - SNI TLS extension contains (TCP request content inspection)",
+              "stopping": "stopping - HAProxy process is currently stopping",
+              "traffic_is_http": "req.proto_http - Traffic is HTTP",
+              "traffic_is_ssl": "req.ssl_ver - Traffic is SSL (TCP request content inspection)",
+              "url_param": "url_param - URL parameter contains",
+              "var": "var - Compare the value of a variable",
+              "wait_end": "wait_end - Inspection period is over"
             },
             "default": "",
             "help": "",
             "required": "Y",
             "type": "OptionField"
+          },
+          "gpc_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "gpt_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
           },
           "hdr": {
             "ValidationMessage": "Should be a string between 1 and 1024 characters.",
@@ -5823,11 +6358,49 @@
             "required": "N",
             "type": "TextField"
           },
+          "http_method": {
+            "OptionValues": {
+              "CONNECT": "CONNECT",
+              "DELETE": "DELETE",
+              "GET": "GET",
+              "HEAD": "HEAD",
+              "OPTIONS": "OPTIONS",
+              "PATCH": "PATCH",
+              "POST": "POST",
+              "PUT": "PUT",
+              "TRACE": "TRACE"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "id": {
             "default": "",
             "help": "",
             "required": "N",
             "type": "UniqueIdField"
+          },
+          "mapfile": {
+            "ValidationMessage": "Related mapfile item not found",
+            "default": "",
+            "help": "",
+            "relation": {
+              "display": "name",
+              "items": "mapfiles.mapfile",
+              "key": "template",
+              "source": "OPNsense.HAProxy.HAProxy"
+            },
+            "relation_targets": [
+              {
+                "display": "name",
+                "items": "mapfiles.mapfile",
+                "key": "template",
+                "source": "OPNsense.HAProxy.HAProxy"
+              }
+            ],
+            "required": "N",
+            "type": "ModelRelationField"
           },
           "name": {
             "ValidationMessage": "Should be a string between 1 and 255 characters.",
@@ -5935,6 +6508,1117 @@
             "required": "N",
             "type": "ModelRelationField"
           },
+          "sc0_clr_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_clr_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_clr_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_clr_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_get_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_get_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_get_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_get_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_get_gpt0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_get_gpt0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_gpc0_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_gpc0_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_gpc1_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_gpc1_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_inc_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_inc_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc0_inc_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc0_inc_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_clr_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_clr_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_clr_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_clr_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_clr_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_clr_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_get_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_get_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_get_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_get_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_get_gpt0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_get_gpt0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_gpc0_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_gpc0_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_gpc1_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_gpc1_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_inc_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_inc_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc1_inc_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc1_inc_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_clr_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_clr_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_clr_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_clr_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_clr_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_clr_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_get_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_get_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_get_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_get_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_get_gpt0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_get_gpt0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_gpc0_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_gpc0_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_gpc1_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_gpc1_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_inc_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_inc_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc2_inc_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc2_inc_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_bytes_in_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_bytes_in_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_bytes_out_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_bytes_out_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_clr_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_clr_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_clr_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_clr_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_clr_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_clr_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_conn_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_conn_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_conn_cur": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_conn_cur_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_conn_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_conn_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_get_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_get_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_get_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_get_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_get_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_get_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_get_gpt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_get_gpt0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_get_gpt0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_get_gpt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_glitch_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_glitch_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_glitch_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_glitch_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_gpc0_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_gpc0_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_gpc1_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_gpc1_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_gpc_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_gpc_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_err_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_err_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_err_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_err_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_fail_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_fail_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_fail_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_fail_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_req_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_req_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_http_req_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_http_req_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_inc_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_inc_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_inc_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_inc_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_inc_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_inc_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_sess_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_sess_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "sc_sess_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "sc_sess_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "src": {
             "default": "",
             "help": "",
@@ -5967,6 +7651,44 @@
             "type": "IntegerField"
           },
           "src_bytes_out_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_clr_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_clr_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_clr_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_clr_gpc1_comparison": {
             "OptionValues": {
               "eq": "equal",
               "ge": "greater equal",
@@ -6036,6 +7758,177 @@
             "required": "N",
             "type": "OptionField"
           },
+          "src_get_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_get_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_get_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_get_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_get_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_get_gpc_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_get_gpt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_get_gpt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_glitch_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_glitch_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_glitch_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_glitch_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_gpc0_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_gpc0_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_gpc1_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_gpc1_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_gpc_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_gpc_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "src_http_err_cnt": {
             "default": "",
             "help": "",
@@ -6074,6 +7967,44 @@
             "required": "N",
             "type": "OptionField"
           },
+          "src_http_fail_cnt": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_http_fail_cnt_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_http_fail_rate": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_http_fail_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "src_http_req_cnt": {
             "default": "",
             "help": "",
@@ -6100,6 +8031,63 @@
             "type": "IntegerField"
           },
           "src_http_req_rate_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_inc_gpc": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_inc_gpc0": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_inc_gpc0_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_inc_gpc1": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "src_inc_gpc1_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "src_inc_gpc_comparison": {
             "OptionValues": {
               "eq": "equal",
               "ge": "greater equal",
@@ -6269,6 +8257,12 @@
             "required": "N",
             "type": "TextField"
           },
+          "table_name": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
           "url_param": {
             "default": "",
             "help": "",
@@ -6292,26 +8286,104 @@
             "help": "",
             "required": "N",
             "type": "TextField"
+          },
+          "var": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "var_comparison": {
+            "OptionValues": {
+              "eq": "equal",
+              "ge": "greater equal",
+              "gt": "greater than",
+              "le": "less equal",
+              "lt": "less than"
+            },
+            "default": "gt",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "var_value": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
           }
         },
         "action": {
-          "actionFind": {
-            "default": "",
+          "compression_algo_req": {
+            "OptionValues": {
+              "deflate": "deflate",
+              "gzip": "gzip [default]",
+              "raw-deflate": "raw-deflate"
+            },
+            "default": "gzip",
             "help": "",
             "required": "N",
-            "type": "TextField"
+            "type": "OptionField"
           },
-          "actionName": {
-            "default": "",
+          "compression_algo_res": {
+            "OptionValues": {
+              "deflate": "deflate",
+              "gzip": "gzip [default]",
+              "raw-deflate": "raw-deflate"
+            },
+            "default": "gzip",
             "help": "",
             "required": "N",
-            "type": "TextField"
+            "type": "OptionField"
           },
-          "actionValue": {
+          "compression_direction": {
+            "OptionValues": {
+              "both": "Compress both",
+              "request": "Compress requests",
+              "response": "Compress responses [default]"
+            },
+            "default": "response",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "compression_mime_req": {
+            "ValidationMessage": "Please provide valid MIME types, i.e. text/css, text/html, application/json.",
             "default": "",
             "help": "",
             "required": "N",
-            "type": "TextField"
+            "type": "CSVListField"
+          },
+          "compression_mime_res": {
+            "ValidationMessage": "Please provide valid MIME types, i.e. text/css, text/html, application/json.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "CSVListField"
+          },
+          "compression_minsize_req": {
+            "MaximumValue": "1000000",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a number between 0 and 1000000.",
+            "default": "1500",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "compression_minsize_res": {
+            "MaximumValue": "1000000",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a number between 0 and 1000000.",
+            "default": "1500",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "compression_offloading": {
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "BooleanField"
           },
           "custom": {
             "default": "",
@@ -6326,6 +8398,12 @@
             "required": "N",
             "type": "TextField"
           },
+          "enabled": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
           "fcgi_pass_header": {
             "ValidationMessage": "Should be a string between 1 and 1024 characters.",
             "default": "",
@@ -6339,6 +8417,129 @@
             "help": "",
             "required": "N",
             "type": "TextField"
+          },
+          "gpc_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "gpt_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "http_after_response_action": {
+            "OptionValues": {
+              "add-header": "add-header",
+              "allow": "allow",
+              "capture": "capture",
+              "del-header": "del-header",
+              "del-map": "del-map",
+              "do-log": "do-log",
+              "replace-header": "replace-header",
+              "replace-value": "replace-value",
+              "sc-add-gpc": "sc-add-gpc",
+              "sc-inc-gpc": "sc-inc-gpc",
+              "sc-inc-gpc0": "sc-inc-gpc0",
+              "sc-inc-gpc1": "sc-inc-gpc1",
+              "sc-set-gpt": "sc-set-gpt",
+              "sc-set-gpt0": "sc-set-gpt0",
+              "set-header": "set-header",
+              "set-log-level": "set-log-level",
+              "set-map": "set-map",
+              "set-status": "set-status",
+              "set-var": "set-var",
+              "set-var-fmt": "set-var-fmt",
+              "strict-mode": "strict-mode",
+              "unset-var": "unset-var"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
+          "http_after_response_option": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "http_request_action": {
+            "OptionValues": {
+              "add-acl": "add-acl",
+              "add-header": "add-header",
+              "allow": "allow",
+              "auth": "auth",
+              "cache-use": "cache-use",
+              "capture": "capture",
+              "del-acl": "del-acl",
+              "del-header": "del-header",
+              "del-map": "del-map",
+              "deny": "deny",
+              "disable-l7-retry": "disable-l7-retry",
+              "do-log": "do-log",
+              "do-resolve": "do-resolve",
+              "early-hint": "early-hint",
+              "lua": "lua",
+              "normalize-uri": "normalize-uri",
+              "redirect": "redirect",
+              "reject": "reject",
+              "replace-header": "replace-header",
+              "replace-path": "replace-path",
+              "replace-pathq": "replace-pathq",
+              "replace-uri": "replace-uri",
+              "replace-value": "replace-value",
+              "return": "return",
+              "sc-add-gpc": "sc-add-gpc",
+              "sc-inc-gpc": "sc-inc-gpc",
+              "sc-inc-gpc0": "sc-inc-gpc0",
+              "sc-inc-gpc1": "sc-inc-gpc1",
+              "sc-set-gpt": "sc-set-gpt",
+              "sc-set-gpt0": "sc-set-gpt0",
+              "send-spoe-group": "send-spoe-group",
+              "set-dst": "set-dst",
+              "set-dst-port": "set-dst-port",
+              "set-fc-mark": "set-fc-mark",
+              "set-fc-tos": "set-fc-tos",
+              "set-header": "set-header",
+              "set-log-level": "set-log-level",
+              "set-map": "set-map",
+              "set-method": "set-method",
+              "set-nice": "set-nice",
+              "set-path": "set-path",
+              "set-pathq": "set-pathq",
+              "set-priority-class": "set-priority-class",
+              "set-priority-offset": "set-priority-offset",
+              "set-query": "set-query",
+              "set-src": "set-src",
+              "set-src-port": "set-src-port",
+              "set-timeout": "set-timeout",
+              "set-uri": "set-uri",
+              "set-var": "set-var",
+              "set-var-fmt": "set-var-fmt",
+              "silent-drop": "silent-drop",
+              "strict-mode": "strict-mode",
+              "tarpit": "tarpit",
+              "track-sc0": "track-sc0",
+              "track-sc1": "track-sc1",
+              "track-sc2": "track-sc2",
+              "unset-var": "unset-var",
+              "use-service": "use-service - use a lua service",
+              "wait-for-body": "wait-for-body",
+              "wait-for-handshake": "wait-for-handshake"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
           },
           "http_request_add_header_content": {
             "default": "",
@@ -6364,7 +8565,22 @@
             "required": "N",
             "type": "TextField"
           },
+          "http_request_deny_status": {
+            "MaximumValue": "999",
+            "MinimumValue": "100",
+            "ValidationMessage": "Please specify a value between 100 and 999.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
           "http_request_lua": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "http_request_option": {
             "default": "",
             "help": "",
             "required": "N",
@@ -6449,6 +8665,53 @@
             "required": "N",
             "type": "TextField"
           },
+          "http_response_action": {
+            "OptionValues": {
+              "add-acl": "add-acl",
+              "add-header": "add-header",
+              "allow": "allow",
+              "cache-store": "cache-store",
+              "capture": "capture",
+              "del-acl": "del-acl",
+              "del-header": "del-header",
+              "del-map": "del-map",
+              "deny": "deny",
+              "do-log": "do-log",
+              "lua": "lua",
+              "redirect": "redirect",
+              "replace-header": "replace-header",
+              "replace-value": "replace-value",
+              "return": "return",
+              "sc-add-gpc": "sc-add-gpc",
+              "sc-inc-gpc": "sc-inc-gpc",
+              "sc-inc-gpc0": "sc-inc-gpc0",
+              "sc-inc-gpc1": "sc-inc-gpc1",
+              "sc-set-gpt": "sc-set-gpt",
+              "sc-set-gpt0": "sc-set-gpt0",
+              "send-spoe-group": "send-spoe-group",
+              "set-fc-mark": "set-fc-mark",
+              "set-fc-tos": "set-fc-tos",
+              "set-header": "set-header",
+              "set-log-level": "set-log-level",
+              "set-map": "set-map",
+              "set-nice": "set-nice",
+              "set-status": "set-status",
+              "set-timeout": "set-timeout",
+              "set-var": "set-var",
+              "set-var-fmt": "set-var-fmt",
+              "silent-drop": "silent-drop",
+              "strict-mode": "strict-mode",
+              "track-sc0": "track-sc0",
+              "track-sc1": "track-sc1",
+              "track-sc2": "track-sc2",
+              "unset-var": "unset-var",
+              "wait-for-body": "wait-for-body"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "http_response_add_header_content": {
             "default": "",
             "help": "",
@@ -6468,6 +8731,12 @@
             "type": "TextField"
           },
           "http_response_lua": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "http_response_option": {
             "default": "",
             "help": "",
             "required": "N",
@@ -6571,6 +8840,62 @@
             "required": "N",
             "type": "ModelRelationField"
           },
+          "map_data_use_backend_default": {
+            "ValidationMessage": "Related backend pool item not found",
+            "default": "",
+            "help": "",
+            "multiple": "N",
+            "relation": {
+              "display": "name",
+              "items": "backends.backend",
+              "key": "template",
+              "source": "OPNsense.HAProxy.HAProxy"
+            },
+            "relation_targets": [
+              {
+                "display": "name",
+                "items": "backends.backend",
+                "key": "template",
+                "source": "OPNsense.HAProxy.HAProxy"
+              }
+            ],
+            "required": "N",
+            "type": "ModelRelationField"
+          },
+          "map_data_use_backend_file": {
+            "ValidationMessage": "Related map file item not found",
+            "default": "",
+            "help": "",
+            "multiple": "N",
+            "relation": {
+              "display": "name",
+              "items": "mapfiles.mapfile",
+              "key": "template",
+              "source": "OPNsense.HAProxy.HAProxy"
+            },
+            "relation_targets": [
+              {
+                "display": "name",
+                "items": "mapfiles.mapfile",
+                "key": "template",
+                "source": "OPNsense.HAProxy.HAProxy"
+              }
+            ],
+            "required": "N",
+            "type": "ModelRelationField"
+          },
+          "map_data_use_backend_input": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "map_default": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
           "map_use_backend_default": {
             "ValidationMessage": "Related backend pool item not found",
             "default": "",
@@ -6615,6 +8940,27 @@
             "required": "N",
             "type": "ModelRelationField"
           },
+          "mapfile": {
+            "ValidationMessage": "Related mapfile item not found",
+            "default": "",
+            "help": "",
+            "relation": {
+              "display": "name",
+              "items": "mapfiles.mapfile",
+              "key": "template",
+              "source": "OPNsense.HAProxy.HAProxy"
+            },
+            "relation_targets": [
+              {
+                "display": "name",
+                "items": "mapfiles.mapfile",
+                "key": "template",
+                "source": "OPNsense.HAProxy.HAProxy"
+              }
+            ],
+            "required": "N",
+            "type": "ModelRelationField"
+          },
           "monitor_fail_uri": {
             "default": "",
             "help": "",
@@ -6638,6 +8984,111 @@
             "required": "N",
             "type": "OptionField"
           },
+          "sample_fetch": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "sc_number": {
+            "MaximumValue": "100",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "tcp_request_action": {
+            "OptionValues": {
+              "connection_accept": "connection accept",
+              "connection_expect-netscaler-cip": "connection expect-netscaler-cip",
+              "connection_expect-proxy": "connection expect-proxy",
+              "connection_fc-silent-drop": "connection fc-silent-drop",
+              "connection_reject": "connection reject",
+              "connection_sc-add-gpc": "connection sc-add-gpc",
+              "connection_sc-inc-gpc": "connection sc-inc-gpc",
+              "connection_sc-inc-gpc0": "connection sc-inc-gpc0",
+              "connection_sc-inc-gpc1": "connection sc-inc-gpc1",
+              "connection_sc-set-gpt": "connection sc-set-gpt",
+              "connection_sc-set-gpt0": "connection sc-set-gpt0",
+              "connection_send-spoe-group": "connection send-spoe-group",
+              "connection_set-dst": "connection set-dst",
+              "connection_set-dst-port": "connection set-dst-port",
+              "connection_set-fc-mark": "connection set-fc-mark",
+              "connection_set-fc-tos": "connection set-fc-tos",
+              "connection_set-log-level": "connection set-log-level",
+              "connection_set-src": "connection set-src",
+              "connection_set-src-port": "connection set-src-port",
+              "connection_set-var": "connection set-var",
+              "connection_set-var-fmt": "connection set-var-fmt",
+              "connection_silent-drop": "connection silent-drop",
+              "connection_track-sc0": "connection track-sc0",
+              "connection_track-sc1": "connection track-sc1",
+              "connection_track-sc2": "connection track-sc2",
+              "connection_unset-var": "connection unset-var",
+              "content_accept": "content accept",
+              "content_capture": "content capture",
+              "content_do-resolve": "content do-resolve",
+              "content_lua": "content lua",
+              "content_reject": "content reject",
+              "content_sc-add-gpc": "content sc-add-gpc",
+              "content_sc-inc-gpc": "content sc-inc-gpc",
+              "content_sc-inc-gpc0": "content sc-inc-gpc0",
+              "content_sc-inc-gpc1": "content sc-inc-gpc1",
+              "content_sc-set-gpt": "content sc-set-gpt",
+              "content_sc-set-gpt0": "content sc-set-gpt0",
+              "content_send-spoe-group": "content send-spoe-group",
+              "content_set-dst": "content set-dst",
+              "content_set-dst-port": "content set-dst-port",
+              "content_set-fc-mark": "content set-fc-mark",
+              "content_set-fc-tos": "content set-fc-tos",
+              "content_set-log-level": "content set-log-level",
+              "content_set-nice": "content set-nice",
+              "content_set-priority-class": "content set-priority-class",
+              "content_set-priority-offset": "content set-priority-offset",
+              "content_set-src": "content set-src",
+              "content_set-src-port": "content set-src-port",
+              "content_set-var": "content set-var",
+              "content_set-var-fmt": "content set-var-fmt",
+              "content_silent-drop": "content silent-drop",
+              "content_switch-mode": "content switch-mode",
+              "content_track-sc0": "content track-sc0",
+              "content_track-sc1": "content track-sc1",
+              "content_track-sc2": "content track-sc2",
+              "content_unset-var": "content unset-var",
+              "content_use-service": "content use-service - use a lua service",
+              "inspect-delay": "inspect-delay",
+              "session_accept": "session accept",
+              "session_attach-srv": "session attach-srv",
+              "session_reject": "session reject",
+              "session_sc-add-gpc": "session sc-add-gpc",
+              "session_sc-inc-gpc": "session sc-inc-gpc",
+              "session_sc-inc-gpc0": "session sc-inc-gpc0",
+              "session_sc-inc-gpc1": "session sc-inc-gpc1",
+              "session_sc-set-gpt": "session sc-set-gpt",
+              "session_sc-set-gpt0": "session sc-set-gpt0",
+              "session_send-spoe-group": "session send-spoe-group",
+              "session_set-dst": "session set-dst",
+              "session_set-dst-port": "session set-dst-port",
+              "session_set-fc-mark": "session set-fc-mark",
+              "session_set-fc-tos": "session set-fc-tos",
+              "session_set-log-level": "session set-log-level",
+              "session_set-src": "session set-src",
+              "session_set-src-port": "session set-src-port",
+              "session_set-var": "session set-var",
+              "session_set-var-fmt": "session set-var-fmt",
+              "session_silent-drop": "session silent-drop",
+              "session_track-sc0": "session track-sc0",
+              "session_track-sc1": "session track-sc1",
+              "session_track-sc2": "session track-sc2",
+              "session_unset-var": "session unset-var"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "tcp_request_content_lua": {
             "default": "",
             "help": "",
@@ -6656,6 +9107,40 @@
             "required": "N",
             "type": "TextField"
           },
+          "tcp_request_option": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "tcp_response_action": {
+            "OptionValues": {
+              "content_accept": "content accept",
+              "content_close": "content close",
+              "content_lua": "content lua",
+              "content_reject": "content reject",
+              "content_sc-add-gpc": "content sc-add-gpc",
+              "content_sc-inc-gpc": "content sc-inc-gpc",
+              "content_sc-inc-gpc0": "content sc-inc-gpc0",
+              "content_sc-inc-gpc1": "content sc-inc-gpc1",
+              "content_sc-set-gpt": "content sc-set-gpt",
+              "content_sc-set-gpt0": "content sc-set-gpt0",
+              "content_send-spoe-group": "content send-spoe-group",
+              "content_set-fc-mark": "content set-fc-mark",
+              "content_set-fc-tos": "content set-fc-tos",
+              "content_set-log-level": "content set-log-level",
+              "content_set-nice": "content set-nice",
+              "content_set-var": "content set-var",
+              "content_set-var-fmt": "content set-var-fmt",
+              "content_silent-drop": "content silent-drop",
+              "content_unset-var": "content unset-var",
+              "inspect-delay": "inspect-delay"
+            },
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
+          },
           "tcp_response_content_lua": {
             "default": "",
             "help": "",
@@ -6663,6 +9148,12 @@
             "type": "TextField"
           },
           "tcp_response_inspect_delay": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "tcp_response_option": {
             "default": "",
             "help": "",
             "required": "N",
@@ -6677,50 +9168,6 @@
             "help": "",
             "required": "Y",
             "type": "OptionField"
-          },
-          "useBackend": {
-            "ValidationMessage": "Related backend item not found",
-            "default": "",
-            "help": "",
-            "multiple": "Y",
-            "relation": {
-              "display": "name",
-              "items": "backends.backend",
-              "key": "template",
-              "source": "OPNsense.HAProxy.HAProxy"
-            },
-            "relation_targets": [
-              {
-                "display": "name",
-                "items": "backends.backend",
-                "key": "template",
-                "source": "OPNsense.HAProxy.HAProxy"
-              }
-            ],
-            "required": "N",
-            "type": "ModelRelationField"
-          },
-          "useServer": {
-            "ValidationMessage": "Related server item not found",
-            "default": "",
-            "help": "",
-            "multiple": "Y",
-            "relation": {
-              "display": "name",
-              "items": "servers.server",
-              "key": "template",
-              "source": "OPNsense.HAProxy.HAProxy"
-            },
-            "relation_targets": [
-              {
-                "display": "name",
-                "items": "servers.server",
-                "key": "template",
-                "source": "OPNsense.HAProxy.HAProxy"
-              }
-            ],
-            "required": "N",
-            "type": "ModelRelationField"
           },
           "use_backend": {
             "ValidationMessage": "Related backend item not found",
@@ -6944,6 +9391,17 @@
             "help": "",
             "required": "N",
             "type": "BooleanField"
+          },
+          "healthCheckProxyProto": {
+            "OptionValues": {
+              "backend": "Follow Backend Pool settings [default]",
+              "disable": "Disable for Health Check",
+              "enable": "Enable for Health Check"
+            },
+            "default": "backend",
+            "help": "",
+            "required": "N",
+            "type": "OptionField"
           },
           "healthCheckRise": {
             "MaximumValue": "100",
@@ -7244,13 +9702,26 @@
               "bytes_in_rate": "Bytes in rate (client to server)",
               "bytes_out_cnt": "Bytes out count (server to client)",
               "bytes_out_rate": "Bytes out rate (server to client)",
-              "conn_cnt": "Connection count",
-              "conn_cur": "Current connections",
+              "conn_cnt": "Connection count (total)",
+              "conn_cur": "Connection count (current)",
               "conn_rate": "Connection rate",
+              "glitch_cnt": "Glitch count",
+              "glitch_rate": "Glitch rate",
+              "gpc": "General Purpose Counters (array of elements)",
+              "gpc0": "gpc0",
+              "gpc0_rate": "gpc0 rate",
+              "gpc1": "gpc1",
+              "gpc1_rate": "gpc1 rate",
+              "gpc_rate": "General Purpose Counter rate",
+              "gpt": "General Purpose Tags (array of elements)",
+              "gpt0": "gpt0",
               "http_err_cnt": "HTTP error count",
               "http_err_rate": "HTTP error rate",
+              "http_fail_cnt": "HTTP fail count",
+              "http_fail_rate": "HTTP fail rate",
               "http_req_cnt": "HTTP request count",
               "http_req_rate": "HTTP request rate",
+              "server_id": "Server ID",
               "sess_cnt": "Session count",
               "sess_rate": "Session rate"
             },
@@ -7266,9 +9737,48 @@
             "required": "Y",
             "type": "TextField"
           },
+          "stickiness_glitchRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_gpcElements": {
+            "MaximumValue": "99",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "stickiness_gpcRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_gptElements": {
+            "MaximumValue": "99",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
           "stickiness_httpErrRatePeriod": {
             "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
             "default": "10s",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_httpFailRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
             "help": "",
             "required": "N",
             "type": "TextField"
@@ -7280,12 +9790,24 @@
             "required": "N",
             "type": "TextField"
           },
+          "stickiness_length": {
+            "MaximumValue": "16384",
+            "MinimumValue": "1",
+            "ValidationMessage": "Please specify a value between 1 and 16384.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
           "stickiness_pattern": {
             "OptionValues": {
-              "cookievalue": "Existing cookie value",
+              "binary": "Binary",
+              "cookievalue": "Cookie value",
+              "integer": "Integer",
               "rdpcookie": "RDP-Cookie",
-              "sourceipv4": "Source-IP [default]",
-              "sourceipv6": "Source-IPv6"
+              "sourceipv4": "Source-IPv4 [default]",
+              "sourceipv6": "Source-IPv6",
+              "string": "String"
             },
             "default": "sourceipv4",
             "help": "",
@@ -7697,6 +10219,7 @@
           "advertised_protocols": {
             "OptionValues": {
               "h2": "HTTP/2",
+              "h3": "HTTP/3",
               "http10": "HTTP/1.0",
               "http11": "HTTP/1.1"
             },
@@ -7756,7 +10279,7 @@
             "type": "ModelRelationField"
           },
           "bind": {
-            "ValidationMessage": "Please provide a valid listen address, i.e. 127.0.0.1:8080, [::1]:8080, www.example.com:443 or unix@socket-name. Port range as start-end, i.e. 127.0.0.1:1220-1240.",
+            "ValidationMessage": "Please provide a valid listen address, i.e. 127.0.0.1:8080, [::1]:8080, www.example.com:443, quic4@www.example.com or unix@socket-name. Port range as start-end, i.e. 127.0.0.1:1220-1240.",
             "default": "",
             "help": "",
             "required": "Y",
@@ -8159,13 +10682,26 @@
               "bytes_in_rate": "Bytes in rate (client to server)",
               "bytes_out_cnt": "Bytes out count (server to client)",
               "bytes_out_rate": "Bytes out rate (server to client)",
-              "conn_cnt": "Connection count",
-              "conn_cur": "Current connections",
+              "conn_cnt": "Connection count (total)",
+              "conn_cur": "Connection count (current)",
               "conn_rate": "Connection rate",
+              "glitch_cnt": "Glitch count",
+              "glitch_rate": "Glitch rate",
+              "gpc": "General Purpose Counters (array of elements)",
+              "gpc0": "gpc0",
+              "gpc0_rate": "gpc0 rate",
+              "gpc1": "gpc1",
+              "gpc1_rate": "gpc1 rate",
+              "gpc_rate": "General Purpose Counter rate",
+              "gpt": "General Purpose Tags (array of elements)",
+              "gpt0": "gpt0",
               "http_err_cnt": "HTTP error count",
               "http_err_rate": "HTTP error rate",
+              "http_fail_cnt": "HTTP fail count",
+              "http_fail_rate": "HTTP fail rate",
               "http_req_cnt": "HTTP request count",
               "http_req_rate": "HTTP request rate",
+              "server_id": "Server ID",
               "sess_cnt": "Session count",
               "sess_rate": "Session rate"
             },
@@ -8181,9 +10717,48 @@
             "required": "Y",
             "type": "TextField"
           },
+          "stickiness_glitchRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_gpcElements": {
+            "MaximumValue": "99",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
+          "stickiness_gpcRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_gptElements": {
+            "MaximumValue": "99",
+            "MinimumValue": "0",
+            "ValidationMessage": "Please specify a value between 0 and 99.",
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "IntegerField"
+          },
           "stickiness_httpErrRatePeriod": {
             "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
             "default": "10s",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "stickiness_httpFailRatePeriod": {
+            "ValidationMessage": "Should be a number between 1 and 8 characters, optionally followed by either \"d\", \"h\", \"m\", \"s\", \"ms\" or \"us\".",
+            "default": "1m",
             "help": "",
             "required": "N",
             "type": "TextField"
@@ -8206,11 +10781,11 @@
           },
           "stickiness_pattern": {
             "OptionValues": {
-              "binary": "store binary blocks",
-              "integer": "store 32bit integers",
-              "ipv4": "only store IPv4 addresses [default]",
-              "ipv6": "only store IPv6 addresses",
-              "string": "store substrings"
+              "binary": "Binary",
+              "integer": "Integer",
+              "ipv4": "IPv4 [default]",
+              "ipv6": "IPv6",
+              "string": "String"
             },
             "default": "",
             "help": "",
@@ -8349,7 +10924,7 @@
             "ValidationMessage": "Please specify a value between 1 and 65535.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "IntegerField"
           },
           "dbUser": {
@@ -8682,7 +11257,7 @@
           "content": {
             "default": "",
             "help": "",
-            "required": "Y",
+            "required": "N",
             "type": "TextField"
           },
           "description": {
@@ -8704,6 +11279,12 @@
             "help": "",
             "required": "Y",
             "type": "TextField"
+          },
+          "url": {
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "UrlField"
           }
         },
         "resolver": {
@@ -8855,7 +11436,7 @@
             "ValidationMessage": "Please specify a value between 1 and 65535.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "IntegerField"
           },
           "description": {
@@ -9017,6 +11598,13 @@
             "type": "CertificateField"
           },
           "sslSNI": {
+            "ValidationMessage": "Should be a string between 1 and 255 characters.",
+            "default": "",
+            "help": "",
+            "required": "N",
+            "type": "TextField"
+          },
+          "sslSNIExpr": {
             "ValidationMessage": "Should be a string between 1 and 255 characters.",
             "default": "",
             "help": "",
@@ -9446,6 +12034,12 @@
             "required": "Y",
             "type": ".\\LinkAddressField"
           },
+          "noclamp": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
           "remote-addr": {
             "default": "",
             "help": "",
@@ -9605,12 +12199,12 @@
           },
           "proto": {
             "OptionValues": {
-              "failover": "failover",
-              "fec": "fec",
-              "lacp": "lacp",
-              "loadbalance": "loadbalance",
-              "none": "None",
-              "roundrobin": "roundrobin"
+              "failover": "",
+              "fec": "",
+              "lacp": "",
+              "loadbalance": "",
+              "none": "",
+              "roundrobin": ""
             },
             "default": "lacp",
             "help": "",
@@ -9643,6 +12237,49 @@
             "help": "",
             "required": "Y",
             "type": "AutoNumberField"
+          }
+        }
+      },
+      "NetworkInterface": {
+        "interface": {
+          "descr": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\IfDescField"
+          },
+          "icon": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "identifier": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "if": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": ".\\DeviceField"
+          },
+          "lock": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
+          "optgroup": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
           }
         }
       },
@@ -9681,8 +12318,8 @@
           },
           "proto": {
             "OptionValues": {
-              "opt1": "802.1Q",
-              "opt2": "802.1ad"
+              "opt1": "",
+              "opt2": ""
             },
             "default": "",
             "help": "",
@@ -9835,8 +12472,8 @@
           },
           "keyType": {
             "OptionValues": {
-              "EAP": "EAP",
-              "PSK": "PSK"
+              "EAP": "",
+              "PSK": ""
             },
             "default": "PSK",
             "help": "",
@@ -10065,7 +12702,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "enabled": {
             "default": "1",
@@ -10077,7 +12714,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "pubkeys": {
             "default": "",
@@ -10166,7 +12803,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "enabled": {
             "default": "1",
@@ -10184,7 +12821,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "pubkeys": {
             "default": "",
@@ -10220,6 +12857,100 @@
     },
     "kea": {
       "KeaDhcpv4": {
+        "option": {
+          "code": {
+            "OptionValues": {
+              "optgroup1": "Assigned",
+              "optgroup2": "Unassigned"
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "JsonKeyValueStoreField"
+          },
+          "data": {
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": ".\\KeaOptionDataField"
+          },
+          "description": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "DescriptionField"
+          },
+          "encoding": {
+            "OptionValues": {
+              "boolean": "Boolean",
+              "fqdn": "FQDN",
+              "hex": "Hex",
+              "int32": "Int32",
+              "ipv4-address": "IPv4 address",
+              "ipv6-address": "IPv6 address",
+              "string": "String",
+              "uint16": "Uint16",
+              "uint32": "Uint32",
+              "uint8": "Uint8"
+            },
+            "default": "hex",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
+          },
+          "force": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "match_code": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "optgroup1": "Assigned",
+              "optgroup2": "Unassigned"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "match_data": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\KeaOptionDataField"
+          },
+          "match_encoding": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "boolean": "Boolean",
+              "fqdn": "FQDN",
+              "hex": "Hex",
+              "int32": "Int32",
+              "ipv4-address": "IPv4 address",
+              "ipv6-address": "IPv6 address",
+              "string": "String",
+              "uint16": "Uint16",
+              "uint32": "Uint32",
+              "uint8": "Uint8"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          }
+        },
         "peer": {
           "name": {
             "Constraints": {
@@ -10232,8 +12963,8 @@
           },
           "role": {
             "OptionValues": {
-              "primary": "primary",
-              "standby": "standby"
+              "primary": "Primary",
+              "standby": "Standby"
             },
             "default": "primary",
             "help": "",
@@ -10262,6 +12993,16 @@
             "help": "",
             "required": "0",
             "type": ".\\KeaClasslessStaticRouteField"
+          },
+          "client_id": {
+            "Constraints": {
+              "check001": ""
+            },
+            "ValidationMessage": "Value must be a colon-separated hexadecimal sequence (e.g., 01:02:f3).",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
           },
           "description": {
             "default": "",
@@ -10300,7 +13041,7 @@
             },
             "default": "",
             "help": "",
-            "required": "Y",
+            "required": "0",
             "type": "MacAddressField"
           },
           "ip_address": {
@@ -10312,11 +13053,38 @@
             "required": "0",
             "type": "NetworkField"
           },
+          "next_server": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
           "ntp_servers": {
             "default": "",
             "help": "",
             "required": "0",
             "type": "NetworkField"
+          },
+          "option": {
+            "default": "",
+            "help": "",
+            "multiple": "Y",
+            "relation": {
+              "display": "description",
+              "items": "options.option",
+              "key": "options",
+              "source": "OPNsense.Kea.KeaDhcpv4"
+            },
+            "relation_targets": [
+              {
+                "display": "description",
+                "items": "options.option",
+                "key": "options",
+                "source": "OPNsense.Kea.KeaDhcpv4"
+              }
+            ],
+            "required": "0",
+            "type": "ModelRelationField"
           },
           "routers": {
             "default": "",
@@ -10332,7 +13100,8 @@
           },
           "subnet": {
             "Constraints": {
-              "check001": ""
+              "check001": "",
+              "check002": ""
             },
             "ValidationMessage": "Related subnet not found.",
             "default": "",
@@ -10368,6 +13137,17 @@
           }
         },
         "subnet4": {
+          "allocator": {
+            "OptionValues": {
+              "flq": "Free Lease Queue",
+              "iterative": "Iterative",
+              "random": "Random"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
           "boot_file_name": {
             "default": "",
             "help": "",
@@ -10379,6 +13159,106 @@
             "help": "",
             "required": "0",
             "type": ".\\KeaClasslessStaticRouteField"
+          },
+          "ddns_conflict_resolution_mode": {
+            "OptionValues": {
+              "check-exists-with-dhcid": "",
+              "no-check-with-dhcid": "",
+              "no-check-without-dhcid": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "ddns_dns_port": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "PortField"
+          },
+          "ddns_dns_server": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
+          "ddns_domain_key_algorithm": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "hmac-md5": "",
+              "hmac-sha1": "",
+              "hmac-sha224": "",
+              "hmac-sha256": "",
+              "hmac-sha384": "",
+              "hmac-sha512": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "ddns_domain_key_name": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "ddns_domain_key_secret": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "Base64Field"
+          },
+          "ddns_forward_zone": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_override_client_update": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "ddns_override_no_update": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "ddns_qualifying_suffix": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_reverse_zone": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_update_on_renew": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
           },
           "description": {
             "default": "",
@@ -10423,6 +13303,27 @@
             "required": "0",
             "type": "NetworkField"
           },
+          "option": {
+            "default": "",
+            "help": "",
+            "multiple": "Y",
+            "relation": {
+              "display": "description",
+              "items": "options.option",
+              "key": "options",
+              "source": "OPNsense.Kea.KeaDhcpv4"
+            },
+            "relation_targets": [
+              {
+                "display": "description",
+                "items": "options.option",
+                "key": "options",
+                "source": "OPNsense.Kea.KeaDhcpv4"
+              }
+            ],
+            "required": "0",
+            "type": "ModelRelationField"
+          },
           "option_data_autocollect": {
             "default": "1",
             "help": "",
@@ -10456,6 +13357,17 @@
             "required": "Y",
             "type": "NetworkField"
           },
+          "subnet_id": {
+            "Constraints": {
+              "check001": ""
+            },
+            "MaximumValue": "4294967294",
+            "MinimumValue": "1",
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "AutoNumberField"
+          },
           "tftp_server_name": {
             "default": "",
             "help": "",
@@ -10480,10 +13392,111 @@
             "help": "",
             "required": "0",
             "type": "IntegerField"
+          },
+          "valid_lifetime": {
+            "MinimumValue": "0",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
           }
         }
       },
       "KeaDhcpv6": {
+        "option": {
+          "code": {
+            "OptionValues": {
+              "optgroup1": "Assigned",
+              "optgroup2": "Unassigned"
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "JsonKeyValueStoreField"
+          },
+          "data": {
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": ".\\KeaOptionDataField"
+          },
+          "description": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "DescriptionField"
+          },
+          "encoding": {
+            "OptionValues": {
+              "boolean": "Boolean",
+              "fqdn": "FQDN",
+              "hex": "Hex",
+              "int32": "Int32",
+              "ipv4-address": "IPv4 address",
+              "ipv6-address": "IPv6 address",
+              "string": "String",
+              "uint16": "Uint16",
+              "uint32": "Uint32",
+              "uint8": "Uint8"
+            },
+            "default": "hex",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
+          },
+          "force": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "match_code": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "optgroup1": "Assigned",
+              "optgroup2": "Unassigned"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "match_data": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\KeaOptionDataField"
+          },
+          "match_encoding": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "boolean": "Boolean",
+              "fqdn": "FQDN",
+              "hex": "Hex",
+              "int32": "Int32",
+              "ipv4-address": "IPv4 address",
+              "ipv6-address": "IPv6 address",
+              "string": "String",
+              "uint16": "Uint16",
+              "uint32": "Uint32",
+              "uint8": "Uint8"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          }
+        },
         "pd_pool": {
           "delegated_len": {
             "MaximumValue": "128",
@@ -10508,9 +13521,9 @@
           "prefix_len": {
             "MaximumValue": "128",
             "MinimumValue": "1",
-            "default": "56",
+            "default": "",
             "help": "",
-            "required": "Y",
+            "required": "0",
             "type": "IntegerField"
           },
           "subnet": {
@@ -10518,14 +13531,14 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "subnet",
+              "display": "interface,subnet",
               "items": "subnets.subnet6",
               "key": "subnets",
               "source": "OPNsense.Kea.KeaDhcpv6"
             },
             "relation_targets": [
               {
-                "display": "subnet",
+                "display": "interface,subnet",
                 "items": "subnets.subnet6",
                 "key": "subnets",
                 "source": "OPNsense.Kea.KeaDhcpv6"
@@ -10547,8 +13560,8 @@
           },
           "role": {
             "OptionValues": {
-              "primary": "primary",
-              "standby": "standby"
+              "primary": "Primary",
+              "standby": "Standby"
             },
             "default": "primary",
             "help": "",
@@ -10586,7 +13599,7 @@
             "ValidationMessage": "Value must be a colon-separated hexadecimal sequence (e.g., 01:02:f3).",
             "default": "",
             "help": "",
-            "required": "Y",
+            "required": "0",
             "type": "TextField"
           },
           "hostname": {
@@ -10594,6 +13607,15 @@
             "help": "",
             "required": "0",
             "type": "HostnameField"
+          },
+          "hw_address": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "MacAddressField"
           },
           "ip_address": {
             "Constraints": {
@@ -10604,22 +13626,54 @@
             "required": "0",
             "type": "NetworkField"
           },
-          "subnet": {
+          "option": {
+            "default": "",
+            "help": "",
+            "multiple": "Y",
+            "relation": {
+              "display": "description",
+              "items": "options.option",
+              "key": "options",
+              "source": "OPNsense.Kea.KeaDhcpv6"
+            },
+            "relation_targets": [
+              {
+                "display": "description",
+                "items": "options.option",
+                "key": "options",
+                "source": "OPNsense.Kea.KeaDhcpv6"
+              }
+            ],
+            "required": "0",
+            "type": "ModelRelationField"
+          },
+          "prefix": {
             "Constraints": {
               "check001": ""
+            },
+            "ValidationMessage": "The prefix length must be in CIDR format (e.g., fd80::/64).",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
+          "subnet": {
+            "Constraints": {
+              "check001": "",
+              "check002": ""
             },
             "ValidationMessage": "Related subnet not found.",
             "default": "",
             "help": "",
             "relation": {
-              "display": "subnet",
+              "display": "interface,subnet",
               "items": "subnets.subnet6",
               "key": "subnets",
               "source": "OPNsense.Kea.KeaDhcpv6"
             },
             "relation_targets": [
               {
-                "display": "subnet",
+                "display": "interface,subnet",
                 "items": "subnets.subnet6",
                 "key": "subnets",
                 "source": "OPNsense.Kea.KeaDhcpv6"
@@ -10632,13 +13686,114 @@
         "subnet6": {
           "allocator": {
             "OptionValues": {
-              "iterative": "iterative",
-              "random": "random"
+              "flq": "Free Lease Queue",
+              "iterative": "Iterative",
+              "random": "Random"
             },
             "default": "",
             "help": "",
             "required": "0",
             "type": "OptionField"
+          },
+          "ddns_conflict_resolution_mode": {
+            "OptionValues": {
+              "check-exists-with-dhcid": "",
+              "no-check-with-dhcid": "",
+              "no-check-without-dhcid": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "ddns_dns_port": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "PortField"
+          },
+          "ddns_dns_server": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
+          "ddns_domain_key_algorithm": {
+            "Constraints": {
+              "check001": ""
+            },
+            "OptionValues": {
+              "hmac-md5": "",
+              "hmac-sha1": "",
+              "hmac-sha224": "",
+              "hmac-sha256": "",
+              "hmac-sha384": "",
+              "hmac-sha512": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "ddns_domain_key_name": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "TextField"
+          },
+          "ddns_domain_key_secret": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "Base64Field"
+          },
+          "ddns_forward_zone": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_override_client_update": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "ddns_override_no_update": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
+          "ddns_qualifying_suffix": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_reverse_zone": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "ddns_update_on_renew": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
           },
           "description": {
             "default": "",
@@ -10659,17 +13814,50 @@
             "required": "0",
             "type": "HostnameField"
           },
+          "dynamic_prefix": {
+            "default": "0",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
           "interface": {
             "default": "",
             "help": "",
             "required": "Y",
             "type": "InterfaceField"
           },
+          "option": {
+            "default": "",
+            "help": "",
+            "multiple": "Y",
+            "relation": {
+              "display": "description",
+              "items": "options.option",
+              "key": "options",
+              "source": "OPNsense.Kea.KeaDhcpv6"
+            },
+            "relation_targets": [
+              {
+                "display": "description",
+                "items": "options.option",
+                "key": "options",
+                "source": "OPNsense.Kea.KeaDhcpv6"
+              }
+            ],
+            "required": "0",
+            "type": "ModelRelationField"
+          },
+          "option_data_autocollect": {
+            "default": "0",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
           "pd-allocator": {
             "OptionValues": {
-              "flq": "Free Lease Queue Allocator",
-              "iterative": "iterative",
-              "random": "random"
+              "flq": "Free Lease Queue",
+              "iterative": "Iterative",
+              "random": "Random"
             },
             "default": "",
             "help": "",
@@ -10688,14 +13876,32 @@
             },
             "default": "",
             "help": "",
-            "required": "Y",
+            "required": "0",
             "type": "NetworkField"
+          },
+          "subnet_id": {
+            "Constraints": {
+              "check001": ""
+            },
+            "MaximumValue": "4294967294",
+            "MinimumValue": "1",
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "AutoNumberField"
           },
           "v6_dnr": {
             "default": "",
             "help": "",
             "required": "0",
             "type": "TextField"
+          },
+          "valid_lifetime": {
+            "MinimumValue": "0",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
           }
         }
       }
@@ -10753,6 +13959,7 @@
             "type": "OptionField"
           },
           "format": {
+            "ValidationMessage": "Non-printable characters as well as \"{\" and \"}\" are not allowed.",
             "default": "",
             "help": "",
             "required": "0",
@@ -10832,7 +14039,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "name": {
             "Constraints": {
@@ -10842,35 +14049,35 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "path": {
             "ValidationMessage": "Should be a valid absolute file or folder path.",
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "pidfile": {
             "ValidationMessage": "Should be a valid absolute path to the PID file of the process.",
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "polltime": {
             "ValidationMessage": "Should be a string between 1 and 255 characters. Allowed characters are letters and numbers as well as asterisk, hyphen, comma and space.",
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "start": {
             "ValidationMessage": "Should be a valid absolute path to the executable with its arguments.",
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "starttimeout": {
             "MaximumValue": "86400",
@@ -10886,7 +14093,7 @@
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "tests": {
             "ValidationMessage": "Related item not found.",
@@ -10940,21 +14147,21 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "name": {
             "ValidationMessage": "Should be a string between 1 and 255 characters. Allowed characters are letters and numbers as well as underscore, minus, dot and space.",
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "path": {
             "ValidationMessage": "Should be a valid absolute file path.",
             "default": "",
             "help": "",
             "required": "0",
-            "type": "TextField"
+            "type": "StrictTextField"
           }
         }
       }
@@ -11015,14 +14222,14 @@
             "type": "BooleanField"
           },
           "enckey": {
-            "ValidationMessage": "Should be a string between 8 and 64 characters. Allowed characters are 0-9a-zA-Z._-!$%/()+#=",
+            "ValidationMessage": "Should be a string between 8 and 64 characters. Allowed characters are 0-9a-zA-Z_-!$%/()+#=.",
             "default": "",
             "help": "",
             "required": "Y",
             "type": "TextField"
           },
           "password": {
-            "ValidationMessage": "Should be a string between 8 and 64 characters. Allowed characters are 0-9a-zA-Z._-!$%/()+#=",
+            "ValidationMessage": "Should be a string between 8 and 64 characters. Allowed characters are 0-9a-zA-Z_-!$%/()+#=.",
             "default": "",
             "help": "",
             "required": "Y",
@@ -11035,7 +14242,7 @@
             "type": "BooleanField"
           },
           "username": {
-            "ValidationMessage": "Should be a string between 1 and 64 characters. Allowed characters are 0-9a-zA-Z._-",
+            "ValidationMessage": "Should be a string between 1 and 64 characters. Allowed characters are 0-9a-zA-Z_-.",
             "default": "",
             "help": "",
             "required": "Y",
@@ -11353,6 +14560,12 @@
           },
           "enable_acme_support": {
             "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
+          "enable_http3": {
+            "default": "0",
             "help": "",
             "required": "Y",
             "type": "BooleanField"
@@ -14000,7 +17213,7 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "description": {
             "default": "",
@@ -14052,13 +17265,13 @@
           },
           "redirect_gateway": {
             "OptionValues": {
-              "autolocal": "autolocal",
-              "block_local": "block local",
-              "bypass_dhcp": "bypass dhcp",
-              "bypass_dns": "bypass dns",
+              "autolocal": "",
+              "block-local": "",
+              "bypass-dhcp": "",
+              "bypass-dns": "",
               "def1": "default",
               "ipv6": "ipv6 (default)",
-              "local": "local",
+              "local": "",
               "notipv4": "not ipv4 (default)"
             },
             "default": "",
@@ -14117,7 +17330,7 @@
             "type": "DescriptionField"
           },
           "key": {
-            "ValidationMessage": "A key is required; generate one with the button.",
+            "ValidationMessage": "A valid key is required; generate one with the button.",
             "default": "",
             "help": "",
             "required": "Y",
@@ -14126,7 +17339,8 @@
           "mode": {
             "OptionValues": {
               "auth": "auth (Authenticate control channel packets)",
-              "crypt": "crypt (Encrypt and authenticate all control channel packets)"
+              "crypt": "crypt (Encrypt and authenticate all control channel packets)",
+              "crypt-v2": "crypt-v2 (Encrypt and authenticate all control channel packets)"
             },
             "default": "crypt",
             "help": "",
@@ -14165,7 +17379,7 @@
             "ValidationMessage": "Only 64 of the following characters are allowed: 0-9a-zA-Z.:-[]",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "domainname": {
@@ -14695,6 +17909,18 @@
             "required": "Y",
             "type": "BooleanField"
           },
+          "interfacename": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "InterfaceField"
+          },
+          "localaddress": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
           "multihop": {
             "default": "0",
             "help": "",
@@ -14856,6 +18082,12 @@
             "required": "0",
             "type": "BooleanField"
           },
+          "bfd_strict": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "BooleanField"
+          },
           "capabilities": {
             "OptionValues": {
               "dynamic": "dynamic",
@@ -14921,16 +18153,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -14942,16 +18174,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -14963,16 +18195,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -14984,16 +18216,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15006,7 +18238,18 @@
             "required": "0",
             "type": "InterfaceField"
           },
+          "localas": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
           "localip": {
+            "Constraints": {
+              "check001": ""
+            },
             "default": "",
             "help": "",
             "required": "0",
@@ -15047,16 +18290,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,description",
               "items": "peergroups.peergroup",
-              "key": "template",
+              "key": "peergroups",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,description",
                 "items": "peergroups.peergroup",
-                "key": "template",
+                "key": "peergroups",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15148,16 +18391,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15169,16 +18412,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15190,16 +18433,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15211,16 +18454,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15344,16 +18587,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15411,16 +18654,16 @@
             "help": "",
             "multiple": "Y",
             "relation": {
-              "display": "number",
+              "display": "name,description",
               "items": "aspaths.aspath",
-              "key": "template",
+              "key": "aspaths",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "number",
+                "display": "name,description",
                 "items": "aspaths.aspath",
-                "key": "template",
+                "key": "aspaths",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15433,16 +18676,16 @@
             "help": "",
             "multiple": "Y",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15455,16 +18698,16 @@
             "help": "",
             "multiple": "Y",
             "relation": {
-              "display": "number",
+              "display": "name,description",
               "items": "communitylists.communitylist",
-              "key": "template",
+              "key": "communitylists",
               "source": "OPNsense.quagga.bgp"
             },
             "relation_targets": [
               {
-                "display": "number",
+                "display": "name,description",
                 "items": "communitylists.communitylist",
-                "key": "template",
+                "key": "communitylists",
                 "source": "OPNsense.quagga.bgp"
               }
             ],
@@ -15713,16 +18956,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf"
               }
             ],
@@ -15734,16 +18977,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf"
               }
             ],
@@ -15817,16 +19060,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.ospf"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.ospf"
               }
             ],
@@ -15869,24 +19112,25 @@
             "MinimumValue": "10",
             "default": "",
             "help": "",
-            "required": "0",
+            "required": "Y",
             "type": "IntegerField"
           },
           "match2": {
             "ValidationMessage": "Related item not found.",
             "default": "",
             "help": "",
+            "multiple": "Y",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf"
               }
             ],
@@ -16049,16 +19293,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf6"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf6"
               }
             ],
@@ -16070,16 +19314,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf6"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf6"
               }
             ],
@@ -16153,16 +19397,16 @@
             "default": "",
             "help": "",
             "relation": {
-              "display": "name",
+              "display": "name,id",
               "items": "routemaps.routemap",
-              "key": "template",
+              "key": "routemaps",
               "source": "OPNsense.quagga.ospf6"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,id",
                 "items": "routemaps.routemap",
-                "key": "template",
+                "key": "routemaps",
                 "source": "OPNsense.quagga.ospf6"
               }
             ],
@@ -16212,17 +19456,18 @@
             "ValidationMessage": "Related item not found.",
             "default": "",
             "help": "",
+            "multiple": "Y",
             "relation": {
-              "display": "name",
+              "display": "name,seqnumber",
               "items": "prefixlists.prefixlist",
-              "key": "template",
+              "key": "prefixlists",
               "source": "OPNsense.quagga.ospf6"
             },
             "relation_targets": [
               {
-                "display": "name",
+                "display": "name,seqnumber",
                 "items": "prefixlists.prefixlist",
-                "key": "template",
+                "key": "prefixlists",
                 "source": "OPNsense.quagga.ospf6"
               }
             ],
@@ -16245,6 +19490,12 @@
       },
       "STATICd": {
         "route": {
+          "bfd": {
+            "default": "0",
+            "help": "",
+            "required": "N",
+            "type": "BooleanField"
+          },
           "enabled": {
             "default": "1",
             "help": "",
@@ -16750,6 +20001,209 @@
         }
       }
     },
+    "radvd": {
+      "Radvd": {
+        "entries": {
+          "AdvCurHopLimit": {
+            "MaximumValue": "255",
+            "MinimumValue": "0",
+            "ValidationMessage": "Hop limit must be between 0 and 255 (inclusive).",
+            "default": "64",
+            "help": "",
+            "required": "Y",
+            "type": "IntegerField"
+          },
+          "AdvDNSSLLifetime": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "ValidationMessage": "Value must be between 1 and 4294967295.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvDefaultLifetime": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvDefaultPreference": {
+            "OptionValues": {
+              "high": "High",
+              "low": "Low",
+              "medium": "Medium"
+            },
+            "default": "medium",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
+          },
+          "AdvLinkMTU": {
+            "MaximumValue": "65535",
+            "MinimumValue": "1280",
+            "ValidationMessage": "AdvLinkMTU must be between 1280 and 65535 bytes.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvPreferredLifetime": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "ValidationMessage": "Value must be between 1 and 4294967295.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvRASrcAddress": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\VipLinkLocalField"
+          },
+          "AdvRDNSSLifetime": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "ValidationMessage": "Value must be between 1 and 4294967295.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvRouteLifetime": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "ValidationMessage": "Value must be between 1 and 4294967295.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "AdvValidLifetime": {
+            "MaximumValue": "4294967295",
+            "MinimumValue": "1",
+            "ValidationMessage": "Value must be between 1 and 4294967295.",
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "IntegerField"
+          },
+          "Base6Interface": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "InterfaceField"
+          },
+          "DNSSL": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "HostnameField"
+          },
+          "DeprecatePrefix": {
+            "OptionValues": {
+              "off": "Off",
+              "on": "On"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "MaxRtrAdvInterval": {
+            "MaximumValue": "1800",
+            "MinimumValue": "4",
+            "ValidationMessage": "Maximum interval must be between 4 and 1800 seconds.",
+            "default": "600",
+            "help": "",
+            "required": "Y",
+            "type": "IntegerField"
+          },
+          "MinRtrAdvInterval": {
+            "MinimumValue": "3",
+            "ValidationMessage": "Value cannot be less than 3 seconds.",
+            "default": "200",
+            "help": "",
+            "required": "Y",
+            "type": "IntegerField"
+          },
+          "RDNSS": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
+          "RemoveAdvOnExit": {
+            "OptionValues": {
+              "off": "Off",
+              "on": "On"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "RemoveRoute": {
+            "OptionValues": {
+              "off": "Off",
+              "on": "On"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "dns": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
+          "enabled": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
+          "interface": {
+            "Constraints": {
+              "check001": ""
+            },
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "InterfaceField"
+          },
+          "mode": {
+            "OptionValues": {
+              "assist": "Assisted",
+              "managed": "Managed",
+              "router": "Router Only",
+              "stateless": "Stateless",
+              "unmanaged": "Unmanaged"
+            },
+            "default": "stateless",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
+          },
+          "nat64prefix": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          },
+          "routes": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "NetworkField"
+          }
+        }
+      }
+    },
     "relayd": {
       "Relayd": {
         "host": {
@@ -17187,8 +20641,8 @@
             "required": "0",
             "type": "DescriptionField"
           },
-          "disabled": {
-            "default": "0",
+          "enabled": {
+            "default": "1",
             "help": "",
             "required": "Y",
             "type": "BooleanField"
@@ -17206,6 +20660,81 @@
             "help": "",
             "required": "Y",
             "type": "NetworkField"
+          }
+        }
+      }
+    },
+    "routing": {
+      "GatewayGroups": {
+        "gateway_group": {
+          "descr": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "DescriptionField"
+          },
+          "item": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": ".\\GatewayGroupItemField"
+          },
+          "item2": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "item3": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "item4": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "item5": {
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "JsonKeyValueStoreField"
+          },
+          "name": {
+            "Constraints": {
+              "check001": ""
+            },
+            "ValidationMessage": "A valid group name must be specified. The name may only consist of the characters \"a-zA-Z0-9_\" and must be less than 32 characters long.",
+            "default": "",
+            "help": "",
+            "required": "Y",
+            "type": "TextField"
+          },
+          "poolopts": {
+            "OptionValues": {
+              "default": "Default",
+              "roundrobin": "Round Robin",
+              "roundrobinsticky": "Round Robin with Sticky Address"
+            },
+            "default": "",
+            "help": "",
+            "required": "0",
+            "type": "OptionField"
+          },
+          "trigger": {
+            "OptionValues": {
+              "down": "Member Down",
+              "downlatency": "High Latency",
+              "downloss": "Packet Loss",
+              "downlosslatency": "Packet Loss and High Latency"
+            },
+            "default": "down",
+            "help": "",
+            "required": "Y",
+            "type": "OptionField"
           }
         }
       }
@@ -17274,21 +20803,20 @@
           "accept_port": {
             "MaximumValue": "65535",
             "MinimumValue": "1",
-            "ValidationMessage": "port needs to be an integer value between 1 and 65535",
+            "ValidationMessage": "Port needs to be an integer value between 1 and 65535.",
             "default": "",
             "help": "",
             "required": "Y",
             "type": "IntegerField"
           },
           "cacert": {
-            "ValidationMessage": "Please select a valid certificate from the list",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "CertificateField"
           },
           "ciphers": {
-            "ValidationMessage": "Please specify valid tls ciphers.",
+            "ValidationMessage": "Please specify valid TLS ciphers.",
             "default": "TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-RSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384,ECDHE-ECDSA-CHACHA20-POLY1305,ECDHE-RSA-CHACHA20-POLY1305,DHE-RSA-AES128-GCM-SHA256,DHE-RSA-AES256-GCM-SHA384",
             "help": "",
             "required": "Y",
@@ -17309,17 +20837,17 @@
           "connect_port": {
             "MaximumValue": "65535",
             "MinimumValue": "1",
-            "ValidationMessage": "port needs to be an integer value between 1 and 65535",
+            "ValidationMessage": "Port needs to be an integer value between 1 and 65535.",
             "default": "",
             "help": "",
             "required": "Y",
             "type": "IntegerField"
           },
           "description": {
-            "ValidationMessage": "Description should be a string between 1 and 255 characters",
+            "ValidationMessage": "Description should be a string between 1 and 255 characters.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "enableCRL": {
@@ -17344,11 +20872,10 @@
             },
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "OptionField"
           },
           "servercert": {
-            "ValidationMessage": "Please select a valid certificate from the list",
             "default": "",
             "help": "",
             "required": "Y",
@@ -17417,14 +20944,14 @@
           },
           "level": {
             "OptionValues": {
-              "alert": "alert",
+              "alert": "",
               "crit": "critical",
-              "debug": "debug",
+              "debug": "",
               "emerg": "emergency",
               "err": "error",
-              "info": "info",
-              "notice": "notice",
-              "warn": "warn"
+              "info": "",
+              "notice": "",
+              "warn": ""
             },
             "default": "",
             "help": "",
@@ -17528,14 +21055,14 @@
             "ValidationMessage": "Only characters, numbers, a dot, underscore and hyphen allowed. Do not use more than 128 characters.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "value": {
             "ValidationMessage": "Only characters, numbers, a dot, underscore and hyphen allowed. Do not use more than 128 characters.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           }
         }
@@ -17657,6 +21184,12 @@
             "help": "",
             "required": "Y",
             "type": "OptionField"
+          },
+          "disablesubnetroutes": {
+            "default": "0",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
           },
           "enabled": {
             "default": "1",
@@ -18239,8 +21772,8 @@
           },
           "direction": {
             "OptionValues": {
-              "in": "in",
-              "out": "out"
+              "in": "In",
+              "out": "Out"
             },
             "default": "",
             "help": "",
@@ -18318,19 +21851,19 @@
           },
           "proto": {
             "OptionValues": {
-              "ah": "ah",
-              "esp": "esp",
-              "gre": "gre",
-              "icmp": "icmp",
-              "igmp": "igmp",
-              "ip": "ip",
-              "ip4": "ipv4",
-              "ip6": "ipv6",
-              "ipv6_icmp": "ipv6-icmp",
-              "tcp": "tcp",
+              "ah": "",
+              "esp": "",
+              "gre": "",
+              "icmp": "",
+              "igmp": "",
+              "ip": "",
+              "ip4": "",
+              "ip6": "",
+              "ipv6-icmp": "",
+              "tcp": "",
               "tcp_ack": "tcp (ACK packets only)",
               "tcp_ack_not": "tcp (non-ACK packets)",
-              "udp": "udp"
+              "udp": ""
             },
             "default": "ip",
             "help": "",
@@ -18420,7 +21953,7 @@
           "InstanceID": {
             "MaximumValue": "63",
             "MinimumValue": "1",
-            "ValidationMessage": "InstanceID needs to be an integer value between 1 and 63",
+            "ValidationMessage": "InstanceID needs to be an integer value between 1 and 63.",
             "default": "0",
             "help": "",
             "required": "Y",
@@ -18436,7 +21969,7 @@
             "ValidationMessage": "Enter a description.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "enabled": {
@@ -18454,24 +21987,24 @@
           "listenport": {
             "MaximumValue": "65535",
             "MinimumValue": "1",
-            "ValidationMessage": "Listen port needs to be an integer value between 1 and 65535",
+            "ValidationMessage": "Listen port needs to be an integer value between 1 and 65535.",
             "default": "",
             "help": "",
             "required": "Y",
             "type": "IntegerField"
           },
           "multicastaddress": {
-            "ValidationMessage": "Broadcast address must be a valid IPv4 address",
+            "ValidationMessage": "Broadcast address must be a valid IPv4 address.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "CSVListField"
           },
           "sourceaddress": {
-            "ValidationMessage": "Source address must be a valid IPv4 address",
+            "ValidationMessage": "Source address must be a valid IPv4 address.",
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           }
         }
@@ -18511,7 +22044,7 @@
             "default": "",
             "help": "",
             "required": "Y",
-            "type": "TextField"
+            "type": "StrictTextField"
           },
           "networks": {
             "ValidationMessage": "Please specify a one or more valid network segment in CIDR notation (Ipv4/IPv6).",
@@ -18691,11 +22224,17 @@
           }
         },
         "host": {
-          "aliascount": {
+          "addptr": {
+            "default": "1",
+            "help": "",
+            "required": "Y",
+            "type": "BooleanField"
+          },
+          "aliases": {
             "default": "",
             "help": "",
             "required": "0",
-            "type": ".\\AliasRefCount"
+            "type": ".\\AliasReflector"
           },
           "description": {
             "default": "",
@@ -18717,6 +22256,7 @@
             "type": "BooleanField"
           },
           "hostname": {
+            "ValidationMessage": "A valid hostname must be specified.",
             "default": "",
             "help": "",
             "required": "0",
@@ -18795,7 +22335,7 @@
           "descr": {
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "interface": {
@@ -18805,7 +22345,7 @@
             "type": "InterfaceField"
           },
           "mac": {
-            "ValidationMessage": "Should be 6 groups of 2 hex characters (a-fA-F0-9) separated by ':'",
+            "ValidationMessage": "Should be 6 groups of 2 hex characters (a-fA-F0-9) separated by ':'.",
             "default": "00:00:00:00:00:00",
             "help": "",
             "required": "Y",
@@ -18892,7 +22432,7 @@
           "description": {
             "default": "",
             "help": "",
-            "required": "N",
+            "required": "0",
             "type": "TextField"
           },
           "enabled": {
