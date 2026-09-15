@@ -27,7 +27,7 @@ from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 HEADER_TMPL = "# AUTO-GENERATED - DO NOT EDIT MANUALLY (Built against OPNsense {core_ref}) - run tools/generate_wrappers.py\n"
-HEADER = HEADER_TMPL.format(core_ref="25.7")
+HEADER = HEADER_TMPL.format(core_ref="26.7.3")
 
 
 # Manually curated fallback for acmeclient if missing

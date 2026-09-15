@@ -50,9 +50,9 @@ def __virtual__() -> bool | tuple[bool, str]:
 
 def _get_client() -> OPNsenseClient:
     try:
-        from salt.exceptions import SaltInvocationError as SaltExc  # noqa: N813
+        from salt.exceptions import SaltInvocationError
     except ImportError:  # pragma: no cover - fallback when not in Salt runtime (unit tests)
-        SaltExc = RuntimeError  # type: ignore  # noqa: N806
+        SaltInvocationError = RuntimeError  # type: ignore  # noqa: N806
 
     try:
         client = get_client_from_opts(
@@ -60,10 +60,10 @@ def _get_client() -> OPNsenseClient:
         )
     except Exception as exc:
         # get_client_from_opts already includes checked sources + example pillar
-        raise SaltExc(str(exc)) from exc
+        raise SaltInvocationError(str(exc)) from exc
 
     if not client:
-        raise SaltExc(
+        raise SaltInvocationError(
             "Failed to create OPNsense client from opts/pillar. "
             "Check pillar resources:opnsense:hosts:fw-01:host (Resources fleet) "
             "or pillar opnsense:host (direct masterless). "
@@ -533,7 +533,7 @@ def doctor() -> dict[str, Any]:
         salt -C 'T@opnsense:fw-01' opnsense.doctor
     """
     res: dict[str, Any] = {
-        "spec_version": "25.7",
+        "spec_version": "26.7.3",
         "loaded_modules_count": len(list_modules()),
         "status": "UNKNOWN",
         "details": {},

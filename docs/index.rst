@@ -1,7 +1,8 @@
 Welcome to saltext-opnsense's documentation!
 ============================================
 
-OPNsense 25.7.11 — 75 modules, 1736 endpoints via REST API. Salt proxy + execution + state.
+OPNsense 26.7.3 — 76 modules, 1815 endpoints via REST API.
+Salt 3008+ Resources fleet-ready — one managing minion manages dozens FWs.
 
 .. toctree::
    :maxdepth: 2
@@ -10,6 +11,7 @@ OPNsense 25.7.11 — 75 modules, 1736 endpoints via REST API. Salt proxy + execu
    QUICKSTART.md
    INSTALL.md
    PILLAR.md
+   RESOURCES.md
 
 .. toctree::
    :maxdepth: 2
