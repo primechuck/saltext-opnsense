@@ -155,7 +155,7 @@ jobs:
         run: |
           set -e
           mkdir -p .bin
-          VER=v1.7.9
+          VER=1.7.9
           URL="https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash"
           if ! .bin/actionlint -version 2>/dev/null | grep -q "$VER"; then
             curl -sSfL "$URL" | bash -s -- "$VER" .bin
