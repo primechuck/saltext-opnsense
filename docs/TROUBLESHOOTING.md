@@ -1,24 +1,20 @@
 # Troubleshooting
 
+Requires `salt>=3008`, Resources-only, no proxy. Proxy removed 1.0.0.
+
 ## Install
 
 **`opnsense utils missing` in __virtual__**
 ```bash
 PYTHONPATH=src python3 tools/verify_import.py
-# should show 75 modules
-salt '*' saltutil.sync_all
+# should show 76 modules
+salt -C 'T@opnsense' saltutil.sync_all
 ```
 
-**`Proxy config missing`**
-- File-based `/etc/salt/proxy` must be flat YAML (no outer `proxy:` wrapper):
-```yaml
-proxytype: opnsense
-host: opnsense.example.com
-api_key: ...
-api_secret: ...
-```
-- Pillar-based: `proxy:` nested dict in `pillar/hosts/opnsense-router.sls` + `top.sls` entry for id `opnsense-router`
-- `get_client_from_opts` merges in order: pillar opnsense, pillar proxy, opts opnsense, opts proxy — last wins. See `QUICKSTART.md`.
+**`missing OPNsense config host` / `SaltInvocationError`**
+- Pillar path is `resources:opnsense:hosts:fw-01:{host, api_key, api_secret}`, not flat `/etc/salt/proxy` (removed 1.0.0). See `docs/RESOURCES.md`.
+- Check `salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts:fw-01 --out=yaml`
+- For masterless `salt-call --local pillar.get resources:opnsense --out=yaml`
 
 ## API
 
@@ -28,7 +24,7 @@ OPNsense expects POST with JSON body even for search. Client defaults to POST. I
 **`404 Endpoint not found` → fallback**
 Renamed in 24.x→25.x `searchAlias` → `searchItem`. Client tries candidates via `_resolve_via_spec` + `_call_with_fallback`. Regen spec:
 ```bash
-make bump CORE=25.7.11
+make bump CORE=26.7.3
 ```
 
 **`RemoteDisconnected` / `Connection aborted`**
@@ -42,7 +38,7 @@ Validation error duplicate hostname. `OPNsenseClient` raises `OPNsenseValidation
 - First run creates, second run should 0 changes. If second run still shows changes:
   - Check bool `"1"` vs `True` — fixed by `diff.py`
   - CSV `"lan,wan"` vs `["wan","lan"]` — fixed by sorted tuple
-  - UUID vs FQDN — `parent_human` logic in `diff.py` + `_resolve_parent`
+  - UUID vs FQDN — auto-resolve via `models.json` + `controllers.json`
   - Trailing dot `example.com.` — stripped
   - Description default `managed by salt - fqdn` — pin description in pillar to avoid churn
 
@@ -50,32 +46,44 @@ Mock helper: `PYTHONPATH=src python3 tools/test_state.py --mock` proves second r
 
 ## Grains
 
-**`grains __virtual__ None`**
-Grains run only on proxy minion. `grains/opnsense.py` returns empty dict if proxy down, not `False`. Check:
+**`grains empty / opnsense_version missing`**
+Grains now come from Resource connection module `resources/opnsense/__init__.py:grains()`, not legacy `grains/opnsense.py` (removed 1.0.0).
+
 ```bash
-salt opnsense-router grains.get opnsense_version
-salt opnsense-router grains.get opnsense_host
+salt -C 'T@opnsense' grains.get opnsense_version
+salt -C 'T@opnsense' grains.get opnsense_host
+salt -C 'T@opnsense' grains.items
+salt-run resource.list_grains
 ```
+
+Ensure `resources:opnsense:hosts:fw-01` exists and `ping()` succeeds.
 
 ## Firewall
 
 **Filter apply locks you out**
-No savepoint since 25.7 (removed in core PR #10411). Only `filter_base/apply` = `filter reload skip_alias`. See `FIREWALL_SAFETY.md`:
+No savepoint since 25.7 (removed in core PR #10411). Only `filter_base/apply` = `filter reload skip_alias`. See `docs/FIREWALL_SAFETY.md`:
 - Keep anti-lockout rule enabled
 - Use `onchanges` single apply after all rules
 - Out-of-band access IPMI/mgmt VLAN
 
-## Proxy
+## Resources connection
 
-**`ping` false**
-`proxy/opnsense.py:ping()` tries `unbound/settings/host_alias`, `bind/domain/primary_domain`, `firewall/alias/item`, fallback `searchHostAlias`. Check `salt opnsense-router opnsense.doctor`.
+**`ping` false / discover 0**
+```bash
+salt -C 'T@opnsense:fw-01' opnsense.doctor
+salt -C 'T@opnsense:fw-01' test.ping
+salt-call --local -l debug saltutil.sync_all  # check pillar Resources tree
+```
+
+Check API key from OPNsense UI `System > Access > Users > API`.
 
 **Vault `__slot__` shows placeholder not resolved**
 ```bash
-salt salt-master vault.read secret/opnsense/api_key
-salt opnsense-router pillar.get proxy --out=yaml
+salt jrbob vault.read secret/opnsense/fw-01/api_key
+salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts:fw-01 --out=yaml
 ```
-If still placeholder, check `master.d/vault.conf` url `http://vault.example.com:8200` and token file `/etc/salt/vault/token` 600.
+
+If still placeholder, check `master.d/vault.conf` url and token file `/etc/salt/vault/token` 600.
 
 ## Pillar
 
@@ -83,7 +91,7 @@ If still placeholder, check `master.d/vault.conf` url `http://vault.example.com:
 `aliases_managed` expects `{"example.com": [www, git]}` not flat list.
 
 **`parent required`**
-Provide `parent: cluster.example.com` or pillar `opnsense:cluster_parent: {hostname: cluster, domain: example.com}`. Ensure parent host_override exists: `salt opnsense-router opnsense_unbound.list_host_overrides`.
+Provide `parent: cluster.example.com` or pillar `opnsense:cluster_parent: {hostname: cluster, domain: example.com}`. Ensure parent host_override exists: `salt -C 'T@opnsense' opnsense_unbound.list_host_overrides`.
 
 ## Testing
 
@@ -91,5 +99,5 @@ Provide `parent: cluster.example.com` or pillar `opnsense:cluster_parent: {hostn
 PYTHONPATH=src pytest tests/unit -v
 PYTHONPATH=src python3 tools/verify_import.py
 # live read-only:
-OPNSENSE_HOST=opnsense.example.com OPNSENSE_API_KEY=xxx OPNSENSE_API_SECRET=yyy python3 tools/test_live.py
+OPNSENSE_HOST=fw-01.example.com OPNSENSE_API_KEY=xxx OPNSENSE_API_SECRET=yyy python3 tools/test_live.py
 ```
