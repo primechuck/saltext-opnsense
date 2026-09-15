@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Sync extension modules to an extmods directory (_modules, _states, _proxy, _grains, _utils)
+Sync extension modules to an extmods directory (_modules, _states, _utils)
 for file-based install without pip.
 
-GitFS file_roots serves _modules, _states, _proxy, _grains, _utils
+GitFS file_roots serves _modules, _states, _utils
 as extension modules via `saltutil.sync_all`.
 
 Usage:
@@ -24,9 +24,7 @@ SRC_BASE = pathlib.Path(__file__).resolve().parent.parent / "src" / "saltext" / 
 
 MAPPINGS = [
     ("modules/opnsense.py", "_modules/opnsense.py"),
-    ("proxy/opnsense.py", "_proxy/opnsense.py"),
     ("states/opnsense.py", "_states/opnsense.py"),
-    ("grains/opnsense.py", "_grains/opnsense.py"),
     ("utils/opnsense.py", "_utils/opnsense.py"),
     ("utils/api_spec.py", "_utils/opnsense_api_spec.py"),
 ]
@@ -123,7 +121,7 @@ def main():
 
     if not args.check:
         saltext_dest_base = dest_path / "_utils" / "saltext" / "opnsense"
-        for sub in ["utils", "modules", "states", "proxy", "grains", "version"]:
+        for sub in ["utils", "modules", "states", "version"]:
             src_sub = SRC_BASE / sub
             dst_sub = saltext_dest_base / sub
             if not src_sub.exists():
@@ -140,8 +138,6 @@ def main():
             dest_path / "_utils" / "saltext" / "opnsense" / "__init__.py",
             dest_path / "_utils" / "saltext" / "opnsense" / "modules" / "__init__.py",
             dest_path / "_utils" / "saltext" / "opnsense" / "states" / "__init__.py",
-            dest_path / "_utils" / "saltext" / "opnsense" / "proxy" / "__init__.py",
-            dest_path / "_utils" / "saltext" / "opnsense" / "grains" / "__init__.py",
             dest_path / "_utils" / "saltext" / "opnsense" / "utils" / "__init__.py",
             dest_path / "_utils" / "saltext" / "opnsense" / "version" / "__init__.py",
         ]:
