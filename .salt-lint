@@ -1,0 +1,14 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+---
+exclude_paths:
+  - docs/conf.py
+rules: {}
+skip_list:
+  # File extension rule fires for pillar.example (YAML pillar, not SLS) – keep warning but exclude via CI
+  - 205  # Use ".sls" as a Salt State file extension
+  # 207/208 handled by 210 which is less noisy
+  - 207  # File modes should always be encapsulated in quotation marks
+  - 208  # File modes should always contain a leading zero
+tags: []
+verbosity: 1

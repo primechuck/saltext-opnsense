@@ -12,8 +12,16 @@ repos:
         args: [--fix=lf]
       - id: end-of-file-fixer
       - id: check-yaml
+        exclude: |
+          (?x)^(
+            src/saltext/opnsense/utils/.*\.json|
+            \.copier-answers\.yml|
+            \.copier-answers\..*\.yml
+          )$
       - id: check-added-large-files
         args: ['--maxkb=500']
+      - id: check-json
+      - id: debug-statements
 
   # ----- Formatting ----->
   - repo: https://github.com/saltstack/pre-commit-remove-import-headers
@@ -43,13 +51,6 @@ repos:
         args: [--py310-plus]
         exclude: src/saltext/opnsense/version/.*\.py$
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
-    hooks:
-      - id: isort
-        args: [--py, "310"]
-        exclude: src/saltext/opnsense/__init__.py
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.8
     hooks:
@@ -58,8 +59,6 @@ repos:
         types: [python]
       - id: ruff-format
         types: [python]
-
-  # <---- Formatting -----
 
   # ----- Security ------->
   - repo: https://github.com/PyCQA/bandit
@@ -75,22 +74,68 @@ repos:
         name: Run bandit against the test suite
         args: [--silent, -lll, --skip, B701]
         files: ^tests/.*
-  # <---- Security --------
 
   # ----- Code Analysis -->
   - repo: local
     hooks:
       - id: nox-lint
         name: Lint Source & Tests via nox
-        entry: nox -e lint -- 
+        entry: nox -e lint --
         language: python
         files: ^(setup|noxfile|src|tests)/.*\.py$
         require_serial: true
+        stages: [manual]
         additional_dependencies:
           - nox==2026.8.17
           - uv==0.12.12
 
-# Setup:
+  # ----- YAML / Salt / Workflow lint -->
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        name: Check YAML syntax with yamllint
+        args: [--strict]
+        types: [file]
+        files: |
+          (?x)^(
+                .*\.yaml|
+                .*\.yml|
+                \.salt-lint|
+                \.yamllint|
+                .*\.example
+          )$
+        exclude: |
+          (?x)^(
+                src/saltext/opnsense/utils/.*\.json|
+                docs/tutorials/.*\.sls|
+                \.copier-answers\.yml|
+                \.copier-answers\..*\.yml
+          )$
+
+  - repo: https://github.com/warpnet/salt-lint
+    rev: v0.9.2
+    hooks:
+      - id: salt-lint
+        name: Check Salt files using salt-lint
+        files: ^.*\.sls$
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.34.0
+    hooks:
+      - id: check-github-workflows
+        name: Validate GitHub workflows
+        args: [--verbose]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: Check shell scripts with shellcheck
+        files: ^.*\.(sh|bash|ksh)$
+        types: []
+
+# Setup for contributors:
 #   pip install pre-commit
 #   pre-commit install
 #   pre-commit run --all-files

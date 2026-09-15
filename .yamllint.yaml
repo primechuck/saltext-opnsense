@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+---
+extends: default
+
+rules:
+  comments:
+    min-spaces-from-content: 1
+  document-start: disable
+  truthy:
+    allowed-values: ["true", "false", "on"]
+    check-keys: false
+  line-length:
+    max: 120
+    allow-non-breakable-inline-mappings: true
+    allow-non-breakable-words: true
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: true
+
+ignore: |
+  src/saltext/opnsense/utils/controllers.json
+  src/saltext/opnsense/utils/models.json
+  docs/conf.py
+  .copier-answers.yml
+  .copier-answers.*.yml
