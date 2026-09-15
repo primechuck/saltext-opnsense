@@ -71,7 +71,7 @@ Thin delegation `resources/opnsense/modules/opnsense.py` via
 States `states/opnsense.py`: generic `item_present/absent/items_present/
 reconfigured`, convenience, `__virtual__` returns `True`,
 `__context__` caching not globals, no import-time wrapper injection,
-`normalize_enabled` unified, `bind.domain_absent` bug fixed, 
+`normalize_enabled` unified, `bind.domain_absent` bug fixed,
 `strip_salt_internal_kwargs` everywhere, reconfigure verification unified,
 `test=True` support.
 

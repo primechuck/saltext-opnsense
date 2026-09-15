@@ -86,6 +86,9 @@ def call(
     Execute a raw REST API call to OPNsense.
 
     CLI Example:
+
+    .. code-block:: bash
+
         salt minion opnsense.call unbound settings searchHostAlias '{"rowCount": 1}'
     """
     kwargs = _strip_pub_kwargs(kwargs)
@@ -107,6 +110,9 @@ def search(
     Query an OPNsense search endpoint and unwrap the resulting rows.
 
     CLI Example:
+
+    .. code-block:: bash
+
         salt minion opnsense.search unbound settings host_alias search_phrase="www"
     """
     filtered = _strip_pub_kwargs(kwargs)
@@ -267,6 +273,9 @@ def ensure_present(
     Ensure an item exists (execution module backend for `opnsense.item_present`).
 
     CLI Example:
+
+    .. code-block:: bash
+
         salt minion opnsense.ensure_present unbound settings host_alias \\
             data='{"hostname": "www"}' match='{"hostname": "www"}'
     """
@@ -319,6 +328,9 @@ def ensure_absent(
     Ensure an item is absent (execution module backend for `opnsense.item_absent`).
 
     CLI Example:
+
+    .. code-block:: bash
+
         salt minion opnsense.ensure_absent unbound settings host_alias \\
             match='{"hostname": "www"}'
     """
@@ -530,6 +542,9 @@ def doctor() -> dict[str, Any]:
     Test OPNsense API connectivity, spec version, and credentials.
 
     CLI Example:
+
+    .. code-block:: bash
+
         salt -C 'T@opnsense:fw-01' opnsense.doctor
     """
     res: dict[str, Any] = {

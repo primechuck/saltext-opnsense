@@ -1,6 +1,6 @@
 # OPNsense Extension Tools
 
-This directory contains the code generation scripts required to maintain this Salt extension. 
+This directory contains the code generation scripts required to maintain this Salt extension.
 Since the OPNsense API is massive (1,800+ endpoints) and constantly changing, this extension dynamically generates its API bindings and data models directly from the upstream OPNsense source code.
 
 ## Generating API Definitions

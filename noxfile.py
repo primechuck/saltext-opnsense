@@ -1,12 +1,9 @@
 import datetime
 import os
-import shutil
-import sys
 import tempfile
 from pathlib import Path
 
 import nox
-from nox.command import CommandFailed
 
 # Nox options — align with salt-extension-copier template
 nox.options.reuse_existing_virtualenvs = True
@@ -20,7 +17,9 @@ except Exception:
     pass
 
 PYTHON_VERSIONS = ("3.10", "3.11", "3.12", "3.13", "3.14")
-CI_RUN = os.environ.get("JENKINS_URL") or os.environ.get("CI") or os.environ.get("DRONE") is not None
+CI_RUN = (
+    os.environ.get("JENKINS_URL") or os.environ.get("CI") or os.environ.get("DRONE") is not None
+)
 PIP_INSTALL_SILENT = CI_RUN is False
 SKIP_REQUIREMENTS_INSTALL = os.environ.get("SKIP_REQUIREMENTS_INSTALL", "0") == "1"
 
@@ -39,7 +38,9 @@ COVERAGE_REPORT_DB = REPO_ROOT / ".coverage"
 JUNIT_REPORT = ARTIFACTS_DIR / "junit-report.xml"
 
 
-def _install_requirements(session, install_coverage=True, install_salt=True, install_source=False, extras=None):
+def _install_requirements(
+    session, install_coverage=True, install_salt=True, install_source=False, extras=None
+):
     extras = extras or []
     from nox.virtualenv import VirtualEnv
 
@@ -108,7 +109,9 @@ def lint_code(session):
 
 @nox.session(name="lint-tests", python="3")
 def lint_tests(session):
-    _install_requirements(session, install_salt=False, install_coverage=False, extras=["lint", "tests"])
+    _install_requirements(
+        session, install_salt=False, install_coverage=False, extras=["lint", "tests"]
+    )
     session.run(
         "pylint",
         "--disable=I,redefined-outer-name,no-member,missing-module-docstring,missing-function-docstring,missing-class-docstring,attribute-defined-outside-init,inconsistent-return-statements,too-few-public-methods,too-many-public-methods",
