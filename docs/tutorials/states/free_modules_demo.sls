@@ -16,7 +16,7 @@ caddy_handle_demo:
     - match: {description: "salt-free-demo"}
     - data: {enabled: "0", description: "salt-free-demo - caddy"}
     - reconfigure: caddy/reverseproxy/reconfigure
-    {% if not demo_enabled %} - onlyif: /bin/false {% endif %}
+    {% if not demo_enabled %}- onlyif: /bin/false{% endif %}
 
 haproxy_backend_demo:
   opnsense.item_present:
@@ -26,7 +26,7 @@ haproxy_backend_demo:
     - match: {name: salt-free-demo-backend}
     - data: {enabled: "0", name: salt-free-demo-backend, description: "demo"}
     - reconfigure: haproxy/service/reconfigure
-    {% if not demo_enabled %} - onlyif: /bin/false {% endif %}
+    {% if not demo_enabled %}- onlyif: /bin/false{% endif %}
 
 nginx_upstream_demo:
   opnsense.item_present:
@@ -36,15 +36,15 @@ nginx_upstream_demo:
     - match: {description: salt-free-demo-upstream}
     - data: {enabled: "0", description: salt-free-demo-upstream}
     - reconfigure: nginx/service/reconfigure
-    {% if not demo_enabled %} - onlyif: /bin/false {% endif %}
+    {% if not demo_enabled %}- onlyif: /bin/false{% endif %}
 
 # Dynamic exec wrappers from generic opnsense module (312+ funcs):
-# salt -C 'T@opnsense:fw-01' opnsense.caddy_reverse_proxy_search_access_list
-# salt -C 'T@opnsense:fw-01' opnsense.haproxy_settings_search_backends
-# salt -C 'T@opnsense:fw-01' opnsense.nginx_settings_search_upstream
+# salt opnsense-router opnsense.caddy_reverse_proxy_search_access_list
+# salt opnsense-router opnsense.haproxy_settings_search_backends
+# salt opnsense-router opnsense.nginx_settings_search_upstream
 # All injected via _inject_dynamic_wrappers() reading controllers.json
 
 verify_dynamic:
   cmd.run:
     - name: PYTHONPATH=src python3 tools/verify_import.py
-    {% if not demo_enabled %} - onlyif: /bin/false {% endif %}
+    {% if not demo_enabled %}- onlyif: /bin/false{% endif %}
