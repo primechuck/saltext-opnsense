@@ -154,7 +154,6 @@ builtins = [
   "__jid_event__",
   "__instance_id__",
   "__salt_system_encoding__",
-  "__proxy__",
   "__serializers__",
   "__reg__",
   "__executors__",

@@ -60,7 +60,7 @@ def main():
         except Exception as exc:
             print(f"  FAIL {mod}/{ctrl}/{act}: {exc}")
 
-    print("Done — if OK, proxy should work.")
+    print("Done — if OK, Resources targeting (salt -C 'T@opnsense:fw-01' ...) should work — proxy removed in 1.0, salt>=3008 required.")
 
 
 if __name__ == "__main__":

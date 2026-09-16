@@ -882,6 +882,14 @@ def _auto_resolve_dict(
 
 
 def __virtual__():
+    # Runtime guard: require salt>=3008
+    try:
+        import salt.version as _sv
+        _ver = getattr(_sv, "__version_info__", ())
+        if _ver and _ver < (3008,):
+            return (False, f"saltext-opnsense requires salt>=3008 (Resources-only), got {_ver}")
+    except Exception:
+        pass
     try:
         salt_dunder = __salt__
     except NameError:
