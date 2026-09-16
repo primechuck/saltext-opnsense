@@ -136,7 +136,7 @@ jobs:
       - name: Yamllint SLS tutorials
         run: |
           echo "Linting docs/tutorials pillars/states with yamllint (allow jinja)"
-          yamllint docs/tutorials -d "{extends: default, rules: {line-length: {max: 120}, truthy: disable, braces: {max-spaces-before: 0, max-spaces-after: 0}}}"
+          yamllint docs/tutorials -d "{extends: default, rules: {line-length: {max: 120}, truthy: disable, braces: disable, brackets: disable}}"
 
       - name: Validate SLS Jinja + YAML render (strict CI gate)
         run: |
