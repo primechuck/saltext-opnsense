@@ -96,7 +96,8 @@ jobs:
           if [ "${{ matrix.salt-version }}" = "latest" ]; then
             pip install pytest pytest-salt-factories requests salt setuptools
           else
-            pip install pytest pytest-salt-factories requests "salt==${{ matrix.salt-version }}" setuptools
+            pip install pytest pytest-salt-factories requests \
+              "salt==${{ matrix.salt-version }}" setuptools
           fi
           pip install -e . --no-deps
 
@@ -113,7 +114,8 @@ jobs:
 
       - name: Sync extmods drift check
         run: |
-          PYTHONPATH=src python tools/sync_extmods.py --check || echo "sync_extmods check: file-based mirror ok"
+          PYTHONPATH=src python tools/sync_extmods.py --check || \
+            echo "sync_extmods check: file-based mirror ok"
 
   sls-validation:
     name: SLS / Package Validation (salt-call + yamllint)
@@ -133,13 +135,13 @@ jobs:
         run: |
           pip install "salt>=3008,<3009" jinja2 pyyaml yamllint
           pip install -e . --no-deps
-          # Optional salt-lint for tutorial SLS
           pip install salt-lint==0.9.2 || echo "salt-lint optional"
 
       - name: Yamllint SLS tutorials
         run: |
           echo "Linting docs/tutorials pillars/states with yamllint (allow jinja)"
-          yamllint docs/tutorials -d "{extends: default, rules: {line-length: {max: 120}, truthy: disable, braces: disable, brackets: disable}}"
+          yamllint docs/tutorials -d "{extends: default, rules: {line-length: {max: 120}, \
+            truthy: disable, braces: disable, brackets: disable}}"
 
       - name: Validate SLS Jinja + YAML render (strict CI gate)
         run: |
@@ -150,7 +152,8 @@ jobs:
       - name: Salt-call --local state.show_sls smoke (file-root / pillar-root)
         run: |
           set -euo pipefail
-          mkdir -p /tmp/empty_salt_conf /tmp/ci_pillar_root /tmp/salt-cache /tmp/salt-pki /tmp/salt-root
+          mkdir -p /tmp/empty_salt_conf /tmp/ci_pillar_root
+          mkdir -p /tmp/salt-cache /tmp/salt-pki /tmp/salt-root
           cat <<'MINIONCONF' > /tmp/empty_salt_conf/minion
           file_client: local
           id: ci
@@ -174,9 +177,12 @@ jobs:
                 - old-www
           PILLAR
           cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/top.sls
-          salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls unbound_aliases
-          salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls acme_certificates
-          PYTHONPATH=src salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough saltutil.sync_all 2>&1 | head -20
+          S_ARGS="-c /tmp/empty_salt_conf --local"
+          S_ARGS="$S_ARGS --file-root=docs/tutorials/states"
+          S_ARGS="$S_ARGS --pillar-root=/tmp/ci_pillar_root --retcode-passthrough"
+          salt-call $S_ARGS state.show_sls unbound_aliases
+          salt-call $S_ARGS state.show_sls acme_certificates
+          PYTHONPATH=src salt-call $S_ARGS saltutil.sync_all 2>&1 | head -20
           echo "salt-call validation step completed"
 
       - name: Python package smoke tests
@@ -206,10 +212,18 @@ jobs:
       - name: Verify Spec Consistency
         shell: bash
         run: |
-          CORE_REF=$(python3 -c "import json,pathlib; print(json.loads(pathlib.Path('src/saltext/opnsense/utils/controllers.json').read_text()).get('meta',{}).get('core_ref','25.7'))")
+          CORE_REF=$(python3 -c "import json,pathlib; \
+            p=pathlib.Path('src/saltext/opnsense/utils/controllers.json'); \
+            print(json.loads(p.read_text()).get('meta',{}).get('core_ref','25.7'))")
           echo "Verifying spec against upstream tag: ${CORE_REF}"
-          python tools/generate_spec.py --core-ref "${CORE_REF}" --plugins-ref "${CORE_REF}" --output /tmp/controllers.json
-          diff -u -I '"generated_at"' src/saltext/opnsense/utils/controllers.json /tmp/controllers.json || (echo "controllers.json drift detected — run make bump CORE=${CORE_REF}" && exit 1)
+          python tools/generate_spec.py \
+            --core-ref "${CORE_REF}" \
+            --plugins-ref "${CORE_REF}" \
+            --output /tmp/controllers.json
+          diff -u -I '"generated_at"' \
+            src/saltext/opnsense/utils/controllers.json \
+            /tmp/controllers.json || \
+            (echo "controllers.json drift -- run make bump CORE=${CORE_REF}" && exit 1)
 
   packaging:
     name: Packaging and Types Check
@@ -237,4 +251,6 @@ jobs:
         run: twine check dist/*
 
       - name: Check py.typed presence (PEP 561)
-        run: test -f src/saltext/opnsense/py.typed && echo "py.typed present" || (echo "py.typed missing" && exit 1)
+        run: |
+          test -f src/saltext/opnsense/py.typed && echo "py.typed present" || \
+            (echo "py.typed missing" && exit 1)
