@@ -9,11 +9,35 @@ Uses tools.validate_tutorials.render_sls to avoid reimplementing logic.
 
 from __future__ import annotations
 
+import importlib.util
 import pathlib
+import sys
 
 import pytest
 
-from tools.validate_tutorials import render_sls
+# Import render_sls robustly — tools/ is not in src/ and pytest pythonpath=[src] only
+# Review #9:15 flagged fragile import that relies on repo root being on sys.path.
+# Fix: try direct import, fallback to importlib.util loader from tools/validate_tutorials.py
+
+
+def _load_render_sls():
+    try:
+        from tools.validate_tutorials import render_sls as _render
+
+        return _render
+    except ModuleNotFoundError:
+        # Fallback: load via file path
+        tools_path = pathlib.Path(__file__).resolve().parents[2] / "tools" / "validate_tutorials.py"
+        spec = importlib.util.spec_from_file_location("validate_tutorials", tools_path)
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["validate_tutorials"] = mod
+            spec.loader.exec_module(mod)
+            return mod.render_sls
+        raise
+
+
+render_sls = _load_render_sls()
 
 STATES_DIR = pathlib.Path(__file__).resolve().parents[2] / "docs" / "tutorials" / "states"
 

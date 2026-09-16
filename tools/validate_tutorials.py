@@ -222,14 +222,9 @@ def render_sls(path: pathlib.Path, strict: bool = False) -> tuple[bool, str, typ
     except Exception as exc:
         return False, f"Jinja render failed: {exc}", None
 
-    # Workaround for known template indentation bug in free_modules_demo.sls:
-    # lines like "     - onlyif" (5 spaces) should be "    - onlyif" (4 spaces)
-    # Normalize any list item with 5-space indent that follows a 4-space indent block
-    # Simple fix: replace "\n     - onlyif" -> "\n    - onlyif"
-    # Do it generically for "- onlyif" and any "- " after extra space
-    if "onlyif" in rendered:
-        rendered = rendered.replace("\n     - onlyif", "\n    - onlyif")
-        rendered = rendered.replace("\n      - onlyif", "\n    - onlyif")
+    # NOTE: free_modules_demo.sls indentation bug (5-space onlyif) was fixed in this PR
+    # via removing leading space before dash in Jinja conditional. Workaround removed
+    # so future indentation bugs surface instead of being hidden (see review #9:230).
 
     # Now try YAML parsing of rendered result
     try:
