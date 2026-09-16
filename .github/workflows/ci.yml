@@ -147,9 +147,20 @@ jobs:
       - name: Salt-call --local state.show_sls smoke (file-root / pillar-root)
         run: |
           set -euo pipefail
-          # Simulate `salt-call --local --file-root=. --pillar-root=test/pillar state.show_sls`
-          # Repo uses docs/tutorials as file/pillar roots – test that state.show_sls works
-          # Requires salt installed above
+          # salt-call --local defaults to /etc/salt which is not writable on GH runners.
+          # Create an isolated config with custom cachedir/pki_dir/root_dir + minion_id_caching:False
+          # so state.show_sls smoke runs properly. Previous || echo/|| true fallbacks hid both
+          # infra failures AND real SLS-invalid failures — now we fail ONLY on invalid SLS.
+          mkdir -p /tmp/empty_salt_conf /tmp/ci_pillar_root /tmp/salt-cache /tmp/salt-pki /tmp/salt-root
+          cat <<'MINIONCONF' > /tmp/empty_salt_conf/minion
+          file_client: local
+          id: ci
+          cachedir: /tmp/salt-cache
+          pki_dir: /tmp/salt-pki
+          log_file: /tmp/salt-minion.log
+          root_dir: /tmp/salt-root
+          minion_id_caching: False
+          MINIONCONF
           cat <<'PILLAR' > /tmp/ci_pillar.sls
           opnsense:
             cluster_parent:
@@ -163,14 +174,10 @@ jobs:
               example.com:
                 - old-www
           PILLAR
-          mkdir -p /tmp/ci_pillar_root
-          cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/top.sls || cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/ci.sls
-          # Show that salt-call can parse SLS (use --file-root docs/tutorials/states)
-          # Critical: Do NOT use || echo fallback – CI must fail if SLS invalid (see review #9)
-          salt-call --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls unbound_aliases
-          salt-call --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls acme_certificates
-          # Package import smoke: prove saltext can be imported via salt loader path
-          PYTHONPATH=src salt-call --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough saltutil.sync_all 2>&1 | head -20
+          cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/top.sls
+          salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls unbound_aliases
+          salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough state.show_sls acme_certificates
+          PYTHONPATH=src salt-call -c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough saltutil.sync_all 2>&1 | head -20
           echo "salt-call validation step completed"
 
       - name: Python package smoke tests
