@@ -566,4 +566,3 @@ salt opnsense-router opnsense.search unbound settings host_alias row_count=1
 
 - **network** (7): `add, del, get, info, search, set, toggle`
 - **settings** (3): `get, set, status`
-

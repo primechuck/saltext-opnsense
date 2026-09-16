@@ -24,7 +24,6 @@ import pathlib
 import re
 import sys
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
 
 HEADER_TMPL = "# AUTO-GENERATED - DO NOT EDIT MANUALLY (Built against OPNsense {core_ref}) - run tools/generate_wrappers.py\n"
 HEADER = HEADER_TMPL.format(core_ref="26.7.3")
@@ -99,7 +98,7 @@ def singularize(name: str) -> str:
     return n
 
 
-def parse_verb_suffix(action: str) -> Tuple[str | None, str]:
+def parse_verb_suffix(action: str) -> tuple[str | None, str]:
     """
     Returns (verb, suffix) where verb in CRUD_VERBS and suffix is remaining part.
     Handles both camelCase and snake_case: searchHostAlias -> (search, HostAlias)
@@ -125,7 +124,7 @@ def parse_verb_suffix(action: str) -> Tuple[str | None, str]:
     return None, action
 
 
-def find_spec_files() -> List[pathlib.Path]:
+def find_spec_files() -> list[pathlib.Path]:
     base = pathlib.Path(__file__).resolve().parent
     candidates = [
         base / "controllers.json",
@@ -147,7 +146,7 @@ def find_spec_files() -> List[pathlib.Path]:
 
 def load_merged_spec() -> dict:
     files = find_spec_files()
-    merged_modules: Dict[str, Dict[str, List[str]]] = {}
+    merged_modules: dict[str, dict[str, list[str]]] = {}
     meta = {}
     for f in files:
         try:
@@ -209,7 +208,7 @@ def load_merged_spec() -> dict:
     return {"meta": meta, "modules": merged_modules}
 
 
-def analyze_controller(controller: str, actions: List[str]) -> dict:
+def analyze_controller(controller: str, actions: list[str]) -> dict:
     """
     Returns dict with:
       crud_types: dict normalized_snake -> {orig_suffix_camel, snake, verbs:set, verb_to_orig_action:dict, verb_to_suffix:dict}
@@ -225,11 +224,11 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
             seen.add(a)
             uniq_actions.append(a)
 
-    temp_type_map: Dict[
+    temp_type_map: dict[
         str, dict
     ] = {}  # normalized_snake -> {orig_suffixes:set, verbs:set, verb_to_orig_action:dict, verb_to_suffix:dict}
-    generic_raw: List[str] = []
-    singleton: Set[str] = set()
+    generic_raw: list[str] = []
+    singleton: set[str] = set()
 
     for act in uniq_actions:
         low = act.lower()
@@ -279,7 +278,7 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
                 entry["representative_suffix"] = suffix
 
     # Determine which temp types are valid CRUD vs should be moved to generic
-    crud_types: Dict[str, dict] = {}
+    crud_types: dict[str, dict] = {}
     for norm_snake, info in temp_type_map.items():
         verbs = info["verbs"]
         # Valid if search in verbs or at least 2 verbs or (add+set) etc
@@ -306,7 +305,7 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
                 generic_raw.append(orig_act)
 
     # Now generic deduplication by normalized snake action
-    generic_map: Dict[str, str] = {}  # snake_action -> orig_action preferred camel
+    generic_map: dict[str, str] = {}  # snake_action -> orig_action preferred camel
     for g in generic_raw:
         # For actions that are like "search" alone, keep as is
         snake = camel_to_snake(g)
@@ -352,7 +351,7 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
                             "representative_suffix", target_key
                         )
             # Remove merged singleton verbs
-            singleton = set([v for v in singleton if v not in target_info["verbs"]])
+            singleton = {v for v in singleton if v not in target_info["verbs"]}
 
     # Also handle pseudo type fallback for simple CRUD controllers like acmeclient where actions are just search/get/add/set/del/toggle without suffix
     # If no crud_types and generic_map contains search/get etc as simple verbs
@@ -416,7 +415,7 @@ def analyze_controller(controller: str, actions: List[str]) -> dict:
     }
 
 
-def build_module_analysis(modules_dict: Dict[str, Dict[str, List[str]]]) -> Dict[str, dict]:
+def build_module_analysis(modules_dict: dict[str, dict[str, list[str]]]) -> dict[str, dict]:
     """
     Returns per module analysis:
       controllers: dict controller_name -> analysis dict from analyze_controller

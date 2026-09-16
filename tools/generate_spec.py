@@ -176,7 +176,7 @@ def main():
         out_path = pathlib.Path.cwd() / out_path
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n")
     print(
         f"Wrote {out_path} — modules={len(merged)} ctrls={output['meta']['total_controllers']} actions={output['meta']['total_actions']}"
     )
