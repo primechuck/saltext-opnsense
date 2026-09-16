@@ -9,6 +9,7 @@ jobs:
   lint:
     name: Lint & Format Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,6 +22,7 @@ jobs:
   unit:
     name: Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -35,9 +37,72 @@ jobs:
       - run: PYTHONPATH=src python tools/verify_import.py
       - run: PYTHONPATH=src python tools/sync_extmods.py --check || echo "sync_extmods check ok"
 
+  version-guard:
+    name: Version Guard — <3008 must be rejected
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install salt 3006.27 (pre-break) + extension file-based to test runtime guard
+        run: |
+          pip install "salt==3006.27" requests --quiet
+          pip install -e . --no-deps --quiet
+      - name: Assert __virtual__ rejects salt<3008 (file-based install bypasses pip dep check)
+        run: |
+          set -e
+          PYTHONPATH=src python - << 'PYTEST'
+          import sys, types
+          # Ensure salt.version is 3006
+          import salt.version
+          print(f"salt.version.__version_info__={salt.version.__version_info__}")
+          assert salt.version.__version_info__ < (3008,), "test setup expects salt<3008"
+          # Mock salt.utils.resources for resource module
+          salt_mod = sys.modules.get("salt")
+          utils_mod = types.ModuleType("salt.utils")
+          res_mod = types.ModuleType("salt.utils.resources")
+          def pillar_resources_tree(opts):
+              return {"opnsense": {"hosts": {"fw-01": {"host": "fw-01"}}}}
+          res_mod.pillar_resources_tree = pillar_resources_tree
+          utils_mod.resources = res_mod
+          sys.modules["salt.utils"] = utils_mod
+          sys.modules["salt.utils.resources"] = res_mod
+          # Resource module must reject
+          import importlib
+          if "saltext.opnsense.resources.opnsense" in sys.modules:
+              del sys.modules["saltext.opnsense.resources.opnsense"]
+          rmod = importlib.import_module("saltext.opnsense.resources.opnsense")
+          rmod.__context__ = {}
+          rmod.__opts__ = {}
+          ret = rmod.__virtual__()
+          print(f"resource __virtual__ -> {ret}")
+          assert isinstance(ret, tuple) and ret[0] is False, f"resource must reject <3008, got {ret}"
+          assert "3008" in ret[1], f"message must mention 3008, got {ret[1]}"
+          # Exec module must reject
+          if "saltext.opnsense.modules.opnsense" in sys.modules:
+              del sys.modules["saltext.opnsense.modules.opnsense"]
+          emod = importlib.import_module("saltext.opnsense.modules.opnsense")
+          ret2 = emod.__virtual__()
+          print(f"exec __virtual__ -> {ret2}")
+          assert isinstance(ret2, tuple) and ret2[0] is False, f"exec must reject <3008, got {ret2}"
+          assert "3008" in ret2[1]
+          print("Version guard OK: <3008 correctly rejected")
+          PYTEST
+      - name: Verify pip packaging would prevent <3008 install (metadata check)
+        run: |
+          python -m pip install build -q
+          python -m build -q
+          python -c "import pathlib, tomllib; print(open('pyproject.toml').read().split('dependencies')[1][:300])"
+          grep -q "salt>=3008" pyproject.toml && echo "pyproject correctly requires salt>=3008"
+          test ! -f src/saltext/opnsense/proxy/opnsense.py && echo "proxy module removed (Resources-only)" || echo "proxy still present - check"
+          test ! -f src/saltext/opnsense/grains/opnsense.py && echo "grains module removed" || echo "grains still present"
+
   spec-drift:
     name: Spec Integrity Check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +119,7 @@ jobs:
   packaging:
     name: Packaging & Types Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
