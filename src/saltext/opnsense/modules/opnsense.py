@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 from saltext.opnsense.utils.common import camel_to_snake as _camel_to_snake
 from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_pub_kwargs
 
+# api_spec has no heavy deps (no requests/salt) — keep it importable even when requests missing
 try:
     from saltext.opnsense.utils.api_spec import (
         list_actions,
@@ -16,15 +17,12 @@ try:
         list_modules,
         load_spec,
     )
-    from saltext.opnsense.utils.opnsense import OPNsenseClient, get_client_from_opts
 
-    HAS_UTILS: Final[bool] = True
-    HAS_UTILS_ERROR: Final[str] = ""
-except ImportError as exc:  # pragma: no cover - fallback for missing deps
-    HAS_UTILS = False  # type: ignore[no-redef]
-    HAS_UTILS_ERROR = str(exc)  # type: ignore[no-redef]
-    OPNsenseClient = None  # type: ignore[assignment]
-    get_client_from_opts = None  # type: ignore[assignment]
+    HAS_API_SPEC: Final[bool] = True
+    HAS_API_SPEC_ERROR: Final[str] = ""
+except ImportError as exc:
+    HAS_API_SPEC = False  # type: ignore[no-redef]
+    HAS_API_SPEC_ERROR = str(exc)  # type: ignore[no-redef]
 
     def list_modules() -> list[str]:  # type: ignore[no-redef]
         return []
@@ -39,10 +37,24 @@ except ImportError as exc:  # pragma: no cover - fallback for missing deps
         return {}
 
 
+try:
+    from saltext.opnsense.utils.opnsense import OPNsenseClient, get_client_from_opts
+
+    HAS_UTILS: Final[bool] = True
+    HAS_UTILS_ERROR: Final[str] = ""
+except ImportError as exc:  # pragma: no cover - fallback for missing deps
+    HAS_UTILS = False  # type: ignore[no-redef]
+    HAS_UTILS_ERROR = str(exc)  # type: ignore[no-redef]
+    OPNsenseClient = None  # type: ignore[assignment]
+    get_client_from_opts = None  # type: ignore[assignment]
+
+
 __virtualname__: Final[str] = "opnsense"
 
 
 def __virtual__() -> bool | tuple[bool, str]:
+    if not HAS_API_SPEC:
+        return (False, f"opnsense api_spec missing: {HAS_API_SPEC_ERROR}")
     if not HAS_UTILS:
         return (False, f"opnsense utils missing: {HAS_UTILS_ERROR}")
     return True
@@ -402,15 +414,17 @@ def _build_dynamic_map() -> dict[str, tuple[str, str, str, str, str, str]]:
     ctx = globals().get("__context__")
     if isinstance(ctx, dict) and _CONTEXT_CACHE_KEY in ctx:
         cached = ctx[_CONTEXT_CACHE_KEY]
-        if isinstance(cached, dict):
+        if isinstance(cached, dict) and cached:
             return cached
 
     global _DYNAMIC_MAP_CACHE
     with _CACHE_LOCK:
         if isinstance(ctx, dict) and _CONTEXT_CACHE_KEY in ctx:
-            return ctx[_CONTEXT_CACHE_KEY]
+            maybe = ctx[_CONTEXT_CACHE_KEY]
+            if isinstance(maybe, dict) and maybe:
+                return maybe
 
-        if _DYNAMIC_MAP_CACHE is not None:
+        if _DYNAMIC_MAP_CACHE:
             return _DYNAMIC_MAP_CACHE
 
         mapping: dict[str, tuple[str, str, str, str, str, str]] = {}
@@ -445,9 +459,11 @@ def _build_dynamic_map() -> dict[str, tuple[str, str, str, str, str, str]]:
         except Exception as exc:
             log.debug("Failed to build dynamic map: %s", exc)
 
-        if isinstance(ctx, dict):
-            ctx[_CONTEXT_CACHE_KEY] = mapping
-        _DYNAMIC_MAP_CACHE = mapping
+        # Only cache non-empty to allow retry after transient load_spec failure
+        if mapping:
+            if isinstance(ctx, dict):
+                ctx[_CONTEXT_CACHE_KEY] = mapping
+            _DYNAMIC_MAP_CACHE = mapping
         return mapping
 
 
