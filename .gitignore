@@ -70,3 +70,4 @@ dmypy.json
 
 # CI generated artifacts
 artifacts/
+.worktrees/

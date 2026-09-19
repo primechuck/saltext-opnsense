@@ -98,10 +98,14 @@ def main():
     assert len(dynamic_map) >= 300, f"expected >=300 funcs, got {len(dynamic_map)}"
 
     dynamic_exec = list(dynamic_map.keys())
-    print(f"[2b] dir(exec_mod) currently {len([x for x in dir(exec_mod) if '_' in x and not x.startswith('_')])} — using map for validation")
+    print(
+        f"[2b] dir(exec_mod) currently {len([x for x in dir(exec_mod) if '_' in x and not x.startswith('_')])} — using map for validation"
+    )
 
     dynamic_state = [x for x in dir(state_mod) if x.endswith("_present")]
-    print(f"[3] generic state dynamic present funcs -> {len(dynamic_state)} (expected >=100 or 0 with 3008+ Resources — state uses diff engine)")
+    print(
+        f"[3] generic state dynamic present funcs -> {len(dynamic_state)} (expected >=100 or 0 with 3008+ Resources — state uses diff engine)"
+    )
     # State module does not use dynamic __getattr__ in same way; it may have 0 present funcs until Salt loader populates, so we don't hard assert
 
     free = ["caddy", "haproxy", "nginx", "wireguard", "acmeclient", "bind", "unbound", "kea"]

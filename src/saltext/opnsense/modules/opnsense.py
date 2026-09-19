@@ -36,6 +36,7 @@ except ImportError as exc:
     def load_spec() -> dict[str, Any]:  # type: ignore[no-redef]
         return {}
 
+
 try:
     from saltext.opnsense.utils.opnsense import OPNsenseClient, get_client_from_opts
 
