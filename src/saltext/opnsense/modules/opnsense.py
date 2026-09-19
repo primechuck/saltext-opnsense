@@ -6,6 +6,15 @@ from typing import Any, Final
 
 log = logging.getLogger(__name__)
 
+# Salt version guard — must run before importing heavy utils (requests) so that
+# <3008 can be rejected even when dependencies are missing (file-based install bypasses pip check)
+try:
+    import salt.version as _salt_version_guard
+
+    _SALT_VERSION_INFO = getattr(_salt_version_guard, "__version_info__", ())
+except Exception:
+    _SALT_VERSION_INFO = ()
+
 from saltext.opnsense.utils.common import camel_to_snake as _camel_to_snake
 from saltext.opnsense.utils.common import strip_salt_internal_kwargs as _strip_pub_kwargs
 
@@ -42,7 +51,7 @@ try:
 
     HAS_UTILS: Final[bool] = True
     HAS_UTILS_ERROR: Final[str] = ""
-except ImportError as exc:  # pragma: no cover - fallback for missing deps
+except Exception as exc:  # pragma: no cover - fallback for missing deps (including AttributeError from mock requests)
     HAS_UTILS = False  # type: ignore[no-redef]
     HAS_UTILS_ERROR = str(exc)  # type: ignore[no-redef]
     OPNsenseClient = None  # type: ignore[assignment]
@@ -53,6 +62,20 @@ __virtualname__: Final[str] = "opnsense"
 
 
 def __virtual__() -> bool | tuple[bool, str]:
+    # Runtime guard: enforce salt>=3008 even when file-based sync bypasses pip
+    # Uses early-captured _SALT_VERSION_INFO so it works even if requests import fails
+    try:
+        ver = _SALT_VERSION_INFO
+        if not ver:
+            import salt.version as _sv
+
+            ver = getattr(_sv, "__version_info__", ())
+
+        if ver and ver < (3008,):
+            return (False, f"saltext-opnsense requires salt>=3008 (Resources-only), got {ver}")
+    except Exception:
+        pass
+
     if not HAS_API_SPEC:
         return (False, f"opnsense api_spec missing: {HAS_API_SPEC_ERROR}")
     if not HAS_UTILS:

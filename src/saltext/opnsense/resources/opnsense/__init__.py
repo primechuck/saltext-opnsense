@@ -184,6 +184,16 @@ def _connect(resource_id: str) -> Any:
 
 
 def __virtual__():
+    # Runtime guard: file-based install bypasses pip dependency check, enforce >=3008 explicitly
+    try:
+        import salt.version as _sv
+
+        ver = getattr(_sv, "__version_info__", ())
+        if ver and ver < (3008,):
+            return (False, f"saltext-opnsense requires salt>=3008 (Resources-only), got {ver}")
+    except Exception:
+        # If salt.version not importable yet (unit tests), allow import; packaging will enforce
+        pass
     if not HAS_DEPS:
         return (False, f"saltext-opnsense deps missing: {HAS_DEPS_ERROR}")
     return True
