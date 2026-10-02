@@ -73,7 +73,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-        salt-version: ["3008.2"]
+        salt-version: ["3008.3"]
         include:
           - python-version: "3.11"
             salt-version: "latest"
