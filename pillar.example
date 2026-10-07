@@ -105,11 +105,11 @@ opnsense_dns_config:
     aliases:
       - name: k8s_nodes
         type: host
-        content: "10.0.0.1,10.0.0.2,10.0.0.3"
+        content: "192.0.2.1,192.0.2.2,192.0.2.3"
         description: "Kubernetes Cluster Nodes"
       - name: rfc1918
         type: network
-        content: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+        content: "192.0.2.0/24,198.51.100.0/24,203.0.113.0/24"
         description: "Private RFC1918 Networks"
 
   # -------------------------------------------------------------------------
@@ -117,13 +117,13 @@ opnsense_dns_config:
   # -------------------------------------------------------------------------
   kea:
     subnets:
-      - subnet: "10.0.0.0/24"
+      - subnet: "192.0.2.0/24"
         description: "LAN Management Network"
     reservations:
       - hostname: "www"
         hw_address: "aa:bb:cc:dd:ee:ff"
-        ip_address: "10.0.0.10"
-        subnet: "10.0.0.0/24"
+        ip_address: "192.0.2.10"
+        subnet: "192.0.2.0/24"
 
   # -------------------------------------------------------------------------
   # 6. ACME Client SSL Certificates

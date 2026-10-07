@@ -8,17 +8,16 @@ Orchestrates:
   2. generate_models.py --core /tmp/opnsense-spec/core --plugins /tmp/opnsense-spec/plugins
      -> writes directly to src/saltext/opnsense/utils/models.json
   3. generate_wrappers.py (all 76 modules)
-  4. sync_extmods.py --copy (if target extmods directory found)
-  5. verify_import.py
-  6. pytest tests/unit -q
+  4. verify_import.py
+  5. pytest tests/unit -q
 
 Usage:
-  python tools/generate_all.py [--core-ref 25.7] [--plugins-ref 25.7] [--skip-sync] [--skip-live]
-  python tools/generate_all.py --only spec|models|wrappers|sync|verify|test
+  python tools/generate_all.py [--core-ref 25.7] [--plugins-ref 25.7] [--skip-live]
+  python tools/generate_all.py --only spec|models|wrappers|verify|test
   CORE_REF=25.7 PLUGINS_REF=25.7 make gen-all
 
 Maintainers: run `make gen-all` or `nox -s gen_all` for full refresh.
-Renovate post-upgrade calls this via vendor_charts.py + gen-all.
+Pip-only: pip install -e . + saltutil.sync_all (no file-based sync).
 """
 
 from __future__ import annotations
@@ -56,33 +55,9 @@ def run_cmd_output(cmd: list[str], cwd: pathlib.Path = PROJECT_ROOT) -> tuple[in
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def find_repo_root() -> pathlib.Path | None:
-    candidates = [
-        PROJECT_ROOT.parent.parent,
-        PROJECT_ROOT.parent,
-        PROJECT_ROOT,
-        pathlib.Path.cwd(),
-        pathlib.Path.cwd().parent.parent,
-    ]
-    seen = set()
-    for cand in candidates:
-        try:
-            cand = cand.resolve()
-        except Exception:
-            continue
-        if cand in seen:
-            continue
-        seen.add(cand)
-        if (cand / "infra" / "salt" / "states").exists() and (
-            cand / "projects" / "saltext-opnsense"
-        ).exists():
-            return cand
-    p = PROJECT_ROOT.resolve()
-    for _ in range(10):
-        p = p.parent
-        if (p / "infra" / "salt" / "states").exists():
-            return p
-    return None
+def find_repo_root() -> pathlib.Path:
+    # Public isolation: self-contained, no monorepo walk
+    return PROJECT_ROOT
 
 
 def step_spec(core_ref: str, plugins_ref: str) -> int:
@@ -132,11 +107,6 @@ def step_wrappers() -> int:
     return run_cmd(cmd, desc="generate_wrappers (all 76 modules)")
 
 
-def step_sync() -> int:
-    cmd = [sys.executable, str(TOOLS_DIR / "sync_extmods.py"), "--copy"]
-    return run_cmd(cmd, cwd=PROJECT_ROOT, desc="sync_extmods --copy")
-
-
 def step_verify() -> int:
     cmd = [sys.executable, str(TOOLS_DIR / "verify_import.py")]
     env_pythonpath = str(PROJECT_ROOT / "src")
@@ -165,7 +135,6 @@ def step_tests() -> int:
             subprocess.run(
                 [sys.executable, "-m", "pytest", "--version"], check=True, capture_output=True
             )
-            pytest_bin = f"{sys.executable} -m pytest"
             cmd = [sys.executable, "-m", "pytest", "tests/unit", "-q"]
         except Exception:
             print("WARN: pytest not found, skipping tests (pip install pytest)")
@@ -177,7 +146,7 @@ def step_tests() -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Orchestrate full codegen pipeline for saltext-opnsense"
+        description="Orchestrate full codegen pipeline for saltext-opnsense (pip-only)"
     )
     parser.add_argument(
         "--core-ref", default="master", help="git ref for opnsense/core (default: master)"
@@ -185,7 +154,6 @@ def main():
     parser.add_argument(
         "--plugins-ref", default="master", help="git ref for opnsense/plugins (default: master)"
     )
-    parser.add_argument("--skip-sync", action="store_true", help="skip sync_extmods.py --copy step")
     parser.add_argument(
         "--skip-live", action="store_true", help="skip pytest tests (alias for --skip-tests)"
     )
@@ -194,9 +162,7 @@ def main():
     parser.add_argument("--skip-wrappers", action="store_true", help="skip generate_wrappers.py")
     parser.add_argument("--skip-models", action="store_true", help="skip generate_models.py")
     parser.add_argument("--skip-spec", action="store_true", help="skip generate_spec.py")
-    parser.add_argument(
-        "--only", help="run only one phase: spec, models, wrappers, sync, verify, test"
-    )
+    parser.add_argument("--only", help="run only one phase: spec, models, wrappers, verify, test")
     parser.add_argument("--dry-run", action="store_true", help="print steps without executing")
     args = parser.parse_args()
 
@@ -212,12 +178,10 @@ def main():
             return name == only or (only == "gen" and name in ("spec", "models", "wrappers"))
         return True
 
-    print("== saltext-opnsense generate_all ==")
+    print("== saltext-opnsense generate_all ===")
     print(f"Project root: {PROJECT_ROOT}")
     print(f"Core ref: {args.core_ref}  Plugins ref: {args.plugins_ref}")
-    print(
-        f"Only: {only or 'all'}  skip_sync={args.skip_sync} skip_tests={args.skip_tests} dry_run={args.dry_run}"
-    )
+    print(f"Only: {only or 'all'}  skip_tests={args.skip_tests} dry_run={args.dry_run}")
 
     rc = 0
 
@@ -255,22 +219,6 @@ def main():
     elif args.skip_wrappers:
         print("SKIP: wrappers (--skip-wrappers)")
 
-    if should_run("sync") and not args.skip_sync:
-        if args.dry_run:
-            print("[dry-run] would run: sync_extmods.py --copy")
-        else:
-            rc = step_sync()
-            if rc != 0:
-                return rc
-    else:
-        if args.skip_sync:
-            print("SKIP: sync (--skip-sync)")
-        elif only and only != "sync":
-            pass
-        else:
-            if should_run("sync"):
-                print("SKIP: sync (only filter)")
-
     if should_run("verify") and not args.skip_verify:
         if args.dry_run:
             print("[dry-run] would run: verify_import.py")
@@ -292,7 +240,7 @@ def main():
         if args.skip_tests:
             print("SKIP: tests (--skip-tests / --skip-live)")
 
-    print("\n== generate_all DONE ==")
+    print("\n== generate_all DONE ===")
     if args.dry_run:
         print(
             "Dry run — no files modified beyond earlier steps that already ran (spec is dry-only)."

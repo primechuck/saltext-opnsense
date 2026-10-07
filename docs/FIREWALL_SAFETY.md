@@ -145,7 +145,7 @@ Since rollback timer no longer exists in >=25.7/26.x:
 1. **Anti-lockout**: Keep default anti-lockout rule enabled, don't manage it
    via Salt. Put restrictive rules after anti-lockout.
 
-2. **Test mode first**: `salt opnsense-router state.apply opnsense.firewall test=True`
+2. **Test mode first**: `salt T@opnsense:fw-01 state.apply opnsense.firewall test=True`
 
 3. **Out-of-band access**: Ensure IPMI / console / separate mgmt VLAN so
    failed filter doesn't brick.

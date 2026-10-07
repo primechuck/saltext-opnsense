@@ -1,8 +1,9 @@
----
 coverage:
   status:
     project:
-      default: false
+      default:
+        target: 75%
+        threshold: 2%
       app:
         informational: true
         paths:
@@ -12,7 +13,9 @@ coverage:
         paths:
           - tests/
     patch:
-      default: false
+      default:
+        target: 75%
+        threshold: 2%
       app:
         informational: true
         paths:

@@ -12,29 +12,24 @@ Requires salt>=3008. No proxy minion. For full fleet tutorial see `docs/RESOURCE
 
 ## 1. Install (PyPI canonical)
 
-Pip (production, recommended — public novice path):
-
 ```bash
 salt-pip install saltext-opnsense
 salt '*' saltutil.sync_all
 ```
 
-File-based fallback (no pip, gitfs/air-gapped):
-
-```bash
-# copies to _modules/_states/_utils/saltext/...
-python3 tools/sync_extmods.py --copy
-salt '*' saltutil.sync_all
-```
 
 Verify:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | head
-# 75 modules
-salt -C 'T@opnsense' opnsense.doctor
+# 76 modules, 1815 endpoints
+salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers unbound
+salt -C 'T@opnsense:fw-01' opnsense.list_api_actions unbound settings
+salt -C 'T@opnsense:fw-01' opnsense.doctor
 salt-run resource.list_grains
 ```
+
+Discovery is live — `docs/API.md` is hand-written, not a stale dump. Query target FW version for truth.
 
 ## 2. Minimal config – Resources pillar (simplest fleet)
 
@@ -59,7 +54,6 @@ resources:
 base:
   '*':
     - resources
-  # or specific managing minion:
   'managing-minion-id':
     - resources
 ```
@@ -71,12 +65,12 @@ salt -C 'T@opnsense' saltutil.refresh_pillar
 salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts unmask=True
 salt -C 'T@opnsense' test.ping
 salt -C 'T@opnsense:fw-01' opnsense.ping
-salt -C 'T@opnsense' opnsense.doctor
+salt -C 'T@opnsense:fw-01' opnsense.doctor
 ```
 
-`doctor` should return `status: OK` with `spec_version: 25.7.11`.
+`doctor` returns `status: OK` with `spec_version: 26.7.3`.
 
-If `missing OPNsense config host`: check pillar path is `resources:opnsense:hosts:fw-01:host`, not flat `/etc/salt/proxy` (proxy removed in 1.0.0). See `docs/RESOURCES.md`.
+If `missing OPNsense config host`: check pillar path is `resources:opnsense:hosts:fw-01:host`, not legacy path. See `docs/RESOURCES.md`.
 
 Optional SSH 2 SRN side (requires python311 on OPNsense):
 
@@ -87,11 +81,9 @@ resources:
       fw-01:
         host: fw-01.example.com
         user: root
-        priv: /etc/salt/keys/fw-01
-        thin_dir: /tmp/.salt-thin
 ```
 
-Then `salt -C 'T@ssh:fw-01' cmd.run 'opnsense-version'`.
+Then `salt -C 'T@opnsense:fw-01 or T@ssh:fw-01' state.apply fw.base`.
 
 ## 3. Pillar for DNS aliases
 
@@ -150,31 +142,46 @@ Apply:
 
 ```bash
 salt -C 'T@opnsense:fw-01' state.apply opnsense.quickstart
-salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
+salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases
 ```
 
-Second run should be 0 changes (idempotent diff engine).
+Second run 0 changes (idempotent diff engine).
 
-Masterless test (no master registry):
+Masterless:
 
 ```bash
 salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense.quickstart test=True
 ```
 
-## 5. Next steps
+## 5. Friendly CLI listers (human maps)
 
-- Full fleet tutorial `docs/RESOURCES.md` – 2 SRN composition, targeting `G@`, `resource.refresh`, `list_grains`
-- Convenience wrappers `docs/CONVENIENCE.md`
-- All 75 modules `docs/USAGE.md`
-- Vault secrets `docs/tutorials/pillars/` – use `__slot__:salt:vault.read(...)`
-- Firewall safety `docs/FIREWALL_SAFETY.md`
+Raw `opnsense.search` returns `{"rows": [...]}`. Convenience modules return sorted dicts:
 
-## Troubleshooting
+```bash
+salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases
+salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_simple
+salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides
+salt -C 'T@opnsense:fw-01' opnsense_bind.list_domains
+salt -C 'T@opnsense:fw-01' opnsense_bind.list_records domain=example.com
+salt -C 'T@opnsense:fw-01' opnsense_kea.list_subnets
+salt -C 'T@opnsense:fw-01' opnsense_dns.managed_preview
+```
 
-- `Function X not supported for opnsense` → managing minion `saltutil.sync_all` + `refresh_pillar`
+All listers call `search rowCount=-1`, auto-resolve relations via `models.json` + `controllers.json`.
+
+See `docs/STATES.md` for batch `aliases_managed` and `docs/API.md` for live discovery.
+
+## 6. Troubleshooting
+
+- `Function X not supported for opnsense` → `salt -C 'T@opnsense' saltutil.sync_all` + `refresh_pillar`
+- `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, `unmask=True`, not flat file
 - `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense_unbound.resolve_parent cluster.example.com`
-- `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, use `unmask=True`
-- Pillar not seen → `salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts unmask=True`
-- Thin copy fails for ssh → ensure `python311` on OPNsense, `thin_dir` writable, key 600
+- `Invalid JSON syntax` → OPNsense expects POST, client defaults POST, pass `{}` not empty
+- `404 Endpoint not found` → renamed action, regen `make bump CORE=26.7.3`
+- `RemoteDisconnected` → Kea restart slow, retry 3x backoff, batch + `onchanges`
+- `validations` failed → `OPNsenseValidationError.validations` in comment, fix data
+- Flap bool `1` vs True / CSV `lan,wan` vs list → fixed by `utils/diff.py` normalization
+- Grains empty → `resources/opnsense/__init__.py:grains()` needs `resources:opnsense:hosts:fw-01` + `ping()` ok
+- Vault `__slot__` placeholder → `salt -C 'T@opnsense:fw-01' pillar.get ... --out=yaml` + check master vault.conf
 
-All example IPs use RFC5737 TEST-NET: `192.0.2.0/24`. Replace with real networks.
+All example IPs use RFC5737 TEST-NET: `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `fw-01.example.com`. Replace with real networks.

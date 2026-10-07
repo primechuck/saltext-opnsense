@@ -1,3 +1,4 @@
+# TODO Q5: keep models.json 653K for now, later trim to unbound/bind/kea only ~45K or delete hardcode 3 lookups
 from __future__ import annotations
 
 import json
@@ -266,3 +267,27 @@ def list_actions(module: str, controller: str) -> list[str]:
         if isinstance(val, tuple):
             return sorted(val)
     return []
+
+
+def has_action(module: str, controller: str, action: str) -> bool:
+    # Support action with suffix like "toggle/0" -> check base
+    base = action.split("/")[0].strip()
+    if not base:
+        return False
+    spec = load_spec()
+    mods = spec.get("modules", {})
+    if module not in mods:
+        return False
+    if controller not in mods[module]:
+        return False
+    val = mods[module][controller]
+    if isinstance(val, dict):
+        actions = list(val.keys())
+    elif isinstance(val, (list, tuple)):
+        actions = list(val)
+    else:
+        return False
+    if base in actions:
+        return True
+    lower_map = {a.lower(): a for a in actions}
+    return base.lower() in lower_map

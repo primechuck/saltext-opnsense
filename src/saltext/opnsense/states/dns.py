@@ -1,69 +1,32 @@
 import logging
 
-from saltext.opnsense.utils.common import (
-    get_reconfigure as _common_get_reconfigure,
-)
-from saltext.opnsense.utils.common import (
-    is_uuid as _is_uuid,
-)
-from saltext.opnsense.utils.common import (
-    normalize_enabled as _normalize_enabled,
-)
-from saltext.opnsense.utils.common import (
-    parse_reconfigure_path as _parse_reconfigure,
-)
-from saltext.opnsense.utils.common import (
-    strip_salt_internal_kwargs as _strip_salt_internal_kwargs,
-)
-from saltext.opnsense.utils.diff import diff_models
-
 log = logging.getLogger(__name__)
+from saltext.opnsense.utils.common import get_reconfigure as _get_rc
+from saltext.opnsense.utils.common import is_uuid as _is_uuid
+from saltext.opnsense.utils.common import normalize_enabled as _norm_en
+from saltext.opnsense.utils.common import parse_reconfigure_path as _parse_rc
+from saltext.opnsense.utils.diff import diff_models
 
 __virtualname__ = "opnsense_dns"
 
 
 def __virtual__():
-    """
-    Only load if opnsense execution module is available.
-    """
     try:
-        salt_dunder = __salt__
+        sd = __salt__
     except NameError:
         return True
-    if "opnsense.search" in salt_dunder or "opnsense_unbound.list_aliases" in salt_dunder:
+    if "opnsense.search" in sd or "opnsense.call" in sd:
         return True
     return (False, "opnsense execution module not loaded")
 
 
-def _get_reconfigure(reconfigure):
-    return _common_get_reconfigure(reconfigure, "unbound")
-
-
-def _verify_reconfigure_call(module: str, controller: str, action: str = "reconfigure"):
+def _search(t: str, phrase: str = ""):
     try:
-        res = __salt__["opnsense.reconfigure"](module, controller, action)
-        if isinstance(res, dict):
-            status = str(res.get("status", "")).lower()
-            result = str(res.get("result", "")).lower()
-            if status in ("failed", "error") or result in ("failed", "error"):
-                msg = res.get("message") or res.get("error") or res.get("validations") or res
-                return False, str(msg)
-        elif isinstance(res, str):
-            if res.lower() in ("failed", "error"):
-                return False, res
-        return True, ""
-    except Exception as exc:
-        return False, str(exc)
-
-
-def _do_search(type_name, search_phrase=""):
-    try:
-        res = __salt__["opnsense.search"](
-            "unbound", "settings", type_name, search_phrase=search_phrase, row_count=-1
-        )
+        fn = __salt__["opnsense.search"]  # type: ignore
+        res = fn("unbound", "settings", t, search_phrase=phrase, row_count=-1)
         return res.get("rows", []) if isinstance(res, dict) else []
     except Exception as exc:
-        log.debug("search %s failed: %s", type_name, exc)
+        log.debug("search %s failed: %s", t, exc)
         return []
 
 
@@ -85,21 +48,31 @@ def _resolve_parent(parent):
     if _is_uuid(parent):
         return parent, None
     if "." not in parent:
-        return None, f"parent {parent} must be FQDN like cluster.example.com"
+        return None, f"parent {parent} must be FQDN"
     hn, dom = parent.split(".", 1)
-    rows = _do_search("host_override", search_phrase=hn)
-    for r in rows:
-        if r.get("hostname") == hn and r.get("domain") == dom:
-            uuid = r.get("uuid")
-            if uuid:
-                return uuid, None
-    rows_all = _do_search("host_override")
-    for r in rows_all:
-        if f"{r.get('hostname')}.{r.get('domain')}" == parent:
-            uuid = r.get("uuid")
-            if uuid:
-                return uuid, None
-    return None, f"parent host_override {parent} not found"
+    for row in _search("host_override", hn):
+        if row.get("hostname") == hn and row.get("domain") == dom:
+            if row.get("uuid"):
+                return row["uuid"], None
+    for row in _search("host_override"):
+        if f"{row.get('hostname')}.{row.get('domain')}" == parent and row.get("uuid"):
+            return row["uuid"], None
+    return None, f"parent {parent} not found"
+
+
+def _verify_rc(module: str, controller: str, action: str = "reconfigure"):
+    try:
+        res = __salt__["opnsense.reconfigure"](module, controller, action)  # type: ignore
+        if isinstance(res, dict):
+            st = str(res.get("status", "")).lower()
+            rs = str(res.get("result", "")).lower()
+            if st in ("failed", "error") or rs in ("failed", "error"):
+                return False, str(res.get("message") or res.get("error") or res)
+        elif isinstance(res, str) and res.lower() in ("failed", "error"):
+            return False, res
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
 
 
 def managed(
@@ -112,90 +85,14 @@ def managed(
     reconfigure=True,
     **kwargs,
 ):
-    """
-    Pillar-driven Unbound host alias management — no Jinja loops required.
-
-    Reads parent, aliases, and purge lists from pillar opnsense:* when not
-    passed explicitly. A single state block with no args manages all DNS
-    aliases declaratively from pillar.
-
-    Pillar example (pillars/resources.sls (resources:opnsense:hosts:fw-01)):
-        opnsense:
-          cluster_parent:
-            hostname: cluster
-            domain: example.com
-          aliases:
-            example.com: [git, www, auth]
-            internal.example.com: [code, ide]
-          purge_aliases:
-            example.com: [old-git, old-service]
-
-    Args:
-        name: State name (arbitrary, e.g. dns)
-        parent: parent host override FQDN or UUID. If omitted, reads
-                pillar opnsense:cluster_parent (dict with hostname/domain,
-                plain string FQDN, or UUID). Required if pillar key absent.
-        aliases: dict domain->list[hostname]. If omitted, reads pillar opnsense:aliases.
-        purge: dict domain->list to remove. If omitted, reads pillar opnsense:purge_aliases.
-        descriptions: optional dict fqdn->description
-        enabled: bool, default True
-        reconfigure: True/None = auto-infer unbound/service/reconfigure, False = skip
-
-    Example SLS - fully pillar-driven (zero args, zero Jinja):
-        dns:
-          opnsense_dns.managed:
-            - name: dns
-          # reads everything from pillar
-
-    Example SLS - explicit parent, pillar aliases:
-        dns_convenience:
-          opnsense_dns.managed:
-            - name: dns
-            - parent: cluster.example.com   # required if not in pillar
-            # aliases/purge auto-read from pillar
-
-    Example SLS - explicit everything:
-        dns_batch:
-          opnsense_dns.managed:
-            - name: dns
-            - parent: cluster.example.com
-            - aliases:
-                example.com:
-                  - www
-                  - git
-            - purge:
-                example.com:
-                  - old-git
-
-    CLI:
-        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases
-        salt -C 'T@opnsense:fw-01' state.apply opnsense.convenience_aliases test=True --out=table
-        # deprecated shim still works: aliases_delightful
-        salt -C 'T@opnsense:fw-01' opnsense_dns.managed_preview
-        salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_pretty --out=table
-
-    Prometheus metrics integration (see docs/METRICS.md):
-        metrics are exposed via resource grain opnsense_unbound_alias_count via `resource.show_grains` and
-        opnsense_version, then written to node_exporter textfile by state
-        opnsense.metrics or examples/states/metrics.sls.
-
-    sys.doc:
-        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.managed
-        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.aliases_managed
-    """
-    if kwargs:
-        _strip_salt_internal_kwargs(kwargs)
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     descriptions = descriptions or {}
-
     pillar = {}
     try:
-        pillar = __pillar__ or {}
+        pillar = __pillar__ or {}  # type: ignore
     except Exception:
         pillar = {}
-
     opnsense_pillar = pillar.get("opnsense", {}) if isinstance(pillar, dict) else {}
-
     if aliases is None:
         aliases = opnsense_pillar.get("aliases", {})
     if purge is None:
@@ -208,25 +105,22 @@ def managed(
             parent = f"{cp['hostname']}.{cp['domain']}"
         elif isinstance(cp, str) and cp:
             parent = cp
-
     if not isinstance(aliases, dict):
-        ret["comment"] = f"aliases must be dict domain->list, got {type(aliases)}"
+        ret["comment"] = f"aliases must be dict got {type(aliases)}"
         return ret
     if not isinstance(purge, dict):
         purge = {}
-
     if not parent:
         ret["comment"] = (
-            "parent required — set opnsense:cluster_parent in pillar or pass parent: cluster.example.com"
+            "parent required – set opnsense:cluster_parent in pillar or pass parent: cluster.example.com"
         )
         return ret
-
     parent_uuid, err = _resolve_parent(parent)
     if not parent_uuid:
         ret["comment"] = f"parent resolve failed {parent}: {err}"
         return ret
 
-    all_rows = _do_search("host_alias")
+    all_rows = _search("host_alias")
     existing_map = {}
     for r in all_rows:
         hn = r.get("hostname")
@@ -240,9 +134,8 @@ def managed(
             continue
         for hn in hosts:
             hn = str(hn).strip()
-            if not hn:
-                continue
-            desired.append((hn, dom))
+            if hn:
+                desired.append((hn, dom))
 
     purge_list = []
     for dom, hosts in purge.items():
@@ -253,9 +146,9 @@ def managed(
             if hn:
                 purge_list.append((hn, dom))
 
-    enabled_str = _normalize_enabled(enabled)
+    enabled_str = _norm_en(enabled)
 
-    if __opts__.get("test"):
+    if __opts__.get("test"):  # type: ignore
         to_add = []
         to_upd = []
         to_del = []
@@ -275,7 +168,7 @@ def managed(
                     "description": desc,
                 }
                 if diff_models(cur, desired_data, parent_human=parent):
-                    to_upd.append(f"{hn}.{dom}")
+                    to_upd.append(fqdn)
         for hn, dom in purge_list:
             if (hn, dom) in existing_map:
                 to_del.append(f"{hn}.{dom}")
@@ -297,7 +190,6 @@ def managed(
     added = []
     updated = []
     errors = []
-
     for hn, dom in desired:
         fqdn = f"{hn}.{dom}"
         desc = descriptions.get(fqdn) or descriptions.get(hn) or f"managed by salt - {fqdn}"
@@ -312,15 +204,14 @@ def managed(
         existing = existing_map.get((hn, dom))
         try:
             if existing is None:
-                __salt__["opnsense.add"]("unbound", "settings", "host_alias", payload)
+                __salt__["opnsense.add"]("unbound", "settings", "host_alias", payload)  # type: ignore
                 added.append(fqdn)
                 changes[fqdn] = {"action": "added", "parent": parent}
             else:
-                diff = diff_models(existing, desired_data, parent_human=parent)
-                if diff:
+                if diff_models(existing, desired_data, parent_human=parent):
                     __salt__["opnsense.set_item"](
                         "unbound", "settings", "host_alias", existing.get("uuid"), payload
-                    )
+                    )  # type: ignore
                     updated.append(fqdn)
                     changes[fqdn] = {"action": "updated", "parent": parent}
         except Exception as exc:
@@ -333,7 +224,7 @@ def managed(
             try:
                 __salt__["opnsense.delete"](
                     "unbound", "settings", "host_alias", existing.get("uuid")
-                )
+                )  # type: ignore
                 fqdn = f"{hn}.{dom}"
                 deleted.append(fqdn)
                 changes[fqdn] = {"action": "deleted"}
@@ -347,36 +238,25 @@ def managed(
         return ret
 
     total_changed = len(added) + len(updated) + len(deleted)
-    rc = _get_reconfigure(reconfigure)
+    rc = _get_rc(reconfigure, "unbound")
+    if total_changed and rc:
+        pr = _parse_rc(rc)
+        if pr:
+            ok, err = _verify_rc(pr["module"], pr["controller"], pr["action"])
+            if not ok:
+                ret["comment"] = f"managed but reconfigure {rc} failed: {err}"
+                ret["result"] = False
+                ret["changes"] = changes
+                return ret
     if total_changed:
-        if rc:
-            pr = _parse_reconfigure(rc)
-            if pr:
-                ok, err = _verify_reconfigure_call(pr["module"], pr["controller"], pr["action"])
-                if not ok:
-                    ret["comment"] = f"managed but reconfigure {rc} failed: {err}"
-                    ret["result"] = False
-                    ret["changes"] = changes
-                    return ret
-                ret["comment"] = (
-                    f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent} and reconfigured {rc}"
-                )
-            else:
-                ret["comment"] = (
-                    f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
-                )
-        else:
-            ret["comment"] = (
-                f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
-            )
+        ret["comment"] = (
+            f"[dns managed:{name}] {len(desired)} aliases, {len(added)} added, {len(updated)} updated, {len(deleted)} purged -> {parent}"
+        )
         ret["changes"] = changes
         ret["result"] = True
     else:
-        ret["comment"] = (
-            f"[dns managed:{name}] {len(desired)} aliases already present -> {parent}, {len(deleted)} purged already absent"
-        )
+        ret["comment"] = f"[dns managed:{name}] {len(desired)} aliases already present -> {parent}"
         ret["result"] = True
-
     return ret
 
 
@@ -390,23 +270,6 @@ def aliases_managed(
     reconfigure=True,
     **kwargs,
 ):
-    """
-    Alias to managed() for backward compat with opnsense_unbound.aliases_managed naming.
-
-    See opnsense_dns.managed for full convenience docs.
-
-    Example:
-        dns_batch:
-          opnsense_dns.aliases_managed:
-            - parent: cluster.example.com
-            - aliases:
-                example.com: [www, git]
-
-    sys.doc:
-        salt -C 'T@opnsense:fw-01' sys.doc opnsense_dns.aliases_managed
-    """
-    if kwargs:
-        _strip_salt_internal_kwargs(kwargs)
     return managed(
         name,
         parent=parent,

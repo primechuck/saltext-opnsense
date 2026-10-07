@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "saltext-opnsense"
-description = "Salt extension for managing OPNsense via its API - Salt 3008+ Resources only (no proxy, no pre-3008), with dynamic wrappers, file-based install, and Vault support"
+description = "Salt extension for managing OPNsense via its API - Salt 3008+ Resources only (pip-only)"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -81,7 +81,6 @@ docs = [
 ]
 docsauto = ["sphinx-autobuild"]
 lint = [
-  "pylint==4.0.4",
   "ruff",
 ]
 tests = [

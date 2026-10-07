@@ -1,7 +1,3 @@
-"""
-Centralized diff engine and value normalization for OPNsense state modules.
-"""
-
 from __future__ import annotations
 
 from typing import Any, Final
@@ -10,69 +6,6 @@ from saltext.opnsense.utils.common import is_uuid
 
 BOOL_TRUE: Final[frozenset[str]] = frozenset({"1", "true", "yes", "enabled", "on"})
 BOOL_FALSE: Final[frozenset[str]] = frozenset({"0", "false", "no", "disabled", "off", ""})
-
-RELATION_KEYS: Final[frozenset[str]] = frozenset(
-    {
-        "host",
-        "domain",
-        "subnet",
-        "account",
-        "validationmethod",
-        "action",
-        "server",
-        "alias",
-        "rule",
-        "item",
-    }
-)
-
-
-def _is_bool_context(key: Any, val: Any, field_meta: dict[str, Any] | None = None) -> bool:
-    if isinstance(val, bool):
-        return True
-    if isinstance(key, str):
-        k_low = key.lower()
-        if (
-            k_low in ("enabled", "disabled")
-            or k_low.endswith("_enabled")
-            or k_low.startswith("is_")
-        ):
-            return True
-    if field_meta and isinstance(field_meta, dict):
-        ftype = str(field_meta.get("type", ""))
-        if ftype in ("BooleanField", "OptionField") or "bool" in ftype.lower():
-            return True
-    if isinstance(val, str) and val.strip().lower() in (
-        "true",
-        "false",
-        "yes",
-        "no",
-        "enabled",
-        "disabled",
-    ):
-        return True
-    return False
-
-
-def _is_relation_key(key: Any, field_meta: dict[str, Any] | None = None) -> bool:
-    if not isinstance(key, str):
-        return False
-    k_low = key.lower()
-    if k_low in RELATION_KEYS or k_low.endswith("_uuid") or k_low.endswith("_ref"):
-        return True
-    if field_meta and isinstance(field_meta, dict):
-        ftype = str(field_meta.get("type", ""))
-        if (
-            "relation" in ftype.lower()
-            or "relation" in field_meta
-            or "relation_targets" in field_meta
-        ):
-            return True
-    return False
-
-
-def _str_key(value: Any) -> str:
-    return str(value)
 
 
 def _normalize_bool(val: Any) -> bool | None:
@@ -99,129 +32,119 @@ def _normalize_list(val: Any) -> tuple[Any, ...] | None:
                     items.append(s)
             elif x is not None:
                 items.append(x)
-        return tuple(sorted(items, key=_str_key))
+        return tuple(sorted(items, key=str))
     if isinstance(val, str) and "," in val:
-        items = [s.strip() for s in val.split(",") if s.strip()]
-        return tuple(sorted(items, key=_str_key))
+        return tuple(sorted([s.strip() for s in val.split(",") if s.strip()], key=str))
     return None
 
 
-def _get_parent_human_str(parent_human: Any) -> str | None:
-    if parent_human is None:
-        return None
-    if isinstance(parent_human, dict):
-        if parent_human.get("hostname") and parent_human.get("domain"):
-            return f"{parent_human['hostname']}.{parent_human['domain']}".strip()
-        if parent_human.get("uuid"):
-            return str(parent_human["uuid"]).strip()
-        if parent_human.get("name"):
-            return str(parent_human["name"]).strip()
-        return str(parent_human).strip()
-    return str(parent_human).strip()
+def _norm_str(val: Any) -> str:
+    if not isinstance(val, str):
+        return ""
+    s = val.strip()
+    if s.endswith(".") and len(s) > 1 and not s.endswith(".."):
+        s = s.rstrip(".")
+    return s
 
 
-def _get_value_str(val: Any) -> str:
+def normalize_field_value(
+    key: str, val: Any, parent_human: Any | None = None, field_meta: dict[str, Any] | None = None
+) -> Any:
+    # 1. None handling
+    if val is None:
+        k = str(key).lower()
+        if k in ("enabled", "disabled") or k.endswith("_enabled") or k.startswith("is_"):
+            return False
+        return ""
+
+    # 2. bool
+    bn = _normalize_bool(val)
+    if bn is not None:
+        return bn
+
+    # 3. list/csv
+    ln = _normalize_list(val)
+    if ln is not None:
+        return ln
+
+    # 4. parent_human relation equivalence: UUID vs human FQDN should be equal
+    ph_str = None
+    if parent_human:
+        if isinstance(parent_human, dict):
+            if parent_human.get("hostname") and parent_human.get("domain"):
+                ph_str = f"{parent_human['hostname']}.{parent_human['domain']}"
+            elif parent_human.get("uuid"):
+                ph_str = str(parent_human.get("uuid")).strip()
+            elif parent_human.get("name"):
+                ph_str = str(parent_human.get("name")).strip()
+            else:
+                ph_str = str(parent_human).strip()
+        else:
+            ph_str = str(parent_human).strip()
+
+    # dict with uuid -> return ph_str if parent_human present and uuid-like
     if isinstance(val, dict):
         if val.get("uuid") and is_uuid(str(val["uuid"])):
-            return str(val["uuid"]).strip()
+            uuid_v = str(val["uuid"]).strip()
+            if ph_str and (ph_str == uuid_v or is_uuid(ph_str) or ph_str):
+                # For relation fields, uuid and human are equivalent -> return parent_human
+                # Check if key looks like relation or parent_human supplied
+                if parent_human:
+                    return ph_str
+            return uuid_v
         if val.get("hostname") and val.get("domain"):
-            return f"{val['hostname']}.{val['domain']}".strip()
+            fqdn = f"{val['hostname']}.{val['domain']}".strip()
+            if ph_str and ph_str == fqdn:
+                return ph_str
+            return fqdn
         if val.get("name"):
-            return str(val["name"]).strip()
-        return str(val).strip()
+            return _norm_str(val.get("name"))
+
+    # handle relation equivalence for string values
     if isinstance(val, str):
-        return val.strip()
-    return str(val)
+        vs = _norm_str(val)
+        if ph_str:
+            # if val is uuid and parent_human is fqdn, or vice versa, treat as equal by returning ph_str
+            if is_uuid(vs) or is_uuid(ph_str):
+                return ph_str
+            if vs == ph_str:
+                return ph_str
+        # number
+        try:
+            if vs and vs not in (ph_str or ""):
+                # don't parse IPs as numbers – only pure digits
+                if vs.isdigit() or (vs.lstrip("-").isdigit()):
+                    return int(vs)
+                # float check only if not containing dots beyond maybe one? keep simple
+                fv = float(vs)
+                if "." not in vs or vs.replace(".", "", 1).replace("-", "", 1).isdigit():
+                    return int(fv) if fv.is_integer() else fv
+        except ValueError:
+            pass
+        # track number parsing for pure numeric strings
+        # more robust int parsing
+        s = vs
+        try:
+            if (
+                s
+                and s[0] not in (".",)
+                and s.replace("-", "", 1).replace(".", "", 1).isdigit() is False
+            ):
+                pass
+            else:
+                # attempt int
+                if s.lstrip("-").isdigit():
+                    return int(s)
+                fv = float(s)
+                return int(fv) if fv.is_integer() else fv
+        except ValueError:
+            pass
+        return s
 
-
-def _normalize_relation(
-    key: str,
-    val: Any,
-    parent_human: Any,
-    field_meta: dict[str, Any] | None,
-    val_str: str,
-    ph_str: str | None,
-) -> str | None:
-    is_rel = _is_relation_key(key, field_meta) or (
-        ph_str is not None and (val_str == ph_str or is_uuid(val_str) or isinstance(val, dict))
-    )
-    if not is_rel:
-        return None
-    if ph_str:
-        if val_str == ph_str:
-            return ph_str
-        if is_uuid(val_str) or is_uuid(ph_str):
-            return ph_str
-    return val_str
-
-
-def _normalize_number(val: Any, val_str: str) -> int | float | None:
     if isinstance(val, (int, float)) and not isinstance(val, bool):
         if isinstance(val, float) and val.is_integer():
             return int(val)
         return val
-    if isinstance(val, str) and val_str:
-        try:
-            return int(val_str)
-        except ValueError:
-            pass
-        try:
-            fv = float(val_str)
-            return int(fv) if fv.is_integer() else fv
-        except ValueError:
-            pass
-    return None
-
-
-def normalize_field_value(
-    key: str,
-    val: Any,
-    parent_human: Any | None = None,
-    field_meta: dict[str, Any] | None = None,
-) -> Any:
-    """
-    Normalize a single field value for order-agnostic and type-safe comparison.
-
-    Rules:
-    - Booleans: "1", 1, True, "true", "yes", "enabled" -> True
-                "0", 0, False, "false", "no", "disabled", "" -> False
-    - Relation / Foreign Key Fields:
-                UUID string and human reference (parent_human) are treated as equivalent
-                if val matches parent_human or if val is UUID and parent_human is provided.
-                Dicts with FQDN / UUID are reduced to FQDN or UUID.
-    - Lists / CSV Strings:
-                Lists ["lan", "wan"] and CSV strings "lan,wan" -> sorted tuples for order-agnostic comparison.
-    - Numbers:  Numeric strings "80" vs 80 -> int or float.
-    - Strings:  Stripped surrounding whitespace.
-    """
-    if val is None:
-        return False if _is_bool_context(key, val, field_meta) else ""
-
-    bool_norm = _normalize_bool(val)
-    if bool_norm is not None:
-        return bool_norm
-
-    list_norm = _normalize_list(val)
-    if list_norm is not None:
-        return list_norm
-
-    ph_str = _get_parent_human_str(parent_human)
-    val_str = _get_value_str(val)
-
-    rel_norm = _normalize_relation(key, val, parent_human, field_meta, val_str, ph_str)
-    if rel_norm is not None:
-        return rel_norm
-
-    num_norm = _normalize_number(val, val_str)
-    if num_norm is not None:
-        return num_norm
-
-    if isinstance(val, str):
-        s = val.strip()
-        if s.endswith(".") and len(s) > 1 and not s.endswith(".."):
-            s = s.rstrip(".")
-        return s
-
     return val
 
 
@@ -231,31 +154,17 @@ def diff_models(
     field_specs: dict[str, dict[str, Any]] | None = None,
     parent_human: str | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """
-    Compare existing vs desired dictionary keys using normalize_field_value.
-    Ignore 'uuid' key.
-    Return {field: {"old": existing_val, "new": desired_val}} ONLY when normalized values genuinely differ.
-    """
     existing = existing or {}
     desired = desired or {}
     field_specs = field_specs or {}
     diff: dict[str, dict[str, Any]] = {}
-
-    for k, desired_val in desired.items():
+    for k, dv in desired.items():
         if k == "uuid":
             continue
-
-        existing_val = existing.get(k)
-        field_meta = field_specs.get(k)
-
-        norm_existing = normalize_field_value(
-            k, existing_val, parent_human=parent_human, field_meta=field_meta
-        )
-        norm_desired = normalize_field_value(
-            k, desired_val, parent_human=parent_human, field_meta=field_meta
-        )
-
-        if norm_existing != norm_desired:
-            diff[k] = {"old": existing_val, "new": desired_val}
-
+        ev = existing.get(k)
+        fm = field_specs.get(k)
+        if normalize_field_value(
+            k, ev, parent_human=parent_human, field_meta=fm
+        ) != normalize_field_value(k, dv, parent_human=parent_human, field_meta=fm):
+            diff[k] = {"old": ev, "new": dv}
     return diff
