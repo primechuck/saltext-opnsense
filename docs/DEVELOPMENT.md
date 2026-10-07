@@ -10,9 +10,9 @@ src/saltext/opnsense/
   utils/api_spec.py               — Spec loader 76 modules for 26.7.3, lru_cache
   utils/models.py                 — Model relation_targets
   utils/diff.py                   — Diff engine, bool/CSV/UUID/FQDN normalization
-  utils/common.py                 — helpers, strip_salt_internal_kwargs
+  utils/common.py                 — helpers
   utils/controllers.json          — 76 modules + meta core_ref
-  utils/models.json               — Model registry
+  utils/models.json               — Model registry 653K
   modules/opnsense.py             — Exec generic + dynamic 1815 funcs __getattr__
   modules/{acmeclient,bind,dns,firewall,kea,unbound}.py — Convenience listers
   states/opnsense.py              — Generic item_present/absent
@@ -20,31 +20,26 @@ src/saltext/opnsense/
   resources/opnsense/__init__.py  — Connection module 3008+ Resources
   resources/opnsense/modules/     — Thin delegation __resource_funcs__
   resources/opnsense/states/      — Re-export via namespaced_function
-  resources/opnsense/grains/      — Resource grains
   py.typed                        — PEP 561
 tools/
-  generate_spec.py                — codegen core/plugins → controllers.json
-  generate_models.py              — Model XML → models.json
-  generate_wrappers.py            — spec → wrappers (optional)
-  generate_all.py                 — pipeline: spec→models→wrappers→sync→verify→test
+  generate_spec.py                — core/plugins -> controllers.json
+  generate_models.py              — Model XML -> models.json
+  generate_all.py                 — pipeline: spec->models->verify->test
   verify_import.py                — import proof 76 modules, 1815 dynamic
-  test_live.py                    — read-only live smoke via env
-  sync_extmods.py                 — sync src → extmods Resources-only, no _proxy/_grains
-  scripts/parallel-dev.sh         — isolated worktrees for parallel branches
+  check_public_boundary.py        — public boundary guard
 tests/unit/                       — mocked, no live OPNsense
 tests/integration/                — live gated OPNSENSE_LIVE_TEST=1
-docs/                             — QUICKSTART, RESOURCES, USAGE, etc.
+docs/                             — QUICKSTART, STATES, API, etc.
 ```
 
 No proxy code ships — removed 1.0.0. Only `resources/opnsense/` remains.
 
 ## Salt 3008+ notes
 
-- Packaging entry-point `salt.loader` → `saltext.opnsense`, `setuptools_scm` no-local-version
-- Builtins `__opts__`, `__salt__`, `__context__`, `__grains__`, `__utils__`, `__pillar__`, `__resource__`, `__resource_funcs__`, `__minion__` — declared in `pyproject.toml` `tool.ruff.builtins`
+- Packaging entry-point `salt.loader` -> `saltext.opnsense`, `setuptools_scm` no-local-version
+- Builtins `__opts__`, `__salt__`, `__context__`, `__grains__`, `__utils__`, `__pillar__`, `__resource__` declared in `pyproject.toml`
 - Install `salt-pip install -e .` into onedir
 - Resources store client in `__context__[opnsense][conns][id]` per-resource, Lock thread-safety
-- Thin overrides use `__resource_funcs__` + `__resource__[id]`
 - State supports `test=True`
 
 ## Running tests
@@ -54,27 +49,20 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Unit
 PYTHONPATH=src pytest tests/unit -v
 make test
 
-# Import proof
 PYTHONPATH=src python3 tools/verify_import.py -v
 make verify
 
-# Lint
 ruff check src tests tools
-ruff format --check src tests tools
 make lint
 
 # Nox matrix
 nox -e tests
-nox -e lint
 
 # Live smoke read-only
-OPNSENSE_HOST=... OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... python tools/test_live.py
-
-# Integration gated
+OPNSENSE_HOST=fw-01.example.com OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... python tools/test_live.py
 OPNSENSE_LIVE_TEST=1 PYTHONPATH=src pytest tests/integration -v -k live
 ```
 
@@ -83,24 +71,40 @@ OPNSENSE_LIVE_TEST=1 PYTHONPATH=src pytest tests/integration -v -k live
 ```bash
 make gen-all CORE_REF=26.7.3 PLUGINS_REF=26.7.3
 make gen-spec
-make gen-wrappers
 make verify
 ```
 
-See MAINTENANCE.md sprint, tools/README.md.
+See `tools/README.md`.
+
+## CI — hard-fail guards
+
+- `ci.yml`: matrix 3.10-3.14 x 3008.11/latest =10 jobs, pytest --cov-fail-under=75 hard-fail, docs `sphinx-build -W -n` hard-fail
+- `lint.yml`: ruff github format + check-json + public-boundary + actionlint, no pylint
+- `check_public_boundary.py` scans repo for private strings (lab nets, monorepo path, legacy proxy id) — must PASS
 
 ## Parallel development
 
-Safe parallel branches via git worktrees — each branch own checkout + .venv, no file clobber (see `docs/plans/parallel-workspace.md`):
+Worktrees per feature branch — each branch own checkout + .venv, no file clobber:
 
 ```bash
 ./tools/scripts/parallel-dev.sh ls
 ./tools/scripts/parallel-dev.sh new feat/my-feature main
-cd .worktrees/feat__my-feature
-source .venv/bin/activate
-make verify && make test
 ```
 
 Or hermes kanban: `hermes kanban create "fix alias diff" --project saltext-opnsense --workspace worktree`
 
 When task completes, worktree auto-pruned if clean + pushed.
+
+## Sprint / release checklist (was MAINTENANCE.md)
+
+OPNsense ~2/year (25.1, 25.7). Must stay in sync — only `make bump CORE=X.Y` to regenerate from upstream.
+
+1. Bump: `make bump CORE=26.7.3` or `python tools/generate_spec.py --core-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json`
+2. Verify: `PYTHONPATH=src python3 tools/verify_import.py -v && PYTHONPATH=src pytest tests/unit -v && ruff check src tests`
+3. Live smoke (lab only): `salt -C 'T@opnsense:fw-01' opnsense.ping && salt -C 'T@opnsense:fw-01' opnsense.doctor`
+4. Commit, PR, tag `v*.*.*` -> publish.yml OIDC to PyPI
+5. After merge: `salt '*' saltutil.sync_all` + `opnsense.doctor`
+
+Renovate tracks `controllers.json` meta `core_ref` for auto-bump PRs.
+
+`setuptools_scm` version from git tags `vX.Y.Z`, no `+gHASH`. Writes `_version.py` gitignored.

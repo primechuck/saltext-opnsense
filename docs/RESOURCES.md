@@ -143,7 +143,7 @@ salt -C 'T@opnsense:fw-01 or T@ssh:fw-01' state.apply fw.base
 
 Example state mixing:
 
-```yaml
+```jinja
 # fw/base.sls
 {% if opts.get("resource_type") == "opnsense" %}
 dns_alias:

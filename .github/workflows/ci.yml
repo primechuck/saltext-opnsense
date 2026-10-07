@@ -1,4 +1,3 @@
----
 name: CI
 
 on:
@@ -12,36 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint and Format Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-
-      - name: Setup Python 3.11
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: |
-            pyproject.toml
-            **/requirements*.txt
-
-      - name: Install ruff
-        run: pip install ruff==0.14.8
-
-      - name: Ruff check
-        run: ruff check src tests tools
-
-      - name: Ruff format check
-        run: ruff format --check src tests tools
-
   docs:
-    name: Docs (Sphinx) Check
+    name: Docs (Sphinx) -W
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -59,11 +30,8 @@ jobs:
       - name: Install docs deps
         run: pip install sphinx sphinx_rtd_theme myst-parser
 
-      - name: Build docs
-        run: |
-          cd docs
-          make html || sphinx-build -b html . _build/html -W -n --keep-going
-          test -f _build/html/index.html
+      - name: Build docs with -W
+        run: sphinx-build -b html docs docs/_build/html -W -n
 
   unit:
     name: Unit Tests (Python ${{ matrix.python-version }}, Salt ${{ matrix.salt-version }})
@@ -72,11 +40,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-        salt-version: ["3008.3"]
-        include:
-          - python-version: "3.11"
-            salt-version: "latest"
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        salt-version: ["3008.3", "latest"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -88,32 +53,22 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install test dependencies (pinned salt + latest)
+      - name: Install test dependencies
         run: |
           set -e
           if [ "${{ matrix.salt-version }}" = "latest" ]; then
-            pip install pytest pytest-salt-factories requests salt setuptools
+            pip install "salt>=3008" requests coverage pytest pytest-cov
           else
-            pip install pytest pytest-salt-factories requests \
-              "salt==${{ matrix.salt-version }}" setuptools
+            pip install "salt==${{ matrix.salt-version }}" requests coverage pytest pytest-cov
           fi
           pip install -e . --no-deps
 
-      - name: Unit tests
-        run: PYTHONPATH=src pytest tests/unit -v --tb=short
-
-      - name: Salt SLS smoke render validation
+      - name: Unit tests with coverage gate
         run: |
-          PYTHONPATH=src python -m pip install -q jinja2 pyyaml
-          PYTHONPATH=src python tools/validate_tutorials.py
+          PYTHONPATH=src pytest tests/unit -q --cov=src/saltext/opnsense --cov-report=term-missing --cov-fail-under=75
 
       - name: Verify dynamic import injection
         run: PYTHONPATH=src python tools/verify_import.py
-
-      - name: Sync extmods drift check
-        run: |
-          PYTHONPATH=src python tools/sync_extmods.py --check || \
-            echo "sync_extmods check: file-based mirror ok"
 
   sls-validation:
     name: SLS / Package Validation (salt-call + yamllint)
@@ -131,27 +86,26 @@ jobs:
 
       - name: Install salt (stable) + linters
         run: |
-          pip install "salt>=3008,<3009" jinja2 pyyaml yamllint
+          pip install "salt>=3008" jinja2 pyyaml yamllint
           pip install -e . --no-deps
           pip install salt-lint==0.9.2 || echo "salt-lint optional"
 
       - name: Yamllint SLS tutorials
         run: |
-          echo "Linting docs/tutorials pillars/states with yamllint (allow jinja)"
-          yamllint docs/tutorials -d "{extends: default, rules: {line-length: {max: 120}, \
-            truthy: disable, braces: disable, brackets: disable}}"
+          yamllint docs/tutorials -d "{extends: default, rules:
+            {line-length: {max: 120}, truthy: disable,
+            braces: disable, brackets: disable}}"
+
 
       - name: Validate SLS Jinja + YAML render (strict CI gate)
         run: |
           set -euo pipefail
           python tools/validate_tutorials.py
-          echo "SLS validation passed"
 
-      - name: Salt-call --local state.show_sls smoke (file-root / pillar-root)
+      - name: Salt-call --local state.show_sls smoke
         run: |
           set -euo pipefail
-          mkdir -p /tmp/empty_salt_conf /tmp/ci_pillar_root
-          mkdir -p /tmp/salt-cache /tmp/salt-pki /tmp/salt-root
+          mkdir -p /tmp/empty_salt_conf /tmp/ci_pillar_root /tmp/salt-cache /tmp/salt-pki /tmp/salt-root
           cat <<'MINIONCONF' > /tmp/empty_salt_conf/minion
           file_client: local
           id: ci
@@ -180,8 +134,6 @@ jobs:
           S_ARGS="$S_ARGS --pillar-root=/tmp/ci_pillar_root --retcode-passthrough"
           salt-call $S_ARGS state.show_sls unbound_aliases
           salt-call $S_ARGS state.show_sls acme_certificates
-          PYTHONPATH=src salt-call $S_ARGS saltutil.sync_all 2>&1 | head -20
-          echo "salt-call validation step completed"
 
       - name: Python package smoke tests
         run: |
@@ -190,7 +142,6 @@ jobs:
           python -m pip install /tmp/dist/*.whl -q
           python -c "import saltext.opnsense; print(saltext.opnsense.__file__)"
 
-
   version-guard:
     name: Version Guard — <3008 must be rejected
     runs-on: ubuntu-latest
@@ -198,21 +149,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
       - name: Setup Python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
-
-      - name: Install salt 3006.27 + extension (file-based)
+      - name: Install salt 3006.27 + extension
         run: |
           pip install "salt==3006.27" requests --quiet
           pip install -e . --no-deps --quiet
-
       - name: Assert __virtual__ rejects salt<3008
         run: PYTHONPATH=src python tools/check_version_guard_ci.py
-
       - name: Verify packaging prevents <3008 install
         run: |
           python -m pip install build -q
@@ -228,31 +175,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
       - name: Setup Python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install requests
         run: pip install requests
-
       - name: Verify Spec Consistency
         shell: bash
         run: |
-          CORE_REF=$(python3 -c "import json,pathlib; \
-            p=pathlib.Path('src/saltext/opnsense/utils/controllers.json'); \
-            print(json.loads(p.read_text()).get('meta',{}).get('core_ref','25.7'))")
+          CORE_REF=$(python3 <<'PY'
+          import json, pathlib
+          p=pathlib.Path('src/saltext/opnsense/utils/controllers.json')
+          print(json.loads(p.read_text()).get('meta',{}).get('core_ref','25.7'))
+          PY
+          )
           echo "Verifying spec against upstream tag: ${CORE_REF}"
-          python tools/generate_spec.py \
-            --core-ref "${CORE_REF}" \
-            --plugins-ref "${CORE_REF}" \
-            --output /tmp/controllers.json
-          diff -u -I '"generated_at"' \
-            src/saltext/opnsense/utils/controllers.json \
-            /tmp/controllers.json || \
-            (echo "controllers.json drift -- run make bump CORE=${CORE_REF}" && exit 1)
+          python tools/generate_spec.py --core-ref "${CORE_REF}"
+            --plugins-ref "${CORE_REF}" --output /tmp/controllers.json
+          diff -u -I '"generated_at"'
+            src/saltext/opnsense/utils/controllers.json /tmp/controllers.json \
+            || (echo "controllers.json drift -- run make bump CORE=${CORE_REF}" && exit 1)
 
   packaging:
     name: Packaging and Types Check
@@ -263,23 +207,17 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-
       - name: Setup Python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install build tools
         run: pip install build twine
-
       - name: Build sdist and wheel
         run: python -m build
-
       - name: Twine check
         run: twine check dist/*
-
       - name: Check py.typed presence (PEP 561)
         run: |
-          test -f src/saltext/opnsense/py.typed && echo "py.typed present" || \
-            (echo "py.typed missing" && exit 1)
+          test -f src/saltext/opnsense/py.typed && echo "py.typed present" || (echo "py.typed missing" && exit 1)

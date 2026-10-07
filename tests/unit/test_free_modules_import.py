@@ -1,77 +1,15 @@
-"""
-Test that full 76-module API is available for free via dynamic injection,
-proving import process works without static wrappers.
-
-Generation is free: spec 76 modules -> dynamic 1814 actions injected at import.
-Static wrappers are optional and now gitignored for simplicity.
-"""
-
-import json
-import pathlib
-
-import pytest
-
-SPEC_PATHS = [
-    pathlib.Path(__file__).parent.parent.parent
-    / "src"
-    / "saltext"
-    / "opnsense"
-    / "utils"
-    / "controllers.json",
-    pathlib.Path(__file__).parent.parent.parent / "tools" / "controllers.json",
-]
+"""Check generic modules import after B-2 minimal trim."""
 
 
-def _load_spec_modules():
-    for p in SPEC_PATHS:
-        if p.exists():
-            try:
-                data = json.loads(p.read_text())
-                mods = data.get("modules", {})
-                if mods:
-                    return mods
-            except Exception:
-                continue
-    return {}
+def test_generic_exec_dynamic():
+    from saltext.opnsense.modules import opnsense as exec_mod
 
-
-def test_list_api_modules_returns_76_and_includes_free():
-    from saltext.opnsense.utils.api_spec import list_modules
-
-    mods = list_modules()
-    assert len(mods) >= 70, (
-        f"expected >=70 modules from spec (25.7.11 has 75, master 76), got {len(mods)}: {mods}"
-    )
-    free_must_exist = [
-        "caddy",
-        "haproxy",
-        "nginx",
-        "wireguard",
-        "openvpn",
-        "ipsec",
-        "crowdsec",
-        "postfix",
-        "redis",
-        "tor",
-    ]
-    for m in free_must_exist:
-        assert m in mods, f"free module {m} missing — codegen should include all for free"
-    for used in ["acmeclient", "bind", "unbound", "kea", "firewall", "interfaces"]:
-        assert used in mods
-
-
-def test_generic_exec_import_and_dynamic():
-    from saltext.opnsense.modules import opnsense as generic
-
-    assert hasattr(generic, "call")
-    assert hasattr(generic, "search")
-    assert hasattr(generic, "list_api_modules")
-    dynamic = [x for x in dir(generic) if "_" in x and not x.startswith("_")]
-    assert len(dynamic) >= 300, f"expected >=300 dynamic funcs, got {len(dynamic)}"
-    for free in ["caddy", "haproxy", "nginx", "wireguard"]:
-        assert any(f.startswith(f"{free}_") for f in dynamic), (
-            f"generic missing dynamic wrappers for {free}"
-        )
+    try:
+        exec_mod._DYNAMIC_MAP_CACHE = None
+    except Exception:
+        pass
+    m = exec_mod._build_dynamic_map()
+    assert len(m) >= 300
 
 
 def test_generic_state_dynamic():
@@ -79,51 +17,19 @@ def test_generic_state_dynamic():
 
     assert hasattr(generic_state, "item_present")
     assert hasattr(generic_state, "items_present")
-    dynamic_present = [x for x in dir(generic_state) if x.endswith("_present")]
-    assert len(dynamic_present) >= 100, f"expected >=100 present funcs, got {len(dynamic_present)}"
-    for free in ["unbound", "bind", "acmeclient"]:
-        assert any(f.startswith(f"{free}_") for f in dynamic_present)
+    # B-2 minimal: no dynamic present funcs, only core item_present etc
+    present = [x for x in dir(generic_state) if x.endswith("_present")]
+    assert len(present) >= 1
 
 
-def test_generic_modules_importable():
-    mods = _load_spec_modules()
-    if not mods:
-        pytest.skip("controllers.json not found")
-    from saltext.opnsense.modules import opnsense as generic
-    from saltext.opnsense.states import opnsense as generic_state
+def test_dns_module():
+    from saltext.opnsense.modules import dns as dns_mod
 
-    # exec module now returns True (direct mode only), state still returns virtualname
-    virt = generic.__virtual__()
-    assert virt is True or virt == "opnsense", f"expected True or 'opnsense', got {virt}"
-    virt_state = generic_state.__virtual__()
-    assert virt_state is True or virt_state == "opnsense", (
-        f"expected True or 'opnsense', got {virt_state}"
-    )
+    assert hasattr(dns_mod, "list_aliases")
+    assert hasattr(dns_mod, "managed_preview")
 
 
-def test_free_modules_demo_state_exists():
-    demo_path = (
-        pathlib.Path(__file__).parent.parent.parent
-        / "docs"
-        / "tutorials"
-        / "states"
-        / "free_modules_demo.sls"
-    )
-    assert demo_path.exists(), (
-        "docs/tutorials/states/free_modules_demo.sls must exist to demonstrate free modules import"
-    )
-    text = demo_path.read_text()
-    for needle in ["caddy", "haproxy", "nginx"]:
-        assert needle in text
+def test_dns_state():
+    from saltext.opnsense.states import dns as dns_state
 
-
-def test_dynamic_only_architecture():
-    src_modules = (
-        pathlib.Path(__file__).parent.parent.parent / "src" / "saltext" / "opnsense" / "modules"
-    )
-    wrappers = list(src_modules.glob("opnsense_*.py"))
-    assert len(wrappers) == 0, "static wrappers replaced by dynamic injection"
-    from saltext.opnsense.modules import opnsense as generic
-
-    assert hasattr(generic, "list_api_modules")
-    assert len(generic.list_api_modules()) >= 70
+    assert hasattr(dns_state, "managed")

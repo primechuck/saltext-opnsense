@@ -31,7 +31,7 @@
 
   - `tools/sync_extmods.py`: drop pre-1.0 `_proxy/` and `_grains/` mappings, header updated to `_modules/_states/_utils` only. File-based install now Resources-only.
   - `tools/generate_wrappers.py`: docstring updated from `proxy and direct modes` to `Resources targeting T@opnsense:fw-01` / `via Salt Resources (3008+)`.
-  - `docs/USAGE.md`: full rewrite from proxy minion dance (`/etc/salt/proxy`, `proxytype: opnsense`, `salt-proxy@opnsense-router`) to Resources fleet `resources:opnsense:hosts:{id}`, `T@opnsense` targeting, Vault `__slot__` via `saltext-vault`. Convenience examples preserved.
+  - `docs/USAGE.md`: full rewrite from proxy minion dance (`/etc/salt/proxy`, `proxytype: opnsense`, `salt-proxy@T@opnsense:fw-01`) to Resources fleet `resources:opnsense:hosts:{id}`, `T@opnsense` targeting, Vault `__slot__` via `saltext-vault`. Convenience examples preserved.
   - `docs/TROUBLESHOOTING.md`: rewrite proxy sections to Resources `T@opnsense` grains/doctor/ping troubleshooting.
   - `src/saltext/opnsense/modules/opnsense.py`: split `HAS_API_SPEC` vs `HAS_UTILS` so spec/dynamic map works without `requests` installed (api_spec has no heavy deps). Fix `_build_dynamic_map` cache poisoning: only cache non-empty mapping, allow retry after transient load_spec failure (previously empty dict cached as valid, blocking recovery). This made `verify_import.py` flaky when salt mocked before import causing duplicate module loads + lru_cache mismatch.
   - `tools/verify_import.py`: robust against duplicate `api_spec` module objects (clear both caches, simulate Salt `__context__`), build map via explicit `_build_dynamic_map()` not dir(), PASS covers 76 modules / 1815 funcs. (#20260915)
@@ -42,8 +42,8 @@
 - Chore: 3008-only docs cleanup — PyPI (salt-pip) as canonical public install path, T@opnsense targeting, remove pre-3008 proxy docs.
 
   - docs/INSTALL.md flips Option A to pip (salt-pip install saltext-opnsense) as recommended public UX, file-based gitfs moves to Option B fallback.
-  - All tutorials/docs slimmed from opnsense-router + flat /etc/salt/proxy references to Resources fleet T@opnsense:fw-01 compound targeting.
-  - CLI examples updated from salt opnsense-router ... to salt -C 'T@opnsense:fw-01' ... .
+  - All tutorials/docs slimmed from T@opnsense:fw-01 + flat /etc/salt/proxy references to Resources fleet T@opnsense:fw-01 compound targeting.
+  - CLI examples updated from salt T@opnsense:fw-01 ... to salt -C 'T@opnsense:fw-01' ... .
   - pyproject.toml description and CI guard now state Salt 3008+ Resources only.
   - Makefile/noxfile: remove proxy/grains pycache cleanup, annotate Resources-only.
   - Public failure mode affirmed: entry-point saltext.opnsense auto-discovers, __virtual__ hides functions cleanly, doctor/ping dict OK/ERROR. (#20260910)

@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 """
-Generate docs/API.md from controllers.json
-Lists all 75 modules with controllers and actions.
+Debug helper: dump full API reference from controllers.json to stdout or file.
+
+This is NOT part of the committed docs — docs/API.md is hand-written live discovery.
+Use this only for offline grepping / debugging when you need a full table:
+
+  python tools/generate_api_docs.py --output /tmp/API_REFERENCE.md
+  python tools/generate_api_docs.py | head -100
+
+Do NOT commit output to docs/. SOT is src/saltext/opnsense/utils/controllers.json meta.
 """
 
+import argparse
 import json
 import pathlib
+import sys
 
-SRC = (
+DEFAULT_SRC = (
     pathlib.Path(__file__).parent.parent
     / "src"
     / "saltext"
@@ -15,51 +24,62 @@ SRC = (
     / "utils"
     / "controllers.json"
 )
-OUT = pathlib.Path(__file__).parent.parent / "docs" / "API.md"
 
-data = json.loads(SRC.read_text())
-modules = data.get("modules", {})
-meta = data.get("meta", {})
 
-with OUT.open("w") as f:
-    f.write(
-        f"# API Reference — {len(modules)} modules, {meta.get('total_actions', '?')} endpoints\n\n"
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Dump API reference (debug only, not committed)")
+    ap.add_argument("--src", default=str(DEFAULT_SRC), help="controllers.json path")
+    ap.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        help="Output file (default stdout). Use /tmp/ for debug, do not commit to docs/",
     )
-    f.write(
-        f"> OPNsense {meta.get('core_ref', '')} / plugins {meta.get('plugins_ref', '')} — generated {meta.get('generated_at', '')}\n\n"
+    args = ap.parse_args()
+
+    src = pathlib.Path(args.src)
+    data = json.loads(src.read_text())
+    modules = data.get("modules", {})
+    meta = data.get("meta", {})
+
+    out_lines: list[str] = []
+    out_lines.append(
+        f"# API Reference (DEBUG dump) — {len(modules)} modules, {meta.get('total_actions', '?')} endpoints\n"
     )
-    f.write(
-        "All endpoints are accessible via generic `opnsense.call` and dynamic wrappers `opnsense.{module}_{controller}_{action}`.\n\n"
+    out_lines.append(
+        f"> OPNsense {meta.get('core_ref', '')} / plugins {meta.get('plugins_ref', '')} — generated {meta.get('generated_at', '')} — DEBUG ONLY, not committed\n"
     )
-    f.write("```bash\n")
-    f.write("salt opnsense-router opnsense.list_api_modules\n")
-    f.write("salt opnsense-router opnsense.list_api_controllers unbound\n")
-    f.write("salt opnsense-router opnsense.list_api_actions unbound settings\n")
-    f.write("salt opnsense-router opnsense.search unbound settings host_alias row_count=1\n")
-    f.write("```\n\n")
-    f.write("## Quick lookup\n\n")
-    f.write("| Module | Controllers | Actions | Example |\n")
-    f.write("|---|---|---|---|\n")
+    out_lines.append(
+        "All endpoints via generic `opnsense.call` and dynamic `opnsense.{module}_{controller}_{action}`.\n"
+    )
+    out_lines.append("```bash")
+    out_lines.append("salt -C 'T@opnsense:fw-01' opnsense.list_api_modules")
+    out_lines.append("salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers unbound")
+    out_lines.append("salt -C 'T@opnsense:fw-01' opnsense.list_api_actions unbound settings")
+    out_lines.append("```\n")
+    out_lines.append("## Quick lookup\n")
+    out_lines.append("| Module | Controllers | Actions | Example |")
+    out_lines.append("|---|---|---|---|")
     for mod in sorted(modules.keys()):
         ctrls = modules[mod]
-        total_actions = sum(
+        total = sum(
             len(v) if isinstance(v, list) else len(v.keys()) if isinstance(v, dict) else 0
             for v in ctrls.values()
         )
-        example_ctrl = next(iter(ctrls.keys())) if ctrls else ""
-        example_act = ""
-        if example_ctrl:
-            acts = ctrls[example_ctrl]
+        ex_ctrl = next(iter(ctrls.keys())) if ctrls else ""
+        ex_act = ""
+        if ex_ctrl:
+            acts = ctrls[ex_ctrl]
             if isinstance(acts, list) and acts:
-                example_act = acts[0]
+                ex_act = acts[0]
             elif isinstance(acts, dict) and acts:
-                example_act = next(iter(acts.keys()))
-        f.write(
-            f"| {mod} | {len(ctrls)} | {total_actions} | `opnsense.call {mod} {example_ctrl} {example_act}` |\n"
+                ex_act = next(iter(acts.keys()))
+        out_lines.append(
+            f"| {mod} | {len(ctrls)} | {total} | `opnsense.call {mod} {ex_ctrl} {ex_act}` |"
         )
-    f.write("\n## Full listing\n\n")
+    out_lines.append("\n## Full listing\n")
     for mod in sorted(modules.keys()):
-        f.write(f"### {mod}\n\n")
+        out_lines.append(f"### {mod}\n")
         ctrls = modules[mod]
         for ctrl in sorted(ctrls.keys()):
             acts = ctrls[ctrl]
@@ -67,10 +87,21 @@ with OUT.open("w") as f:
                 acts = sorted(acts.keys())
             else:
                 acts = sorted(acts)
-            f.write(f"- **{ctrl}** ({len(acts)}): `{', '.join(acts[:15])}`")
-            if len(acts) > 15:
-                f.write(f" +{len(acts) - 15} more")
-            f.write("\n")
-        f.write("\n")
+            out_lines.append(
+                f"- **{ctrl}** ({len(acts)}): `{', '.join(acts[:20])}`"
+                + (f" +{len(acts) - 20} more" if len(acts) > 20 else "")
+            )
+        out_lines.append("")
 
-print(f"Wrote {OUT} ({OUT.stat().st_size} bytes)")
+    content = "\n".join(out_lines)
+
+    if args.output:
+        p = pathlib.Path(args.output)
+        p.write_text(content)
+        print(f"Wrote {p} ({p.stat().st_size} bytes)", file=sys.stderr)
+    else:
+        sys.stdout.write(content)
+
+
+if __name__ == "__main__":
+    main()

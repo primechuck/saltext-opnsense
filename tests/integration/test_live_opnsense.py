@@ -1,7 +1,7 @@
 """
 Integration live test — skipped unless OPNSENSE_LIVE_TEST=1
 
-Requires real opnsense-router credentials via env:
+Requires real fw-01.example.com credentials via env:
   OPNSENSE_HOST=opnsense.example.com OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... OPNSENSE_LIVE_TEST=1 pytest tests/integration -v
 
 This is intentionally not run in CI. Use for local validation after `salt-proxy` is up.

@@ -15,13 +15,6 @@ salt -C 'T@opnsense:fw-01' opnsense.list_api_modules
 
 Works with onedir /opt/saltstack/salt. Entry-point `saltext.opnsense` auto-discovers. Failure mode via `__virtual__` hides functions cleanly; `doctor/ping` returns dict OK/ERROR. Use `salt -C 'T@opnsense:fw-01' opnsense.ping` to verify.
 
-## Option B: File-based via gitfs (no pip, fallback)
-
-```bash
-python3 tools/sync_extmods.py --copy
-salt '*' saltutil.sync_all
-salt -C 'T@opnsense:fw-01' opnsense.list_api_modules
-```
 
 ## Verify
 
