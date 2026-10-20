@@ -219,4 +219,5 @@ jobs:
         run: twine check dist/*
       - name: Check py.typed presence (PEP 561)
         run: |
-          test -f src/saltext/opnsense/py.typed && echo "py.typed present" || (echo "py.typed missing" && exit 1)
+          test -f src/saltext/opnsense/py.typed
+          echo "py.typed present"
