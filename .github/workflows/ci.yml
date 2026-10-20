@@ -129,7 +129,8 @@ jobs:
                 - old-www
           PILLAR
           cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/top.sls
-          S_ARGS=(-c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough)
+          S_ARGS=(-c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states)
+          S_ARGS+=(--pillar-root=/tmp/ci_pillar_root --retcode-passthrough)
           salt-call "${S_ARGS[@]}" state.show_sls unbound_aliases
           salt-call "${S_ARGS[@]}" state.show_sls acme_certificates
 
