@@ -14,9 +14,9 @@ src/saltext/opnsense/
   utils/controllers.json          — 76 modules + meta core_ref
   utils/models.json               — Model registry 653K
   modules/opnsense.py             — Exec generic + dynamic 1815 funcs __getattr__
-  modules/{acmeclient,bind,dns,firewall,kea,unbound}.py — Convenience listers
-  states/opnsense.py              — Generic item_present/absent
-  states/{bind,dns,unbound}.py    — Convenience states
+  modules/dns.py                  — Convenience Unbound DNS alias listers & preview
+  states/opnsense.py              — Generic item_present/absent/reconfigured/assert_resolves
+  states/dns.py                   — Pillar-driven opnsense_dns.managed batch state
   resources/opnsense/__init__.py  — Connection module 3008+ Resources
   resources/opnsense/modules/     — Thin delegation __resource_funcs__
   resources/opnsense/states/      — Re-export via namespaced_function
@@ -62,7 +62,6 @@ make lint
 nox -e tests
 
 # Live smoke read-only
-OPNSENSE_HOST=fw-01.example.com OPNSENSE_API_KEY=... OPNSENSE_API_SECRET=... python tools/test_live.py
 OPNSENSE_LIVE_TEST=1 PYTHONPATH=src pytest tests/integration -v -k live
 ```
 
@@ -90,8 +89,6 @@ Worktrees per feature branch — each branch own checkout + .venv, no file clobb
 ./tools/scripts/parallel-dev.sh ls
 ./tools/scripts/parallel-dev.sh new feat/my-feature main
 ```
-
-Or hermes kanban: `hermes kanban create "fix alias diff" --project saltext-opnsense --workspace worktree`
 
 When task completes, worktree auto-pruned if clean + pushed.
 

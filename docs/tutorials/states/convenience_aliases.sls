@@ -19,20 +19,28 @@
 # {% endfor %}
 # {% endfor %}
 
-# After — single-alias (human parent, auto-inferred reconfigure)
+# After — single-alias (human parent auto-resolved, auto-inferred reconfigure)
 
 www_dev:
-  opnsense_unbound.alias_present:
-    - parent: cluster.example.com
-    - domain: example.com
-    - description: "www dashboard"
-    - enabled: true
+  opnsense.item_present:
+    - module: unbound
+    - controller: settings
+    - type: host_alias
+    - match:
+        hostname: www
+        domain: example.com
+    - data:
+        enabled: "1"
+        host: cluster.example.com
+        hostname: www
+        domain: example.com
+        description: "www dashboard"
     # reconfigure auto-inferred to unbound/service/reconfigure
 
 # Batch — one state, one reconfigure, no Jinja
 
 example_dns_batch:
-  opnsense_unbound.aliases_managed:
+  opnsense_dns.managed:
     - parent: cluster.example.com
     - aliases:
         example.com:
@@ -69,18 +77,32 @@ dns_auto:
     #   cluster_parent: {hostname: cluster, domain: example.com}
     #   aliases: {example.com: [www, git], internal.example.com: [code]}
 
-# Bind examples
+# Bind examples (human domain auto-resolved to zone UUID)
 
 example_zone:
-  opnsense_bind.domain_present:
-    - name: example.com
-    - description: "example.com primary"
-    - reconfigure: true
+  opnsense.item_present:
+    - module: bind
+    - controller: domain
+    - type: primary_domain
+    - match:
+        domainname: example.com
+    - data:
+        enabled: "1"
+        domainname: example.com
+        description: "example.com primary"
 
 www_bind_record:
-  opnsense_bind.record_present:
-    - name: www
-    - domain: example.com
-    - type: A
-    - value: 192.0.2.30
-    - reconfigure: true
+  opnsense.item_present:
+    - module: bind
+    - controller: record
+    - type: record
+    - match:
+        domain: example.com
+        name: www
+        type: A
+    - data:
+        enabled: "1"
+        domain: example.com
+        name: www
+        type: A
+        value: 192.0.2.30

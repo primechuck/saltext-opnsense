@@ -1,4 +1,4 @@
-BREAKING 3.0 – spec-strict client no fallback + hosts-only + fail loud.
+BREAKING 2.0 – spec-strict client no fallback + hosts-only + fail loud.
 
 - `src/saltext/opnsense/utils/opnsense.py`: remove `enable_fallback: bool` field, delete `_candidate_actions()`, `_resolve_via_spec()`, `_call_with_fallback()` (~150 LOC fallback probing loops). `call(module, controller, action)` now spec-strict: checks `api_spec.has_action()` and raises `FileNotFoundError(f"unknown {module}/{controller}/{action} – run make bump CORE_REF=...")` if not in spec. `search/get/add/set/delete/toggle` resolve via `_resolve_action()` single deterministic action against spec, fail fast no loop. Added TODO models.json keep current per Q5 but will trim later.
 - `src/saltext/opnsense/resources/opnsense/__init__.py`: `_normalize_hosts()` hosts-only: returns only `tree.get("hosts") if dict else {}`. Delete legacy `resource_ids` flat list handling, `config` dict merging branches (:26,90,94,128-129). `_pillar_tree()` simplified to hosts-only check.

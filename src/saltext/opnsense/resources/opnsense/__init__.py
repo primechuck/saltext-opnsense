@@ -158,13 +158,15 @@ def grains():
     except Exception:
         pass
     try:
+        bd = client.search("bind", "domain", "primary_domain", row_count=1)
+        if isinstance(bd, dict):
+            out["opnsense_bind_domain_count"] = bd.get("total", 0)
+    except Exception:
+        pass
+    try:
         info = client.call("core", "firmware", "status", data={}, method="POST")
         if isinstance(info, dict):
-            ver = (
-                info.get("product_version")
-                or info.get("product_version_string")
-                or info.get("product_version")
-            )
+            ver = info.get("product_version") or info.get("product_version_string")
             if ver:
                 out["opnsense_version"] = ver
     except Exception:

@@ -124,14 +124,70 @@ def list_api_actions(module, controller, **kwargs):
 
 def doctor(**kwargs):
     _strip(kwargs)
+    res = {
+        "spec_version": "26.7.3",
+        "loaded_modules_count": len(list_api_modules()),
+        "status": "UNKNOWN",
+        "resource_id": __resource__["id"] if "__resource__" in globals() else "unknown",  # type: ignore[name-defined]
+    }
+    try:
+        spec_data = spec()
+        meta = spec_data.get("meta", {}) if isinstance(spec_data, dict) else {}
+        if meta.get("core_ref"):
+            res["spec_version"] = meta["core_ref"]
+    except Exception:
+        pass
     try:
         client_res = __resource_funcs__["opnsense.call"](
             "core", "firmware", "status", data={}, method="POST"
         )  # type: ignore[name-defined]
-        return {"status": "OK", "firmware_status": client_res, "resource_id": __resource__["id"]}  # type: ignore[name-defined]
+        res["status"] = "OK"
+        res["firmware_status"] = client_res
+        return res
     except Exception as exc:
-        return {
-            "status": "ERROR",
-            "error": str(exc),
-            "resource_id": __resource__["id"] if "__resource__" in globals() else "unknown",
-        }  # type: ignore[name-defined]
+        res["status"] = "ERROR"
+        res["error"] = str(exc)
+        return res
+
+
+def _make_resource_dynamic_wrapper(mod_name, ctrl_name, action, func_name):
+    def wrapper(data=None, uuid=None, search_phrase="", row_count=-1, **kwargs):
+        kwargs = _strip(kwargs)
+        if action.lower().startswith("search"):
+            return call(
+                mod_name,
+                ctrl_name,
+                action,
+                data={"current": 1, "rowCount": row_count, "searchPhrase": search_phrase, **kwargs},
+                method="POST",
+            )
+        if data is not None:
+            return call(mod_name, ctrl_name, action, uuid=uuid, data=data, method="POST")
+        return call(mod_name, ctrl_name, action, uuid=uuid, data=None, method=None)
+
+    wrapper.__name__ = func_name
+    wrapper.__doc__ = f"Auto-generated {mod_name}/{ctrl_name}/{action}. CLI: salt -C 'T@opnsense:fw-01' opnsense.{func_name}"
+    return wrapper
+
+
+def __getattr__(name):
+    from saltext.opnsense.modules.opnsense import _build_dynamic_map
+
+    mapping = _build_dynamic_map()
+    if name in mapping:
+        mod_name, ctrl_name, action = mapping[name]
+        wrapper = _make_resource_dynamic_wrapper(mod_name, ctrl_name, action, name)
+        globals()[name] = wrapper
+        return wrapper
+    raise AttributeError(f"module 'opnsense' has no attribute {name!r}")
+
+
+def __dir__():
+    from saltext.opnsense.modules.opnsense import _build_dynamic_map
+
+    base = list(globals().keys())
+    try:
+        base.extend(_build_dynamic_map().keys())
+    except Exception:
+        pass
+    return sorted(set(base))

@@ -175,7 +175,10 @@ def main():
         if only:
             if only == "gen-spec":
                 return name == "spec"
-            return name == only or (only == "gen" and name in ("spec", "models", "wrappers"))
+            return name == only or (only == "gen" and name in ("spec", "models"))
+        # 2.0 minimal uses dynamic __getattr__ wrappers instead of static generated files
+        if name == "wrappers":
+            return False
         return True
 
     print("== saltext-opnsense generate_all ===")

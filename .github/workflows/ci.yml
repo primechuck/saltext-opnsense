@@ -129,11 +129,9 @@ jobs:
                 - old-www
           PILLAR
           cp /tmp/ci_pillar.sls /tmp/ci_pillar_root/top.sls
-          S_ARGS="-c /tmp/empty_salt_conf --local"
-          S_ARGS="$S_ARGS --file-root=docs/tutorials/states"
-          S_ARGS="$S_ARGS --pillar-root=/tmp/ci_pillar_root --retcode-passthrough"
-          salt-call $S_ARGS state.show_sls unbound_aliases
-          salt-call $S_ARGS state.show_sls acme_certificates
+          S_ARGS=(-c /tmp/empty_salt_conf --local --file-root=docs/tutorials/states --pillar-root=/tmp/ci_pillar_root --retcode-passthrough)
+          salt-call "${S_ARGS[@]}" state.show_sls unbound_aliases
+          salt-call "${S_ARGS[@]}" state.show_sls acme_certificates
 
       - name: Python package smoke tests
         run: |
@@ -192,9 +190,9 @@ jobs:
           PY
           )
           echo "Verifying spec against upstream tag: ${CORE_REF}"
-          python tools/generate_spec.py --core-ref "${CORE_REF}"
+          python tools/generate_spec.py --core-ref "${CORE_REF}" \
             --plugins-ref "${CORE_REF}" --output /tmp/controllers.json
-          diff -u -I '"generated_at"'
+          diff -u -I '"generated_at"' \
             src/saltext/opnsense/utils/controllers.json /tmp/controllers.json \
             || (echo "controllers.json drift -- run make bump CORE=${CORE_REF}" && exit 1)
 

@@ -46,6 +46,12 @@ _RESOLVE_MAP = {
         "type": "primary_domain",
         "field": "domainname",
     },
+    "primary_domain": {
+        "module": "bind",
+        "controller": "domain",
+        "type": "primary_domain",
+        "field": "domainname",
+    },
     "account": {
         "module": "acmeclient",
         "controller": "accounts",
@@ -65,6 +71,13 @@ _RESOLVE_MAP = {
         "field": "name",
     },
     "action": {"module": "acmeclient", "controller": "actions", "type": "action", "field": "name"},
+    "actions": {"module": "acmeclient", "controller": "actions", "type": "action", "field": "name"},
+    "restartActions": {
+        "module": "acmeclient",
+        "controller": "actions",
+        "type": "action",
+        "field": "name",
+    },
 }
 
 
@@ -149,6 +162,9 @@ def _resolve_subnet_single(value):
 def _resolve_generic_single(value, cfg):
     if not isinstance(value, str) or _is_uuid(value) or not value:
         return value
+    if "," in value:
+        parts = [p.strip() for p in value.split(",") if p.strip()]
+        return ",".join(str(_resolve_generic_single(p, cfg)) for p in parts)
     sf = cfg.get("field", "name")
     for phrase in (value, ""):
         for row in _do_search(cfg["module"], cfg["controller"], cfg["type"], phrase):
@@ -216,6 +232,13 @@ def _auto_resolve(data: dict, module: str = "") -> dict:
             rv = _resolve_ref(k, v, module)
             if rv != v:
                 data[k] = rv
+        elif isinstance(v, list):
+            new_list = [
+                _resolve_ref(k, elem, module) if isinstance(elem, (str, dict)) else elem
+                for elem in v
+            ]
+            if new_list != v:
+                data[k] = new_list
     return data
 
 
@@ -290,6 +313,23 @@ def _extract_payload(type_name: str, data: dict) -> dict:
         "rule": "rule",
     }
     key = mapping.get(type_name, type_name)
+    # Preserve caller-supplied single-key wrapper (e.g. subnet4, subnet6, ddns, general, alias)
+    if len(data) == 1 and isinstance(next(iter(data.values())), dict):
+        only_key = next(iter(data.keys()))
+        if only_key in (
+            key,
+            type_name,
+            "subnet4",
+            "subnet6",
+            "ddns",
+            "general",
+            "alias",
+            "host",
+            "domain",
+            "record",
+            "rule",
+        ):
+            return data
     # also handle generic: if type contains '_' take last part
     if key == type_name and "_" in type_name:
         key = type_name.split("_")[-1]
@@ -301,9 +341,12 @@ def item_present(
 ):
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
     data = data or {}
-    match = match or {}
-    # unwrap if payload already wrapped
-    if len(data) == 1 and isinstance(list(data.values())[0], dict):
+    raw_match = dict(match) if isinstance(match, dict) else {}
+    match = _auto_resolve(dict(raw_match), module) if raw_match else {}
+    # unwrap if payload already wrapped, preserving explicit outer wrapper key (e.g. subnet4, ddns)
+    outer_key = None
+    if isinstance(data, dict) and len(data) == 1 and isinstance(list(data.values())[0], dict):
+        outer_key = list(data.keys())[0]
         flat = list(data.values())[0]
     else:
         flat = data
@@ -322,9 +365,9 @@ def item_present(
             search_phrase = ""
             if search_field and isinstance(flat, dict) and search_field in flat:
                 search_phrase = str(flat.get(search_field) or "")
-            elif match:
-                # use first match value as phrase for efficiency
-                for v in match.values():
+            elif raw_match:
+                # use first raw_match value as phrase for efficiency
+                for v in raw_match.values():
                     if isinstance(v, str) and v:
                         search_phrase = v
                         break
@@ -336,7 +379,9 @@ def item_present(
             for row in rows:
                 ok = True
                 for k, v in (match or {}).items():
-                    if str(row.get(k, "")) != str(v):
+                    row_val = str(row.get(k, ""))
+                    raw_val = str(raw_match.get(k, v))
+                    if row_val != str(v) and row_val != raw_val:
                         ok = False
                         break
                 if ok:
@@ -358,6 +403,26 @@ def item_present(
     except Exception as exc:
         log.debug("item_present search failed: %s", exc)
 
+    if found and isinstance(found, dict) and found.get("uuid"):
+        try:
+            sd = __salt__  # type: ignore[name-defined]
+            if isinstance(sd, dict) and "opnsense.get" in sd and callable(sd["opnsense.get"]):
+                full_item = sd["opnsense.get"](module, controller, type, uuid=found.get("uuid"))
+                if isinstance(full_item, dict) and full_item:
+                    if type in full_item and isinstance(full_item[type], dict):
+                        unwrapped = full_item[type]
+                    elif len(full_item) == 1 and isinstance(next(iter(full_item.values())), dict):
+                        unwrapped = next(iter(full_item.values()))
+                    else:
+                        unwrapped = full_item
+                    if isinstance(unwrapped, dict) and unwrapped:
+                        merged = dict(found)
+                        merged.update(unwrapped)
+                        merged["uuid"] = found["uuid"]
+                        found = merged
+        except Exception as exc:
+            log.debug("item_present get full item failed: %s", exc)
+
     if __opts__.get("test"):  # type: ignore[name-defined]
         if found:
             diff = diff_models(found, flat)
@@ -377,7 +442,7 @@ def item_present(
     try:
         if not found:
             # create
-            payload = _extract_payload(type, flat)
+            payload = {outer_key: flat} if outer_key else _extract_payload(type, flat)
             res = __salt__["opnsense.add"](module, controller, type, payload)  # type: ignore[name-defined]
             ret["changes"] = {"added": res}
         else:
@@ -386,7 +451,7 @@ def item_present(
                 ret["result"] = True
                 ret["comment"] = f"{name} already present"
                 return ret
-            payload = _extract_payload(type, flat)
+            payload = {outer_key: flat} if outer_key else _extract_payload(type, flat)
             res = __salt__["opnsense.set_item"](
                 module, controller, type, found.get("uuid"), payload
             )  # type: ignore[name-defined]
@@ -565,23 +630,39 @@ def items_absent(name, module, controller, type, items, reconfigure=None, search
 
 def assert_resolves(name, hostname, expected_ip, server=None, timeout=10, ttl=60):
     ret = {"name": name, "result": False, "changes": {}, "comment": ""}
-    # try localData search first
+    try:
+        if __opts__.get("test"):  # type: ignore[name-defined]
+            ret["result"] = None
+            ret["comment"] = f"would verify {hostname} resolves to {expected_ip}"
+            ret["changes"] = {"would_check": f"{hostname} -> {expected_ip}"}
+            return ret
+    except Exception:
+        pass
+    # try Unbound localData search first
     try:
         fn = (
             __salt__.get("opnsense.call")
             if isinstance(__salt__, dict)
             else __salt__["opnsense.call"]
-        )  # type: ignore
-        res = (
-            fn("unbound", "diagnostics", "getLocalData", data={}, method="POST")
-            if callable(fn)
-            else {}
-        )
-        txt = str(res)
-        if expected_ip in txt:
-            ret["result"] = True
-            ret["comment"] = f"{hostname} resolves to {expected_ip} via localData"
-            return ret
+        )  # type: ignore[name-defined]
+        if callable(fn):
+            res = fn("unbound", "diagnostics", "listLocalData", data={}, method="GET")
+            txt = str(res)
+            if hostname in txt and expected_ip in txt:
+                ret["result"] = True
+                ret["comment"] = f"{hostname} resolves to {expected_ip} via localData"
+                return ret
+    except Exception:
+        pass
+    # try network.dig if available in __salt__ (supports CNAME targets & multi-A records)
+    try:
+        sd = __salt__  # type: ignore[name-defined]
+        if isinstance(sd, dict) and "network.dig" in sd and callable(sd["network.dig"]):
+            dig_res = sd["network.dig"](hostname)
+            if expected_ip in str(dig_res):
+                ret["result"] = True
+                ret["comment"] = f"{hostname} resolves to {expected_ip} via dig"
+                return ret
     except Exception:
         pass
     try:
@@ -589,9 +670,18 @@ def assert_resolves(name, hostname, expected_ip, server=None, timeout=10, ttl=60
         if ip == expected_ip:
             ret["result"] = True
             ret["comment"] = f"{hostname} -> {ip}"
-        else:
-            ret["comment"] = f"{hostname} -> {ip} expected {expected_ip}"
-            ret["result"] = False
+            return ret
+        try:
+            infos = socket.getaddrinfo(hostname, None)
+            addrs = {str(info[4][0]) for info in infos if info and len(info) > 4 and info[4]}
+            if expected_ip in addrs:
+                ret["result"] = True
+                ret["comment"] = f"{hostname} -> {expected_ip}"
+                return ret
+        except Exception:
+            pass
+        ret["comment"] = f"{hostname} -> {ip} expected {expected_ip}"
+        ret["result"] = False
         return ret
     except Exception as exc:
         ret["comment"] = f"resolve {hostname} failed: {exc}"

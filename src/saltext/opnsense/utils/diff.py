@@ -84,6 +84,19 @@ def normalize_field_value(
 
     # dict with uuid -> return ph_str if parent_human present and uuid-like
     if isinstance(val, dict):
+        if val and all(isinstance(ov, dict) and "selected" in ov for ov in val.values()):
+            selected_keys = [
+                str(ok).strip()
+                for ok, ov in val.items()
+                if str(ov.get("selected", 0)).strip().lower() in ("1", "true", "yes")
+            ]
+            if not selected_keys:
+                return ""
+            if len(selected_keys) == 1:
+                return normalize_field_value(
+                    key, selected_keys[0], parent_human=parent_human, field_meta=field_meta
+                )
+            return tuple(sorted(selected_keys))
         if val.get("uuid") and is_uuid(str(val["uuid"])):
             uuid_v = str(val["uuid"]).strip()
             if ph_str and (ph_str == uuid_v or is_uuid(ph_str) or ph_str):

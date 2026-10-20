@@ -142,7 +142,7 @@ Apply:
 
 ```bash
 salt -C 'T@opnsense:fw-01' state.apply opnsense.quickstart
-salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases
+salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases
 ```
 
 Second run 0 changes (idempotent diff engine).
@@ -153,29 +153,27 @@ Masterless:
 salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense.quickstart test=True
 ```
 
-## 5. Friendly CLI listers (human maps)
+## 5. Friendly CLI listers & dynamic API wrappers
 
-Raw `opnsense.search` returns `{"rows": [...]}`. Convenience modules return sorted dicts:
+Raw `opnsense.search` returns `{"rows": [...]}`. `opnsense_dns` provides human maps and `opnsense.*` exposes all 1,815 endpoints dynamically:
 
 ```bash
-salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases
-salt -C 'T@opnsense:fw-01' opnsense_unbound.list_aliases_simple
-salt -C 'T@opnsense:fw-01' opnsense_unbound.list_host_overrides
-salt -C 'T@opnsense:fw-01' opnsense_bind.list_domains
-salt -C 'T@opnsense:fw-01' opnsense_bind.list_records domain=example.com
-salt -C 'T@opnsense:fw-01' opnsense_kea.list_subnets
+salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases
+salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases_simple
 salt -C 'T@opnsense:fw-01' opnsense_dns.managed_preview
+salt -C 'T@opnsense:fw-01' opnsense.search unbound settings host_override
+salt -C 'T@opnsense:fw-01' opnsense.search bind domain primary_domain
+salt -C 'T@opnsense:fw-01' opnsense.search kea dhcpv4 subnet
+salt -C 'T@opnsense:fw-01' opnsense.unbound_settings_search_host_alias row_count=5
 ```
 
-All listers call `search rowCount=-1`, auto-resolve relations via `models.json` + `controllers.json`.
-
-See `docs/STATES.md` for batch `aliases_managed` and `docs/API.md` for live discovery.
+See `docs/STATES.md` for batch `opnsense_dns.managed` and `docs/API.md` for live discovery.
 
 ## 6. Troubleshooting
 
 - `Function X not supported for opnsense` → `salt -C 'T@opnsense' saltutil.sync_all` + `refresh_pillar`
 - `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, `unmask=True`, not flat file
-- `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense_unbound.resolve_parent cluster.example.com`
+- `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense.search unbound settings host_override search_phrase=cluster`
 - `Invalid JSON syntax` → OPNsense expects POST, client defaults POST, pass `{}` not empty
 - `404 Endpoint not found` → renamed action, regen `make bump CORE=26.7.3`
 - `RemoteDisconnected` → Kea restart slow, retry 3x backoff, batch + `onchanges`

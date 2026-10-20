@@ -1,5 +1,8 @@
-CORE_REF ?= 26.7.3
-PLUGINS_REF ?= 26.7.3
+.PHONY: gen-spec gen-models gen-wrappers bump verify test lint docs gen-all clean
+
+CORE ?= 26.7.3
+CORE_REF ?= $(CORE)
+PLUGINS_REF ?= $(CORE_REF)
 
 gen-spec:
 	@mkdir -p src/saltext/opnsense/utils
@@ -21,7 +24,6 @@ gen-wrappers:
 
 bump:
 	python3 tools/generate_spec.py --core-ref $(CORE_REF) --plugins-ref $(PLUGINS_REF) --output src/saltext/opnsense/utils/controllers.json
-	python3 tools/generate_wrappers.py
 	PYTHONPATH=src python3 tools/verify_import.py
 
 verify:

@@ -35,7 +35,7 @@ Exec `modules/opnsense.py`: raises `SaltInvocationError` with pillar hint, `doct
 
 States `states/opnsense.py`: generic `item_present/absent/reconfigured`, `__context__` caching, `test=True`.
 
-Convenience: acmeclient,bind,dns,firewall,kea,unbound — listers + `dns.managed`.
+Convenience: `opnsense_dns` (`modules/dns.py` + `states/dns.py`) — listers + `opnsense_dns.managed`.
 
 ## Idempotency — diff engine (`utils/diff.py`)
 

@@ -56,27 +56,30 @@ www_alias:
     - reconfigure: unbound/service/reconfigure
 ```
 
-After (single-alias, human parent):
+After (human parent auto-resolved to UUID, `reconfigure` auto-inferred):
 
 ```yaml
-www:
-  opnsense_unbound.alias_present:
-    - parent: cluster.example.com
-    - domain: example.com
+www_alias:
+  opnsense.item_present:
+    - module: unbound
+    - controller: settings
+    - type: host_alias
+    - match: {hostname: www, domain: example.com}
+    - data:
+        enabled: "1"
+        host: cluster.example.com
+        hostname: www
+        domain: example.com
+        description: "managed by salt"
 ```
 
 Parent `cluster.example.com` auto-resolved to UUID. `reconfigure` auto-inferred to `unbound/service/reconfigure`.
 
-## Convenience — Unbound DNS
+## Convenience — Unbound DNS (`opnsense_dns`)
 
 ```yaml
-www:
-  opnsense_unbound.alias_present:
-    - parent: cluster.example.com
-    - domain: example.com
-
 dns_batch:
-  opnsense_unbound.aliases_managed:
+  opnsense_dns.managed:
     - parent: cluster.example.com
     - aliases:
         example.com: [www, git, auth]
@@ -110,37 +113,41 @@ dns:
 
 What it provides:
 
-- `opnsense_unbound.alias_present(name, parent, domain, description, enabled, reconfigure)` — human FQDN parent
-- `opnsense_unbound.alias_absent(name, domain, reconfigure)`
-- `opnsense_unbound.aliases_managed(name, parent, aliases={domain:[...]}, purge={domain:[...]})` — batch
-- `opnsense_bind.domain_present(name, domain_type, description, enabled, reconfigure)`
-- `opnsense_bind.record_present(name, domain, type, value, ttl, enabled, reconfigure)` — human domain auto-resolved
-- `opnsense_dns.managed(name, parent=None, aliases=None, purge=None)` — pillar-aware, reads `opnsense:aliases`
+- `opnsense_dns.managed(name, parent=None, aliases=None, purge=None)` — pillar-aware batch Unbound alias management, reads `opnsense:aliases`
+- `opnsense.item_present(name, module, controller, type, data, match, reconfigure)` — generic state with automatic human-to-UUID relation resolution (`host`, `domain`, `subnet`, `account`, `validationMethod`, `restartActions`)
 
 Execution helpers:
 
-- `opnsense_unbound.list_aliases()` → `{fqdn: {parent, uuid, enabled}}`
-- `opnsense_unbound.list_aliases_simple()` → `{fqdn: parent}`
-- `opnsense_unbound.resolve_parent(fqdn)` → UUID
-- `opnsense_bind.list_domains()`, `list_records(domain=...)`
+- `opnsense_dns.list_aliases()` → `{fqdn: {parent, uuid, enabled}}`
+- `opnsense_dns.list_aliases_simple()` → `{fqdn: parent}`
 - `opnsense_dns.managed_preview()` — desired vs live without changes
 
-## Convenience — BIND
+## BIND (human domain auto-resolved)
 
 ```yaml
-example.com:
-  opnsense_bind.domain_present:
-    - name: example.com
+example_zone:
+  opnsense.item_present:
+    - module: bind
+    - controller: domain
+    - type: primary_domain
+    - match: {domainname: example.com}
+    - data: {domainname: example.com, enabled: "1"}
 
 www:
-  opnsense_bind.record_present:
-    - name: www
-    - domain: example.com
-    - type: A
-    - value: 192.0.2.10
+  opnsense.item_present:
+    - module: bind
+    - controller: record
+    - type: record
+    - match: {domain: example.com, name: www, type: A}
+    - data:
+        domain: example.com
+        name: www
+        type: A
+        value: 192.0.2.10
+        enabled: "1"
 ```
 
-Human domain auto-resolved to UUID.
+Human `domain: example.com` auto-resolved to the zone UUID.
 
 ## Convenience — Kea (human CIDR)
 

@@ -243,7 +243,7 @@ def _make_dynamic_wrapper(mod_name: str, ctrl_name: str, action: str, func_name:
             )
         if data is not None:
             return call(mod_name, ctrl_name, action, uuid=uuid, data=data, method="POST")
-        return call(mod_name, ctrl_name, action, uuid=uuid, data={}, method="POST")
+        return call(mod_name, ctrl_name, action, uuid=uuid, data=None, method=None)
 
     wrapper.__name__ = func_name
     wrapper.__doc__ = f"Auto-generated {mod_name}/{ctrl_name}/{action}. CLI: salt -C 'T@opnsense:fw-01' opnsense.{func_name}"

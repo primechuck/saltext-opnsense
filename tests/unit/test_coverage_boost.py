@@ -604,7 +604,14 @@ def test_resources_modules_and_states_override():
     assert isinstance(m.list_api_modules(), list)
     assert isinstance(m.list_api_controllers("unbound"), list)
     assert isinstance(m.list_api_actions("unbound", "settings"), list)
-    assert m.doctor()["status"] in ("OK", "ERROR")
+    doc = m.doctor()
+    assert doc["status"] in ("OK", "ERROR")
+    assert "spec_version" in doc
+    assert "loaded_modules_count" in doc
+    dyn_fn = m.unbound_settings_search_host_alias
+    assert callable(dyn_fn)
+    assert isinstance(dyn_fn(search_phrase="www", row_count=1), dict)
+    assert "unbound_settings_search_host_alias" in dir(m)
     # resources states override – just test fallback path
     state_name = "saltext.opnsense.resources.opnsense.states.opnsense"
     if state_name in sys.modules:
@@ -1614,7 +1621,7 @@ def test_states_opnsense_full_coverage2():
     st.__opts__ = {"test": False}
 
     def call_success(*a, **k):
-        return "contains 192.0.2.1 and localData"
+        return "www.example.com contains 192.0.2.1 and localData"
 
     st.__salt__ = {
         "opnsense.call": MagicMock(side_effect=call_success),
@@ -1622,6 +1629,55 @@ def test_states_opnsense_full_coverage2():
     }
     res = st.assert_resolves(name="check", hostname="www.example.com", expected_ip="192.0.2.1")
     assert res["result"] is True
+
+    # assert_resolves test mode
+    st.__opts__ = {"test": True}
+    res_test = st.assert_resolves(name="check", hostname="www.example.com", expected_ip="192.0.2.1")
+    assert res_test["result"] is None
+    st.__opts__ = {"test": False}
+
+    # assert_resolves via network.dig (CNAME target)
+    st.__salt__ = {
+        "opnsense.call": MagicMock(side_effect=Exception("no api")),
+        "network.dig": MagicMock(return_value=["cluster.example.com."]),
+    }
+    res_dig = st.assert_resolves(
+        name="check_cname", hostname="www.example.com", expected_ip="cluster.example.com"
+    )
+    assert res_dig["result"] is True
+
+    # assert_resolves via socket.getaddrinfo round-robin
+    st.__salt__ = {"opnsense.call": MagicMock(side_effect=Exception("no api"))}
+    with patch.object(st.socket, "gethostbyname", return_value="192.0.2.10"):
+        with patch.object(
+            st.socket,
+            "getaddrinfo",
+            return_value=[(2, 1, 6, "", ("192.0.2.10", 0)), (2, 1, 6, "", ("192.0.2.11", 0))],
+        ):
+            res_rr = st.assert_resolves(
+                name="check_rr", hostname="rr.example.com", expected_ip="192.0.2.11"
+            )
+            assert res_rr["result"] is True
+
+    # item_present preserves caller outer wrapper key (e.g. subnet4)
+    added_payloads = []
+    st.__salt__ = {
+        "opnsense.search": MagicMock(return_value={"rows": []}),
+        "opnsense.add": MagicMock(
+            side_effect=lambda m, c, t, p: added_payloads.append(p) or {"uuid": "u1"}
+        ),
+        "opnsense.reconfigure": MagicMock(return_value={"status": "ok"}),
+    }
+    res_kea = st.item_present(
+        name="vlan30_subnet",
+        module="kea",
+        controller="dhcpv4",
+        type="subnet",
+        data={"subnet4": {"subnet": "192.0.2.0/24", "description": "VLAN 30"}},
+        match={"subnet": "192.0.2.0/24"},
+    )
+    assert res_kea["result"] is True
+    assert added_payloads and "subnet4" in added_payloads[0]
 
     # assert_resolves socket failure
     st.__salt__ = {"opnsense.call": MagicMock(side_effect=Exception("no api"))}
