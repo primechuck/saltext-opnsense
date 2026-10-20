@@ -128,7 +128,7 @@ class SaltMock(dict):
     def __init__(self, grains_dict: dict | None = None, pillar_dict: dict | None = None):
         super().__init__()
         self._grains = grains_dict or {
-            "id": "opnsense-router",
+            "id": "T@opnsense:fw-01",
             "opnsense_version": "25.7",
             "opnsense_host": "opnsense.example.com",
             "opnsense_unbound_alias_count": 2,
@@ -199,7 +199,7 @@ def render_sls(path: pathlib.Path, strict: bool = False) -> tuple[bool, str, typ
 
     # Provide realistic grains dict
     dummy_grains = {
-        "id": "opnsense-router",
+        "id": "T@opnsense:fw-01",
         "opnsense_version": "25.7",
         "opnsense_host": "opnsense.example.com",
         "opnsense_unbound_alias_count": 2,

@@ -21,16 +21,11 @@ def _setup_state(mod_name="opnsense"):
     return mod, mock_salt
 
 
-def _has_any(mod, substrings):
-    return any(any(s in name for s in substrings) for name in dir(mod) if not name.startswith("_"))
-
-
 def test_dynamic_state_wrappers():
-    mod, mocks = _setup_state("opnsense")
-    assert _has_any(mod, ["unbound_settings_host_alias_present", "host_alias_present"])
-    assert _has_any(mod, ["bind_record_present", "record_present"])
-    assert any(m.endswith("_present") for m in dir(mod))
-    assert any(m.endswith("_absent") for m in dir(mod))
+    mod, _ = _setup_state("opnsense")
+    # B-2 minimal – no dynamic injection, only core 5 funcs
+    assert hasattr(mod, "item_present")
+    assert hasattr(mod, "item_absent")
 
 
 def test_item_present_exists():
@@ -43,28 +38,14 @@ def test_item_present_exists():
 
 
 def test_all_modules_dynamic_present():
-    import json
-    import pathlib
+    # After B-1/B-2, exec module provides dynamic map, not state. So just check exec module dynamic covers modules
+    from saltext.opnsense.modules import opnsense as exec_mod
 
-    spec_path = (
-        pathlib.Path(__file__).parent.parent.parent
-        / "src"
-        / "saltext"
-        / "opnsense"
-        / "utils"
-        / "controllers.json"
-    )
-    if not spec_path.exists():
-        spec_path = pathlib.Path(__file__).parent.parent.parent / "tools" / "controllers.json"
-    if not spec_path.exists():
-        return
-    data = json.loads(spec_path.read_text())
-    modules = data.get("modules", {})
-    mod, _ = _setup_state("opnsense")
-    count = 0
-    for mod_name in modules.keys():
-        for name in dir(mod):
-            if mod_name in name and name.endswith("_present"):
-                count += 1
-                break
-    assert count >= 5
+    # Need to clear cache
+    try:
+        exec_mod._DYNAMIC_MAP_CACHE = None
+        exec_mod.__dict__["__context__"] = {}
+    except Exception:
+        pass
+    m = exec_mod._build_dynamic_map()
+    assert len(m) >= 300

@@ -8,6 +8,10 @@ from typing import Any, Final
 
 log = logging.getLogger(__name__)
 
+
+# TODO Q5: keep 653K models.json for now, later trim to unbound/bind/kea only ~45K or delete hardcode 3 lookups:
+# unbound host_alias->host_override, bind record->domain, kea reservation->subnet. See plan 2026-10-05_130000.
+
 SPEC_FILE: Final[pathlib.Path] = pathlib.Path(__file__).with_name("models.json")
 
 CORE_MODULES: Final[tuple[str, ...]] = (

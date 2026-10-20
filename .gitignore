@@ -71,3 +71,13 @@ dmypy.json
 # CI generated artifacts
 artifacts/
 .worktrees/
+
+# Debug API dumps — do not commit (hand-written docs/API.md is SOT)
+docs/API_REFERENCE.md
+docs/API_GENERATED.md
+/tmp/API_REFERENCE.md
+/tools/API_REFERENCE.md
+/tmp/
+
+# Hermes internal plans - private, never commit to public
+.hermes/

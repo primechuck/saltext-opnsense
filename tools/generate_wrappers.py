@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+DEPRECATED - kept for debug stub regen only, dynamic __getattr__ covers all 76/1815.
 Generate ergonomic OPNsense wrappers from controllers.json.
 
 Loads tools/controllers.json + src/saltext/opnsense/utils/controllers.json,

@@ -8,33 +8,50 @@ Since the OPNsense API is massive (1,800+ endpoints) and constantly changing, th
 When a new OPNsense release is available, you should update the API specifications:
 
 ```bash
-python3 tools/generate_spec.py --core-ref 25.7 --plugins-ref 25.7 --output tools/controllers.json
-python3 tools/generate_models.py --core-ref 25.7 --plugins-ref 25.7 --output tools/models.json
+python3 tools/generate_spec.py --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json
+python3 tools/generate_models.py --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/models.json
 ```
 - `generate_spec.py`: Parses the PHP controller files in the upstream repo to discover available endpoints.
 - `generate_models.py`: Parses the XML model files in the upstream repo to extract validation rules and schema constraints.
 
-## Regenerating Static Wrappers
-
-After updating the definitions, regenerate the static execution and state wrapper modules:
+## Regenerating Wrappers (optional, dynamic covers all)
 
 ```bash
 python3 tools/generate_wrappers.py
 ```
-This script reads `controllers.json` and emits human-friendly Python wrappers in `src/saltext/opnsense/modules/` and `src/saltext/opnsense/states/`.
+Reads `controllers.json` and emits human-friendly Python wrappers in `src/saltext/opnsense/modules/` and `states/`. Dynamic `__getattr__` injection already covers all 1815 funcs — wrappers optional.
 
-## Syncing Extmods (File Roots)
+## API Reference — live discovery (not generated dump)
 
-If you need to distribute the extension via Salt's file roots instead of `salt-pip`, use the sync tool to copy the modules into your `_modules`, `_states`, and `_utils` directories:
+`docs/API.md` is hand-written ~66 lines, not a 568-line stale dump. Source of truth is `utils/controllers.json` meta (26.7.3, 76 modules, 1815 actions).
+
+Live discovery always accurate for target FW version:
 
 ```bash
-python3 tools/sync_extmods.py --copy
+salt -C 'T@opnsense:fw-01' opnsense.list_api_modules
+salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers unbound
+salt -C 'T@opnsense:fw-01' opnsense.list_api_actions unbound settings
 ```
+
+Debug helper (not committed):
+
+```bash
+python tools/generate_api_docs.py --output /tmp/API_REFERENCE.md  # debug only
+```
+
+Tool defaults to stdout, use `--output /tmp/` for offline grepping. Do not commit `docs/API_REFERENCE.md`.
 
 ## Verifying Imports
 
-After generation, verify that all dynamically created modules import cleanly without syntax errors:
+After generation, verify that all dynamically created modules import cleanly:
 
 ```bash
 PYTHONPATH=src python3 tools/verify_import.py
 ```
+
+## Public Boundary Guard
+
+```bash
+python tools/check_public_boundary.py  # must PASS
+```
+Scans repo for private strings (lab nets, monorepo path, legacy IDs). CI hard-fails on leak.

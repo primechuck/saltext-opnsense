@@ -114,3 +114,18 @@ def normalize_enabled(v: Any) -> str:
     if s in _ENABLED_FALSE:
         return "0"
     return "1" if v else "0"
+
+
+def is_salt_version_ok(
+    min_version: tuple[int, ...] = (3008,),
+) -> bool | tuple[bool, str]:
+    """Check salt version >= min_version, return True or (False, reason)."""
+    try:
+        import salt.version as _sv  # type: ignore
+
+        ver = getattr(_sv, "__version_info__", ())
+        if ver and ver < min_version:
+            return (False, f"requires salt>={min_version[0]} got {ver}")
+    except Exception:
+        pass
+    return True

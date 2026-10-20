@@ -29,12 +29,6 @@ salt-pip install saltext-opnsense
 salt '*' saltutil.sync_all
 ```
 
-File-based (no pip):
-
-```bash
-python3 tools/sync_extmods.py --copy
-salt '*' saltutil.sync_all
-```
 
 ### 2. Configuration – Fleet via Pillar
 

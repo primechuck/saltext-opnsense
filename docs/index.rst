@@ -18,8 +18,6 @@ Salt 3008+ Resources fleet-ready — one managing minion manages dozens FWs.
    :caption: Usage:
 
    STATES.md
-   CONVENIENCE.md
-   USAGE.md
    API.md
    FIREWALL_SAFETY.md
 
@@ -29,5 +27,3 @@ Salt 3008+ Resources fleet-ready — one managing minion manages dozens FWs.
 
    ARCHITECTURE.md
    DEVELOPMENT.md
-   MAINTENANCE.md
-   TROUBLESHOOTING.md

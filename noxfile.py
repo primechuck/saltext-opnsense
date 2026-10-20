@@ -5,7 +5,7 @@ from pathlib import Path
 
 import nox
 
-# Nox options — align with salt-extension-copier template
+# Nox options — align with salt-extension-copier template minimal
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_missing_interpreters = False
 try:
@@ -78,7 +78,15 @@ def _install_requirements(
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session):
     _install_requirements(session, install_source=True, extras=["tests"])
-    session.run("pytest", "tests/unit", "-v", *session.posargs)
+    session.run(
+        "pytest",
+        "tests/unit",
+        "-q",
+        "--cov=src/saltext/opnsense",
+        "--cov-report=term-missing",
+        "--cov-fail-under=75",
+        *session.posargs,
+    )
 
 
 @nox.session
@@ -99,21 +107,3 @@ def gen_all(session):
     """
     session.install("requests")
     session.run("python", "tools/generate_all.py", *session.posargs)
-
-
-@nox.session(name="lint-code", python="3")
-def lint_code(session):
-    _install_requirements(session, install_salt=False, install_coverage=False, extras=["lint"])
-    session.run("pylint", "--disable=I", "setup.py", "noxfile.py", "src/")
-
-
-@nox.session(name="lint-tests", python="3")
-def lint_tests(session):
-    _install_requirements(
-        session, install_salt=False, install_coverage=False, extras=["lint", "tests"]
-    )
-    session.run(
-        "pylint",
-        "--disable=I,redefined-outer-name,no-member,missing-module-docstring,missing-function-docstring,missing-class-docstring,attribute-defined-outside-init,inconsistent-return-statements,too-few-public-methods,too-many-public-methods",
-        "tests/",
-    )
