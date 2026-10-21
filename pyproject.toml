@@ -29,7 +29,6 @@ classifiers = [
   "Intended Audience :: System Administrators",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
-  "Framework :: Salt",
   "Topic :: System :: Networking :: Firewalls",
   "Topic :: System :: Systems Administration",
   "Operating System :: OS Independent",
