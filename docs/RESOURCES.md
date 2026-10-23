@@ -179,7 +179,32 @@ resources:
 
 Use `salt.utils.resources.pillar_resources_tree(opts)` – honors custom key.
 
-Secrets: Vault slots `__slot__:salt:vault.read(secret/opnsense/fw-01/api_key)` work because pillar templates render with masking disabled. CLI `pillar.get` masks by default – use `unmask=True`.
+### Vault / Secrets Integration in Pillars
+
+> ⚠️ **Do not use `__slot__` in Salt Pillar files!**
+>
+> Salt's `__slot__:salt:...` syntax is evaluated by the **State Compiler**
+> (`state.apply`) only — the **Pillar Compiler does not evaluate `__slot__`**.
+> Using it in a pillar leaves the literal string `__slot__:salt:vault.read(...)`
+> in memory, which silently breaks OPNsense API authentication (wrong
+> credentials are sent). This extension's `OPNsenseClientConfig.from_dict`
+> **rejects** such unresolved values with a clear `ValueError` before any
+> request is made.
+>
+> Use **Jinja templating** in the pillar instead (evaluated at render time):
+
+```yaml
+resources:
+  opnsense:
+    hosts:
+      fw-01:
+        host: fw-01.example.com
+        api_key: {{ salt['vault.read_secret']('secret/opnsense/api_key')['value'] }}
+        api_secret: {{ salt['vault.read_secret']('secret/opnsense/api_secret')['value'] }}
+```
+
+The resolved plaintext then flows through the same Resources path. CLI
+`pillar.get` masks secrets by default — use `unmask=True` to inspect.
 
 ## Configuration
 

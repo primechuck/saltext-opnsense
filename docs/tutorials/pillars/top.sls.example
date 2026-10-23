@@ -28,8 +28,9 @@ base:
 # - If using file-based /etc/salt/proxy on salt-master host, the above `opnsense-router`
 #   entry is still useful for CMDB data (aliases, bind_zone, cluster_parent)
 #   but proxy credentials come from file, not pillar.
-# - Vault integration: hosts/opnsense-router.sls uses __slot__:salt:vault.read(...)
-#   Those slots are rendered on master, so secret never appears plaintext
-#   in pillar file — only resolved during pillar compilation.
+# - Vault integration: hosts/opnsense-router.sls uses Jinja templating
+#   `{{ salt['vault.read_secret'](...)['value'] }}` — *not* `__slot__:`.
+#   `__slot__` is only evaluated by the state compiler, never by the pillar
+#   compiler, so a literal `__slot__` string in pillar causes auth to fail.
 # - For local testing without master, you can skip top.sls entirely and just
 #   use /etc/salt/proxy flat file.

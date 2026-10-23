@@ -38,8 +38,8 @@ timeout: 30
 # proxy:
 #   proxytype: opnsense
 #   host: opnsense.example.com
-#   api_key: __slot__:salt:vault.read(secret/opnsense/api_key)
-#   api_secret: __slot__:salt:vault.read(secret/opnsense/api_secret)
+#   api_key: {{ salt['vault.read_secret']('secret/opnsense/api_key')['value'] }}
+#   api_secret: {{ salt['vault.read_secret']('secret/opnsense/api_secret')['value'] }}
 #
 # Dance explanation:
 # - Master holds pillar top.sls entry for minion id `opnsense-router` → `hosts.opnsense-router`

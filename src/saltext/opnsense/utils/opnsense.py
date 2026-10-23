@@ -80,6 +80,43 @@ def _mask_sensitive_data(data: Any) -> Any:
     return data
 
 
+def _assert_resolved(value: object, field_name: str) -> None:
+    """Validate that a credential field carries a concrete value.
+
+    Salt's ``__slot__`` syntax is only evaluated by the **State** compiler,
+    not the **Pillar** compiler, so a value written in a pillar file survives
+    verbatim as the literal ``__slot__:salt:...`` string and produces an
+    opaque ``Authentication Failed`` error on the first network call. Detect it
+    here so the user gets an actionable message at config-load time instead.
+    See https://docs.saltproject.io/en/latest/topics/slots/.
+
+    Direct ``sdb://`` URIs are likewise not resolved here; ``sdb`` support, if
+    desired, belongs in :func:`get_client_from_opts` where the resource pillar
+    is read.
+
+    :param value: the (unresolved) pillar value for this field
+    :param field_name: display name used in the error message
+    :raises ValueError: if the value is an unresolved Salt construct
+    """
+    if not isinstance(value, str):
+        return
+    if value.startswith("__slot__:"):
+        raise ValueError(
+            f"Invalid {field_name}: detected unresolved Salt slot syntax "
+            f"'{value}'. Salt '__slot__' expressions are only evaluated during "
+            "state compilation (state.apply), not inside Salt Pillars. In pillar "
+            "files, use Jinja templating instead: "
+            "{{ salt['vault.read_secret'](...)['value'] }}."
+        )
+    if value.startswith("sdb://"):
+        raise ValueError(
+            f"Invalid {field_name}: detected unhandled SDB URI '{value}'. "
+            "Direct SDB URIs are not automatically resolved in resource pillar "
+            "definitions; resolve them to a concrete string in the pillar, or "
+            "implement sdb handling in get_client_from_opts."
+        )
+
+
 @dataclass
 class OPNsenseClientConfig:
     host: str
@@ -93,10 +130,16 @@ class OPNsenseClientConfig:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "OPNsenseClientConfig":
+        api_key = data.get("api_key") or data.get("key") or data.get("username", "")
+        api_secret = (
+            data.get("api_secret") or data.get("secret") or data.get("password", "")
+        )
+        _assert_resolved(api_key, "api_key")
+        _assert_resolved(api_secret, "api_secret")
         return cls(
             host=data["host"],
-            api_key=data.get("api_key") or data.get("key") or data.get("username", ""),
-            api_secret=data.get("api_secret") or data.get("secret") or data.get("password", ""),
+            api_key=api_key,
+            api_secret=api_secret,
             proto=data.get("proto", "https"),
             verify_ssl=data.get("verify_ssl", True),
             timeout=int(data.get("timeout", 30)),

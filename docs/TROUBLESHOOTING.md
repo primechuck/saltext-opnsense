@@ -77,13 +77,25 @@ salt-call --local -l debug saltutil.sync_all  # check pillar Resources tree
 
 Check API key from OPNsense UI `System > Access > Users > API`.
 
-**Vault `__slot__` shows placeholder not resolved**
+**Vault secret shows placeholder / auth fails (`__slot__` not resolved)**
+
+`__slot__:salt:...` is **state-compiler only** — the Pillar compiler does *not*
+evaluate it, so a literal `__slot__` string reaches the client config and auth
+fails. This extension's `OPNsenseClientConfig.from_dict` rejects `__slot__`
+(and `sdb://`) values with a clear error *before* any request. Use Jinja in the
+pillar instead:
+
+```yaml
+api_key: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_key')['value'] }}
+```
+
 ```bash
 salt jrbob vault.read secret/opnsense/fw-01/api_key
 salt -C 'T@opnsense:fw-01' pillar.get resources:opnsense:hosts:fw-01 --out=yaml
 ```
 
-If still placeholder, check `master.d/vault.conf` url and token file `/etc/salt/vault/token` 600.
+If the pillar value is still the literal `__slot__:salt:...` text, switch it to
+the Jinja form above — no `master.d/vault.conf` is involved in pillar templating.
 
 ## Pillar
 

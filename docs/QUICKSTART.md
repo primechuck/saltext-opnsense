@@ -166,7 +166,7 @@ salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense
 - Full fleet tutorial `docs/RESOURCES.md` – 2 SRN composition, targeting `G@`, `resource.refresh`, `list_grains`
 - Convenience wrappers `docs/CONVENIENCE.md`
 - All 75 modules `docs/USAGE.md`
-- Vault secrets `docs/tutorials/pillars/` – use `__slot__:salt:vault.read(...)`
+- Vault secrets `docs/tutorials/pillars/` – Jinja templating `{{ salt['vault.read_secret'](...)['value'] }}` (⚠️ not `__slot__`: only evaluated by the state compiler, never by pillar)
 - Firewall safety `docs/FIREWALL_SAFETY.md`
 
 ## Troubleshooting

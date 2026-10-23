@@ -163,8 +163,8 @@ resources:
     hosts:
       fw-01:
         host: fw-01.example.com
-        api_key: __slot__:salt:vault.read(secret/opnsense/fw-01/api_key)
-        api_secret: __slot__:salt:vault.read(secret/opnsense/fw-01/api_secret)
+        api_key: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_key')['value'] }}
+        api_secret: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_secret')['value'] }}
         verify_ssl: true
         timeout: 30
 ```
@@ -384,7 +384,7 @@ OPNSENSE_LIVE_TEST=1 pytest tests/integration/test_live_opnsense.py -v
 
 ## Pillar examples reference
 
-- `docs/PILLAR.md` — canonical `resources:opnsense:hosts:{id}` format, Vault `__slot__`
+- `docs/PILLAR.md` — canonical `resources:opnsense:hosts:{id}` format, Vault via Jinja `{{ salt['vault.read_secret'](...)['value'] }}`
 - `docs/RESOURCES.md` — fleet tutorial 10 min masterless walk-through + 2 SRN composition
 - `docs/INSTALL.md` — PyPI canonical + file-based dev
 - `pillars/hosts/sparky.sls` analogue: `resources:opnsense:hosts:fw-01` example

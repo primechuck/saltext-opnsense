@@ -152,5 +152,4 @@ Integration gated `OPNSENSE_LIVE_TEST=1`, `test_live.py` read-only env.
 Targeting: `T@opnsense`, `G@opnsense_version:25.*`,
 `T@opnsense:fw-01 or T@ssh:fw-01` composition. See RESOURCES.md.
 
-Vault: `__slot__:salt:vault.read(...)` resolved on master via
-`saltext-vault`.
+Vault (Jinja evaluation — *not* `__slot__`): `{{ salt['vault.read_secret']('secret/opnsense/fw-01/api_key')['value'] }}`, evaluated at pillar render time.

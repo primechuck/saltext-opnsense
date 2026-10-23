@@ -23,9 +23,11 @@ resources:
         api_secret: "your_api_secret_here"
         verify_ssl: true
         timeout: 30
-        # Optional Vault Slot Integration (requires Vault engine):
-        # api_key: __slot__:salt:vault.read(secret/opnsense/fw-01/api_key)
-        # api_secret: __slot__:salt:vault.read(secret/opnsense/fw-01/api_secret)
+        # Optional Vault Secret Integration (requires a Vault engine):
+        # NOTE: NOT __slot__:state-compiler only, never evaluated in pillar.
+        # Use Jinja so the secret is pulled at pillar render time:
+        # api_key: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_key')['value'] }}
+        # api_secret: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_secret')['value'] }}
       fw-02:
         host: fw-02.example.com
         proto: https

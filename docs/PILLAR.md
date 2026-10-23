@@ -22,7 +22,7 @@ resources:
 
 Only supported format. Requires salt>=3008. No flat /etc/salt/proxy, no proxy dict, no proxytype. See RESOURCES.md.
 
-Vault:
+Vault (Jinja evaluation — *not* `__slot__`; see the warning at the top of this file):
 
 ```yaml
 resources:
@@ -30,8 +30,8 @@ resources:
     hosts:
       fw-01:
         host: fw-01.example.com
-        api_key: __slot__:salt:vault.read(secret/opnsense/fw-01/api_key)
-        api_secret: __slot__:salt:vault.read(secret/opnsense/fw-01/api_secret)
+        api_key: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_key')['value'] }}
+        api_secret: {{ salt['vault.read_secret']('secret/opnsense/fw-01/api_secret')['value'] }}
 ```
 
 ## Direct single-host masterless testing
