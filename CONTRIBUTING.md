@@ -2,6 +2,9 @@
 
 Requires `salt>=3008`. Resources-only, no proxy — removed 1.0.0.
 
+Agents and humans: read [`AGENTS.md`](AGENTS.md) first. It lists the auto-generated files you must not hand-edit,
+the Salt/OPNsense idempotency rules, and the changes that need human review. Generator workflow: `tools/README.md`.
+
 ## Quick start
 
 ```bash
