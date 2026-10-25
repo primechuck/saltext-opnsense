@@ -76,3 +76,77 @@ def minion_opts(tmp_path):  # pragma: no cover
     opts["log_file"] = "logs/minion.log"
     opts["conf_file"] = os.path.join(opts["conf_dir"], "minion")
     return opts
+
+
+# ---------------------------------------------------------------------------
+# Offline-first guard: unit tests must never reach a real OPNsense appliance.
+# Any HTTP send through ``requests`` or any non-loopback ``socket.connect`` fails the test
+# immediately. ``pytest.fail`` raises a BaseException subclass, so the broad ``except
+# Exception`` blocks in the states/modules cannot swallow it and hide a leaking test.
+# Mock ``requests.Session.request`` or ``__salt__`` instead. Live tests opt out with
+# ``@pytest.mark.allow_network`` (``tests/integration`` is opted out automatically).
+# ---------------------------------------------------------------------------
+import ipaddress  # noqa: E402
+import socket  # noqa: E402
+
+try:
+    import requests.adapters
+except ImportError:  # pragma: no cover - requests is a hard dependency of the package
+    requests = None
+
+_OFFLINE_MSG = (
+    "Live network access is blocked in unit tests ({what}). Mock the transport "
+    "(patch 'requests.Session.request' or provide a fake __salt__), or mark an opt-in live "
+    "test with @pytest.mark.allow_network."
+)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "allow_network: disable the offline-first socket/HTTP guard (live tests only)"
+    )
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "integration" in item.path.parts:
+            item.add_marker(pytest.mark.allow_network)
+
+
+def _is_local_address(address) -> bool:
+    if isinstance(address, (str, bytes, bytearray)):  # AF_UNIX path
+        return True
+    host = address[0] if address else ""
+    if isinstance(host, (bytes, bytearray)):
+        host = host.decode("ascii", "ignore")
+    if host in ("", "localhost"):
+        return True
+    try:
+        ip = ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_unspecified
+
+
+@pytest.fixture(autouse=True)
+def _offline_first_guard(request, monkeypatch):
+    if request.node.get_closest_marker("allow_network"):
+        return
+
+    if requests is not None:
+
+        def _blocked_send(self, req, *args, **kwargs):
+            pytest.fail(_OFFLINE_MSG.format(what=f"{req.method} {req.url}"), pytrace=False)
+
+        monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", _blocked_send)
+
+    def _guard(real):
+        def guarded(self, address, *args, **kwargs):
+            if not _is_local_address(address):
+                pytest.fail(_OFFLINE_MSG.format(what=f"connect {address!r}"), pytrace=False)
+            return real(self, address, *args, **kwargs)
+
+        return guarded
+
+    monkeypatch.setattr(socket.socket, "connect", _guard(socket.socket.connect))
+    monkeypatch.setattr(socket.socket, "connect_ex", _guard(socket.socket.connect_ex))

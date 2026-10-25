@@ -720,8 +720,14 @@ def test_resources_init_extra():
     mod.__context__ = {}
     mod.init({})
     mod.__resource__ = {"id": "fw-01", "type": "opnsense"}
-    grains = mod.grains()
+    # Fail the transport instead of letting grains() dial fw-01.example.com (offline-first guard)
+    with patch(
+        "saltext.opnsense.utils.opnsense.requests.Session.request",
+        side_effect=RuntimeError("unit test: no network"),
+    ):
+        grains = mod.grains()
     assert "resource_id" in grains
+    assert grains["opnsense_host"] == "fw-01.example.com"
     # shutdown
     mod.__context__ = {}
     mod.init({})
