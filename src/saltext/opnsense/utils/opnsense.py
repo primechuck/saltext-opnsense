@@ -1,9 +1,59 @@
+"""
+HTTP client for the OPNsense REST API (``/api/<module>/<controller>/<action>[/<uuid>]``).
+
+Hand-written. The API registry it validates against (``controllers.json``) is generated; see
+``AGENTS.md`` and ``tools/README.md``.
+
+Credential resolution
+---------------------
+``get_client_from_opts`` (non-resource calls) resolves the first match of:
+
+1. ``opts["pillar"]["resources"]["opnsense"]["hosts"]``: the *first* host that has ``host``.
+2. ``opts["pillar"]["opnsense"]`` when it has ``host``.
+3. The same two pillar shapes in the ``pillar`` argument.
+4. ``opts["opnsense"]`` (minion/master config) when it has ``host``.
+
+Salt Resource targets (``T@opnsense:<id>``) are resolved earlier, per resource id, from
+``resources:opnsense:hosts:<id>`` by ``resources/opnsense/__init__.py``. Grains and proxy
+minion configuration are **not** consulted (proxy support was removed in 1.0.0). Accepted keys:
+``host``, ``api_key``/``key``/``username``, ``api_secret``/``secret``/``password``, ``proto``,
+``verify_ssl`` (default ``True``), ``timeout``, ``base_path``. Do not invent new auth parameters.
+
+Payload contract: GET vs POST are asymmetric
+--------------------------------------------
+Reading and writing the same item uses different shapes. Diffing raw GET output against the POST
+payload makes a state report changes on every run (a state diff loop). Normalize both sides with
+``saltext.opnsense.utils.diff`` first.
+
+* ``get*`` returns the model wrapped by its root key (``{"alias": {...}}``). Option fields
+  (dropdowns, multi-selects) are nested maps keyed by option key::
+
+      {"opt1": {"value": "<display label>", "selected": 1}, "opt2": {"value": "...", "selected": 0}}
+
+* ``search*`` returns flat rows (``rows`` is coerced to a list by ``OPNsenseClient.call``), with
+  relation fields as UUIDs and no selection maps.
+* ``add*`` / ``set*`` expect the model root wrapper with **flat** values: one key, or
+  **comma-joined keys** for multi-select (``"opt1,opt2"``), never the nested map or a list.
+* Booleans are the strings ``"0"`` / ``"1"``. Relations are UUIDs; resolve natural keys
+  (hostname, FQDN, name) to a UUID with ``search*`` before any mutation.
+* Mutations are staged. Only the service ``reconfigure`` call applies them; issue it once, and
+  only after a mutation actually happened.
+
+Failure contract
+----------------
+``{"result": "failed", "validations": {...}}`` raises ``OPNsenseValidationError`` (the field
+errors are kept on ``.validations``). Other error payloads and HTTP >= 400 raise
+``OPNsenseAPIError``. Connection resets are retried (3 attempts, exponential backoff).
+``OPNsenseClient.call`` is spec-strict: an action absent from ``controllers.json`` raises
+``FileNotFoundError``.
+"""
+
 import json
 import logging
 import time
 from dataclasses import dataclass
 from http.client import RemoteDisconnected
-from typing import Any, Final
+from typing import Any, Final, TypedDict
 from urllib.parse import urljoin
 
 import requests
@@ -30,6 +80,47 @@ _SENSITIVE_KEYS: Final = frozenset(
 _SENSITIVE_SUBSTRINGS: Final = frozenset(
     {"secret", "passwd", "password", "token", "private_key", "psk"}
 )
+
+
+class SelectionOption(TypedDict):
+    """One entry of an option field in a ``get*`` response, keyed by its option key."""
+
+    value: str  # display label, not the key
+    selected: int  # 1 when chosen, else 0 (diff.py also accepts "1"/"true"/"yes")
+
+
+class MutationResponse(TypedDict, total=False):
+    """
+    Envelope returned by ``add*``, ``set*``, ``del*``, ``toggle*`` and ``reconfigure``.
+
+    Exact keys vary by controller, so every key is optional. ``add*`` returns ``result`` plus the
+    new ``uuid``; ``reconfigure`` endpoints usually return ``status``.
+    """
+
+    result: str  # "saved", "deleted", ... ("failed" is raised, see ValidationErrorResponse)
+    status: str  # "ok" / "error" on reconfigure and service endpoints
+    uuid: str  # set by add*
+    changed: bool
+    message: str
+
+
+class ValidationErrorResponse(TypedDict):
+    """
+    Body of a rejected ``add*`` / ``set*``; ``OPNsenseClient`` raises it as
+    ``OPNsenseValidationError`` and exposes ``validations`` on the exception.
+    """
+
+    result: str  # always "failed"
+    validations: dict[str, str]  # "<model>.<field>" -> message
+
+
+class SearchResponse(TypedDict, total=False):
+    """Envelope returned by ``search*``; ``rows`` are flat dicts, each carrying a ``uuid``."""
+
+    rows: list[dict[str, Any]]
+    rowCount: int
+    total: int
+    current: int
 
 
 def _is_sensitive_key(k: str) -> bool:
@@ -386,6 +477,13 @@ class OPNsenseClient:
 
 
 def get_client_from_opts(opts: dict, pillar: dict | None = None) -> OPNsenseClient | None:
+    """
+    Build a client from Salt ``opts`` and optional ``pillar``; return ``None`` if no host config.
+
+    Resolution order is documented in the module docstring (Resources pillar, ``opnsense`` pillar,
+    ``opts["opnsense"]``). Grains are intentionally ignored. Changing this order or the
+    credential key aliases is a human-gated change (see ``AGENTS.md``).
+    """
     cfg = None
     try:
         if isinstance(opts, dict):

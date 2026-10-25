@@ -1,3 +1,28 @@
+"""
+Normalization and diff engine that makes OPNsense states idempotent.
+
+OPNsense reads and writes the same item in different shapes (full contract in
+``saltext.opnsense.utils.opnsense``). ``get*`` returns option fields as nested maps
+(``{"opt1": {"value": "<label>", "selected": 1}}``) and rows with UUID relations, while
+``add*`` / ``set*`` take flat values: a key or comma-joined keys, ``"0"`` / ``"1"`` booleans and
+UUIDs. Comparing raw values makes a state report changes on every run.
+
+``normalize_field_value`` maps both shapes onto one canonical value so ``diff_models`` compares
+like with like:
+
+* booleans: ``"1"``/``"true"``/``"yes"``/``"enabled"``/``"on"`` and their negatives -> ``bool``
+* multi-select: selection maps keep only ``selected`` keys (one key -> that value, several -> a
+  sorted ``tuple``); CSV strings and lists -> a sorted ``tuple`` (order-agnostic)
+* relations: UUID, ``{"uuid": ...}``, ``{"hostname", "domain"}`` and the human FQDN compare equal
+  when ``parent_human`` is supplied
+* numeric strings -> ``int``/``float``; trailing dots on names are ignored
+
+``diff_models(existing, desired)`` returns ``{field: {"old", "new"}}`` for desired fields whose
+normalized values differ; ``uuid`` is skipped. An empty diff means "already present": the state
+must not mutate and must not call ``reconfigure``. Extend this module (with a regression test)
+instead of special-casing a field inside a state.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Final
