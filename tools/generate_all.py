@@ -88,10 +88,13 @@ def step_models(core_ref: str, plugins_ref: str) -> int:
     cmd = [sys.executable, str(TOOLS_DIR / "generate_models.py")]
     core_path = TMP_DIR / "core"
     plugins_path = TMP_DIR / "plugins"
+    # Always pass the refs: with cached clones the generator cannot infer them and would
+    # otherwise record core_ref/plugins_ref="master" in models.json meta.
+    cmd += ["--core-ref", core_ref, "--plugins-ref", plugins_ref]
     if core_path.exists() and plugins_path.exists():
         cmd += ["--core", str(core_path), "--plugins", str(plugins_path)]
     else:
-        cmd += ["--core-ref", core_ref, "--plugins-ref", plugins_ref, "--tmp-dir", str(TMP_DIR)]
+        cmd += ["--tmp-dir", str(TMP_DIR)]
     cmd += ["--output", str(MODELS_JSON_SRC)]
     rc = run_cmd(cmd, desc=f"generate_models core={core_ref} plugins={plugins_ref}")
     if rc != 0:
