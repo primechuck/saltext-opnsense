@@ -107,3 +107,16 @@ def gen_all(session):
     """
     session.install("requests")
     session.run("python", "tools/generate_all.py", *session.posargs)
+
+
+@nox.session
+def codegen_drift(session):
+    """
+    Codegen drift gate: regenerate controllers.json + models.json from the upstream refs
+    pinned in their meta and fail if the committed files differ (generated_at is ignored).
+    Needs git + network; pass local clones to stay offline:
+      nox -s codegen_drift
+      nox -s codegen_drift -- --core ~/src/core --plugins ~/src/plugins
+    The offline integrity half runs on every PR via tests/unit/test_codegen_guardrails.py.
+    """
+    session.run("python", "tools/check_codegen_drift.py", "--regenerate", *session.posargs)

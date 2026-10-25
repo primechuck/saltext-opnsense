@@ -1,3 +1,32 @@
+"""
+Generic OPNsense states: ``item_present``, ``item_absent``, ``items_present``,
+``items_absent``, ``reconfigured`` and ``assert_resolves``. Hand-written; this is the golden
+reference for state modules in this extension (``states/dns.py`` follows the same lifecycle).
+
+Idempotency lifecycle
+---------------------
+Every state that manages an OPNsense item runs these four steps, in order:
+
+1. **Lookup (natural key -> UUID).** The API mutates by UUID, humans use names. Resolve
+   relation fields (``_auto_resolve``) and locate the item with ``opnsense.search``
+   (``row_count=-1``) via ``match`` / ``search_field``; enrich the row with ``opnsense.get``.
+   Never write before knowing whether the item exists.
+2. **Normalize and diff.** Compare the stored item with the desired data through
+   ``utils.diff.diff_models`` (booleans, CSV vs list, UUID vs FQDN, selection maps), never
+   with raw ``==``. Empty diff -> ``result: True``, no changes, and **no** ``reconfigure``.
+3. **Test mode.** If ``__opts__["test"]`` is true, return
+   ``{"name": name, "result": None, "changes": {...}, "comment": "..."}`` and issue no
+   ``opnsense.add`` / ``set_item`` / ``delete`` / ``reconfigure``.
+4. **Mutate, then reconfigure.** Call ``opnsense.add`` or ``opnsense.set_item`` with the model
+   wrapper and flat values (``_extract_payload``), then apply with the service ``reconfigure``
+   endpoint (``_get_reconfigure`` / ``_verify_reconfigure``) only because something changed.
+   A failed reconfigure makes the state ``result: False``. Batch states (``items_*``) disable
+   the per-item reconfigure and apply once at the end, only when ``changes`` is non-empty.
+
+The GET-vs-POST payload asymmetry is documented in ``saltext.opnsense.utils.opnsense``.
+``__salt__`` is read lazily inside functions and ``__opts__`` is never mutated.
+"""
+
 from __future__ import annotations
 
 import logging

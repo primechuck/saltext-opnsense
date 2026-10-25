@@ -1,4 +1,4 @@
-.PHONY: gen-spec gen-models gen-wrappers bump verify test lint docs gen-all clean
+.PHONY: gen-spec gen-models gen-wrappers bump verify check-drift test lint docs gen-all clean
 
 CORE ?= 26.7.3
 CORE_REF ?= $(CORE)
@@ -28,6 +28,10 @@ bump:
 
 verify:
 	PYTHONPATH=src python3 tools/verify_import.py
+
+# Offline sentinel/meta integrity; add --regenerate (git + network) for the full drift gate.
+check-drift:
+	python3 tools/check_codegen_drift.py $(DRIFT_ARGS)
 
 test:
 	pytest tests/unit -q --cov=src/saltext/opnsense --cov-report=term-missing --cov-fail-under=75
