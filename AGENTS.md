@@ -104,6 +104,22 @@ Grains and proxy configuration are **not** consulted. Do not invent new auth par
 resolution layer without human review (see section 4). Accepted aliases: `api_key`/`key`/`username`
 and `api_secret`/`secret`/`password`. `verify_ssl` defaults to `True`.
 
+Salt 3008 wraps pillar values in `MaskedDict`/`MaskedList` (`salt.utils.secret`). Scalar leaves
+still read as plain strings via normal `.get()`/`[]` access — masking only redacts `repr`/`str`
+and serialized output — so the credential code paths in `utils/opnsense.py` and the `resources:`
+fallback in `resources/opnsense/__init__.py::_pillar_tree` work as-is today. Two rules follow:
+never compare or log whole pillar subtrees (they render as `**********`), and route every secret
+read through `utils/opnsense.py` / the resource `_connect` path instead of ad-hoc `__pillar__`
+access. If a future code path ever needs explicit plain-Python containers, unwrap with
+`salt.utils.secret.expose()` (note: there is no `unmask` helper in that module) or read via
+`pillar.get(key, unmask=True)` — never hand-roll masking.
+
+The Salt Resources API (`salt.utils.resources.pillar_resources_tree`, `__resource__` /
+`__resource_funcs__`) is new in 3008.0 and is the **only** supported way to reach resource pillar
+data here. Do not pull in `salt.utils.cloud`, `sdb`, or any legacy pillar connection-pooling
+pattern when editing `resources/opnsense/`; the `except Exception` fallback to a direct
+`resources:` pillar read in `_pillar_tree` is the single sanctioned compatibility shim.
+
 ### The idempotency bridge (follow all four steps, in order)
 
 1. **Natural key to UUID.** The API mutates by UUID; humans use names/FQDNs. Resolve with
