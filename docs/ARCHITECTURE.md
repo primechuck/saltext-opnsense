@@ -55,7 +55,7 @@ Quirks: bools 1/0 vs True, UUID vs FQDN vs dict, CSV lan,wan vs list order-agnos
 
 ## Packaging — 3008+ only
 
-`pyproject.toml` deps `salt>=3008`, `requires-python >=3.10`, entry-point `salt.loader`.
+`pyproject.toml` deps `salt>=3008`, `requires-python >=3.12`, entry-point `salt.loader`.
 
 Install `salt-pip install saltext-opnsense` or `pip install -e .` dev (pip-only).
 

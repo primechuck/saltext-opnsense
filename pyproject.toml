@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 name = "saltext-opnsense"
 description = "Salt extension for managing OPNsense via its API - Salt 3008+ Resources only (pip-only)"
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [{name = "David Bierce", email = "david@bierce.org"}]
 maintainers = [{name = "David Bierce", email = "david@bierce.org"}]
@@ -20,8 +20,6 @@ classifiers = [
   "Programming Language :: Cython",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
@@ -133,7 +131,7 @@ build-constraint-dependencies = ["setuptools<69"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 builtins = [
   "__opts__",
   "__salt__",
