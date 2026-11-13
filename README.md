@@ -134,7 +134,7 @@ Unit tests cover client retry/masking, diff engine bool/UUID/CSV, resource disco
 
 ## Packaging Polish – Pythonic & Salty
 
-- `src/saltext/opnsense/py.typed` PEP 561, `.gitignore` untracks `_version.py`, `optional-dependencies:dev` + `dependency-groups`, `readme`/`license` as file objects, `Changelog` URL, `tool.ruff.builtins` includes `__resource__`, `nox` python 3.10-3.14.
+- `src/saltext/opnsense/py.typed` PEP 561, `.gitignore` untracks `_version.py`, `optional-dependencies:dev` + `dependency-groups`, `readme`/`license` as file objects, `Changelog` URL, `tool.ruff.builtins` includes `__resource__`, `nox` python 3.12-3.14.
 - Client `close()` + `__enter__/__exit__`, `Final/frozenset` constants, typing `TypedDict`, specific exceptions, `encoding=utf-8`, no `Path.cwd()` fallback, no `globals()` mutation in connection module, `lru_cache` for spec, thread-safe `_DYNAMIC_MAP_CACHE` via `__context__` + `Lock`.
 - States `__virtual__` returns `True`, `__context__` caching not globals, no import-time wrapper injection, `normalize_enabled` unified, `bind.domain_absent` bug fixed (preserves actual type), `strip_salt_internal_kwargs` everywhere, reconfigure verification unified.
 

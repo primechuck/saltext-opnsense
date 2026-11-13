@@ -4,7 +4,7 @@ Harness-agnostic contract for autonomous coding agents and human contributors.
 `CLAUDE.md` and `.cursorrules` are symlinks to this file: edit **only** `AGENTS.md`.
 
 `saltext-opnsense` bridges Salt's declarative, idempotent model with OPNsense's imperative,
-UI-driven REST API. Requires `salt>=3008` and Python `>=3.10`. It is **Resources-only**: the proxy
+UI-driven REST API. Requires `salt>=3008` and Python `>=3.12`. It is **Resources-only**: the proxy
 minion was removed in 1.0.0, so do not add proxy code or `salt-proxy` docs.
 
 ## 1. Repository overview and architecture map

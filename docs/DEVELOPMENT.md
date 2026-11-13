@@ -77,7 +77,7 @@ See `tools/README.md`.
 
 ## CI — hard-fail guards
 
-- `ci.yml`: matrix 3.10-3.14 x 3008.11/latest =10 jobs, pytest --cov-fail-under=75 hard-fail, docs `sphinx-build -W -n` hard-fail
+- `ci.yml`: matrix 3.12-3.14 x 3008.3/latest =6 jobs, pytest --cov-fail-under=75 hard-fail, docs `sphinx-build -W -n` hard-fail
 - `lint.yml`: ruff github format + check-json + public-boundary + actionlint, no pylint
 - `check_public_boundary.py` scans repo for private strings (lab nets, monorepo path, legacy proxy id) — must PASS
 

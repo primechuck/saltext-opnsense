@@ -47,8 +47,8 @@ repos:
     rev: v3.21.2
     hooks:
       - id: pyupgrade
-        name: Rewrite code to be Py310+
-        args: [--py310-plus]
+        name: Rewrite code to be Py312+
+        args: [--py312-plus]
         exclude: src/saltext/opnsense/version/.*\.py$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
