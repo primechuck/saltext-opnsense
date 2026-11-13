@@ -7,13 +7,13 @@ Requires `salt>=3008`. Resources-only.
 ```
 src/saltext/opnsense/
   utils/opnsense.py               — Client 3008+ only, close() + context manager
-  utils/api_spec.py               — Spec loader 76 modules for 26.7.3, lru_cache
+  utils/api_spec.py               — Spec loader 77 modules for 26.7.9, lru_cache
   utils/models.py                 — Model relation_targets
   utils/diff.py                   — Diff engine, bool/CSV/UUID/FQDN normalization
   utils/common.py                 — helpers
-  utils/controllers.json          — 76 modules + meta core_ref
+  utils/controllers.json          — 77 modules + meta core_ref
   utils/models.json               — Model registry 653K
-  modules/opnsense.py             — Exec generic + dynamic 1815 funcs __getattr__
+  modules/opnsense.py             — Exec generic + dynamic 1843 funcs __getattr__
   modules/dns.py                  — Convenience Unbound DNS alias listers & preview
   states/opnsense.py              — Generic item_present/absent/reconfigured/assert_resolves
   states/dns.py                   — Pillar-driven opnsense_dns.managed batch state
@@ -25,7 +25,7 @@ tools/
   generate_spec.py                — core/plugins -> controllers.json
   generate_models.py              — Model XML -> models.json
   generate_all.py                 — pipeline: spec->models->verify->test
-  verify_import.py                — import proof 76 modules, 1815 dynamic
+  verify_import.py                — import proof 77 modules, 1843 dynamic
   check_public_boundary.py        — public boundary guard
 tests/unit/                       — mocked, no live OPNsense
 tests/integration/                — live gated OPNSENSE_LIVE_TEST=1
@@ -68,7 +68,7 @@ OPNSENSE_LIVE_TEST=1 PYTHONPATH=src pytest tests/integration -v -k live
 ## Codegen
 
 ```bash
-make gen-all CORE_REF=26.7.3 PLUGINS_REF=26.7.3
+make gen-all CORE_REF=26.7.9 PLUGINS_REF=26.7.9
 make gen-spec
 make verify
 ```
@@ -96,7 +96,7 @@ When task completes, worktree auto-pruned if clean + pushed.
 
 OPNsense ~2/year (25.1, 25.7). Must stay in sync — only `make bump CORE=X.Y` to regenerate from upstream.
 
-1. Bump: `make bump CORE=26.7.3` or `python tools/generate_spec.py --core-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json`
+1. Bump: `make bump CORE=26.7.9` or `python tools/generate_spec.py --core-ref 26.7.9 --output src/saltext/opnsense/utils/controllers.json`
 2. Verify: `PYTHONPATH=src python3 tools/verify_import.py -v && PYTHONPATH=src pytest tests/unit -v && ruff check src tests`
 3. Live smoke (lab only): `salt -C 'T@opnsense:fw-01' opnsense.ping && salt -C 'T@opnsense:fw-01' opnsense.doctor`
 4. Commit, PR, tag `v*.*.*` -> publish.yml OIDC to PyPI

@@ -1,6 +1,6 @@
 .PHONY: gen-spec gen-models gen-wrappers bump verify check-drift test lint docs gen-all clean
 
-CORE ?= 26.7.3
+CORE ?= 26.7.9
 CORE_REF ?= $(CORE)
 PLUGINS_REF ?= $(CORE_REF)
 

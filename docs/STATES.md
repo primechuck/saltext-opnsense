@@ -1,6 +1,6 @@
 # States Reference
 
-## Generic (works for all 76 modules)
+## Generic (works for all 77 modules)
 
 ```yaml
 rfc1918_alias:
@@ -209,6 +209,6 @@ See `docs/QUICKSTART.md` for fleet targeting `T@opnsense:fw-01` and `docs/API.md
 
 ## Free modules — all 76
 
-Codegen free: wrappers for every OPNsense API module via dynamic `__getattr__` 1815 funcs. Generic `opnsense.item_present` covers any module. See `examples` and `docs/tutorials`.
+Codegen free: wrappers for every OPNsense API module via dynamic `__getattr__` 1843 funcs. Generic `opnsense.item_present` covers any module. See `examples` and `docs/tutorials`.
 
 Targeting always via `T@opnsense:fw-01` (Resources). Pillar path `resources:opnsense:hosts:fw-01:{host,api_key}` or `pillars/hosts/<minion>.sls` example (replace `<minion>` with your managing minion ID).

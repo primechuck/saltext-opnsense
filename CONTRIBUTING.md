@@ -28,7 +28,7 @@ make verify
 # unit (no live OPNsense, mocked)
 PYTHONPATH=src pytest tests/unit -v
 
-# import proof: 76 modules + dynamic 1815 wrappers
+# import proof: 77 modules + dynamic 1843 wrappers
 PYTHONPATH=src python3 tools/verify_import.py
 
 # lint
@@ -111,7 +111,7 @@ Run `pytest tests/unit -v --collect-only` to verify discovery.
 
 ## Regenerating code
 
-- Spec: `tools/generate_spec.py --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json`
+- Spec: `tools/generate_spec.py --core-ref 26.7.9 --plugins-ref 26.7.9 --output src/saltext/opnsense/utils/controllers.json`
 - Models: `tools/generate_models.py`
 - Wrappers: `tools/generate_wrappers.py` (emits 76 exec + state modules + dynamic wrappers)
 - Verify: `tools/verify_import.py`

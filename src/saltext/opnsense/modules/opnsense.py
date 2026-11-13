@@ -271,7 +271,7 @@ def __dir__() -> list[str]:
 
 def doctor() -> dict[str, Any]:
     res: dict[str, Any] = {
-        "spec_version": "26.7.3",
+        "spec_version": "26.7.9",
         "loaded_modules_count": len(list_modules()),
         "status": "UNKNOWN",
         "details": {},
