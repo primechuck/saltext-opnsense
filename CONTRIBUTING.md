@@ -28,7 +28,7 @@ make verify
 # unit (no live OPNsense, mocked)
 PYTHONPATH=src pytest tests/unit -v
 
-# import proof: 77 modules + dynamic 1843 wrappers
+# import proof: 93 modules + dynamic 2038 wrappers
 PYTHONPATH=src python3 tools/verify_import.py
 
 # lint

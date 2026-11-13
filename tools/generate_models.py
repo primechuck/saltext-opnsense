@@ -93,6 +93,32 @@ def _get_type_from_elem(elem: ET.Element) -> str:
     return ""
 
 
+# Concrete ArrayField subclasses used as array-container wrappers
+# (e.g. ".\NetworkInterfaceField" extends ArrayField). Upstream migrates
+# plain `type="ArrayField"` wrappers to these subclasses over time
+# (NetworkInterface.xml did so in 26.7.4), so the container heuristic must
+# accept them. Nested *scalar* dotted fields (e.g. ".\KeaOptionDataField")
+# carry only untyped config children (CodeSource/Constraints/...) and are
+# excluded by the typed-children requirement below.
+def _is_array_container(elem: ET.Element) -> bool:
+    elem_type = _get_type_from_elem(elem)
+    if elem_type == "ArrayField":
+        return True
+    if not elem_type.startswith(".\\"):
+        return False
+    # Dotted subclass reference: only a container if it directly wraps a
+    # field (a child carrying its own type). Nested containers
+    # (<servers>/<clients>) have untyped element children and stay out.
+    for child in elem:
+        if not isinstance(child.tag, str):
+            continue
+        if child.tag in SKIP_TAGS:
+            continue
+        if _get_type_from_elem(child):
+            return True
+    return False
+
+
 def _get_child_text(elem: ET.Element, tag_name: str) -> str:
     child = elem.find(tag_name)
     if child is not None and child.text:
@@ -216,8 +242,7 @@ def parse_model_xml(path: pathlib.Path):
     for elem in root.iter():
         if not isinstance(elem.tag, str):
             continue
-        elem_type = _get_type_from_elem(elem)
-        if elem_type != "ArrayField":
+        if not _is_array_container(elem):
             continue
 
         array_name = elem.tag

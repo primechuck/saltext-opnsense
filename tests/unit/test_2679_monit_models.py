@@ -21,11 +21,14 @@ extension's bundled registries (`controllers.json` / `models.json`):
 
 These tests are offline-first: they touch only the bundled registries on disk and pure
 path-construction helpers -- no sockets, no HTTP.
+
+Fix history: the (B) assignment gap was closed by the 26.7.9 follow-up to
+``tools/generate_models.py`` (``_is_array_container`` accepts dotted
+``ArrayField`` subclasses), and the (A) scan artifact by the
+``SERVICE_BASE_ACTIONS`` fallback in ``tools/generate_spec.py``.
 """
 
 from __future__ import annotations
-
-import pytest
 
 from saltext.opnsense.states.opnsense import _get_reconfigure, _infer_reconfigure
 from saltext.opnsense.utils import api_spec
@@ -68,47 +71,37 @@ def test_monit_service_check_absent_from_runtime():
     assert api_spec.has_action(MODULE, SERVICE_CONTROLLER, "check") is False
 
 
-def test_monit_service_not_scanned_but_route_still_constructible():
-    """Lock the scan artifact: service is dropped from the registry (blind to inheritance) yet the
-    generic state can still infer the correct base-class route.  Re-adding spurious actions here
-    would be a regression, so the current (empty) action list is pinned as a guard."""
-    assert api_spec.list_controllers(MODULE) == ["settings", "status"]
-    assert api_spec.list_actions(MODULE, SERVICE_CONTROLLER) == []
-    # Path construction must not depend on the missing registry entry.
-    assert _infer_reconfigure(MODULE, SERVICE_CONTROLLER, None) == BASE_CLASS_RECONFIGURE
+def test_monit_service_base_actions_scanned_from_base_class():
+    """The service-base fallback keeps inherited verbs in the registry.
+
+    ``monit/service`` declares no actions of its own; the generator records
+    the five ``ApiMutableServiceControllerBase`` verbs instead of dropping
+    the controller.
+    """
+    assert api_spec.has_action(MODULE, SERVICE_CONTROLLER, "reconfigure") is True
+    assert api_spec.has_action(MODULE, SERVICE_CONTROLLER, "status") is True
+    assert set(api_spec.list_actions(MODULE, SERVICE_CONTROLLER)) == {
+        "reconfigure",
+        "restart",
+        "start",
+        "status",
+        "stop",
+    }
 
 
 # --- (B) interfaces/assignment model resolution --------------------------------------------------
 
-# Locked current gap: the model silently dropped from models.json at 26.7.9 (see docstring, (B)).
+# Fixed by the generate_models.py ArrayField-subclass heuristic (26.7.9 follow-up):
+# the <interface type=".\NetworkInterfaceField"> wrapper is recognised again.
 
 
-def test_interfaces_assignment_absent_from_models_json():
-    assert "assignment" not in model_utils.list_models("interfaces")
-    assert model_utils.get_model_arrays("interfaces", "assignment") == {}
+def test_interfaces_assignment_present_in_models_json():
+    assert "NetworkInterface" in model_utils.list_models("interfaces")
+    assert model_utils.get_model_arrays("interfaces", "NetworkInterface") != {}
 
 
-def test_interfaces_interface_array_cannot_resolve_model():
-    """With the assignment model gone, the ``interface`` array field no longer resolves to a model."""
+def test_interfaces_interface_array_resolves_model():
+    """The 'interface' array resolves back to the NetworkInterface model (assignment API)."""
     model_name, array, fields = model_utils.find_model_for_array("interfaces", "interface")
-    assert (model_name, array) == ("", "")
-    assert fields == {}
-
-
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        r"REGRESSION (26.7.9): interfaces/assignment (the generic 'interface' model) dropped from "
-        "models.json because generate_models.py only matches array wrappers with type == 'ArrayField', "
-        "while upstream renamed the <interface> wrapper type to the concrete subclass "
-        "'.\\NetworkInterfaceField' (which extends ArrayField).  Restore by fixing the generator "
-        "(accept subclass ArrayField wrappers) and regenerating models.json; once shipped this "
-        "find_model_for_array('interfaces', 'interface') -> ('assignment', 'interface', {...})."
-    ),
-)
-def test_interfaces_interface_array_resolves_assignment_model():
-    """Correct post-fix behavior: the 'interface' array resolves back to the assignment model."""
-    model_name, array, fields = model_utils.find_model_for_array("interfaces", "interface")
-    assert model_name == "assignment"
-    assert array == "interface"
+    assert (model_name, array) == ("NetworkInterface", "interface")
     assert fields  # field metadata is present

@@ -25,7 +25,7 @@ modules/dns.py + states/dns.py   hand-written Unbound alias helpers (opnsense_dn
 
 | Path | Produced by | Notes |
 |---|---|---|
-| `src/saltext/opnsense/utils/controllers.json` | `tools/generate_spec.py` | API registry parsed from upstream PHP `*Api/*Controller.php` (77 modules / 260 controllers / 1843 actions @ OPNsense 26.7.9). JSON has no comments, so the sentinel is `meta.warning`. |
+| `src/saltext/opnsense/utils/controllers.json` | `tools/generate_spec.py` | API registry parsed from upstream PHP `*Api/*Controller.php` (93 modules / 299 controllers / 2038 actions @ OPNsense 26.7.9). JSON has no comments, so the sentinel is `meta.warning`. |
 | `src/saltext/opnsense/utils/models.json` | `tools/generate_models.py` | Field/relation registry parsed from upstream model XML. Same `meta.warning` sentinel. |
 | `src/saltext/opnsense/{modules,states}/opnsense_<module>.py` | `tools/generate_wrappers.py` | **Deprecated, none committed in 2.0.** Wrappers are injected at runtime by `__getattr__` in `modules/opnsense.py`. If such a file ever exists it must begin with the sentinel header (below). |
 | `docs/tutorials/pillars/full_example.sls{,.example}` | `tools/generate_pillar_example.py` | Header-marked. Not part of `generate_all.py` and currently stale (75 modules). Regenerate; do not hand-patch. |

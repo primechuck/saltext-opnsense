@@ -7,13 +7,13 @@ Requires `salt>=3008`. Resources-only.
 ```
 src/saltext/opnsense/
   utils/opnsense.py               — Client 3008+ only, close() + context manager
-  utils/api_spec.py               — Spec loader 77 modules for 26.7.9, lru_cache
+  utils/api_spec.py               — Spec loader 93 modules for 26.7.9, lru_cache
   utils/models.py                 — Model relation_targets
   utils/diff.py                   — Diff engine, bool/CSV/UUID/FQDN normalization
   utils/common.py                 — helpers
-  utils/controllers.json          — 77 modules + meta core_ref
+  utils/controllers.json          — 93 modules + meta core_ref
   utils/models.json               — Model registry 653K
-  modules/opnsense.py             — Exec generic + dynamic 1843 funcs __getattr__
+  modules/opnsense.py             — Exec generic + dynamic 2038 funcs __getattr__
   modules/dns.py                  — Convenience Unbound DNS alias listers & preview
   states/opnsense.py              — Generic item_present/absent/reconfigured/assert_resolves
   states/dns.py                   — Pillar-driven opnsense_dns.managed batch state
@@ -25,7 +25,7 @@ tools/
   generate_spec.py                — core/plugins -> controllers.json
   generate_models.py              — Model XML -> models.json
   generate_all.py                 — pipeline: spec->models->verify->test
-  verify_import.py                — import proof 77 modules, 1843 dynamic
+  verify_import.py                — import proof 93 modules, 2038 dynamic
   check_public_boundary.py        — public boundary guard
 tests/unit/                       — mocked, no live OPNsense
 tests/integration/                — live gated OPNSENSE_LIVE_TEST=1

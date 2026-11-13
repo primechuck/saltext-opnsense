@@ -15,8 +15,10 @@ HTTP-method quirks captured from the upstream controllers (see ``src/.../control
 * ``core/dashboard/getDefaults`` -- plain read, **GET**.
 * ``interfaces/{tap,wireless}settings`` -- standard ``ApiMutableModelControllerBase`` CRUD
   (search/get = GET, set/add/del = POST, ``reconfigure`` = POST).
-* ``netflector/settings`` -- ``*Reflector`` CRUD; ``netflector/service`` daemon verbs are
-  **absent** from controllers.json (see the dedicated absence test).
+* ``netflector/settings`` -- ``*Reflector`` CRUD; ``netflector/service`` daemon verbs
+  (start/stop/restart/reconfigure/status) are inherited from
+  ``ApiMutableServiceControllerBase`` and recorded by the
+  ``SERVICE_BASE_ACTIONS`` fallback in ``tools/generate_spec.py``.
 
 Offline-first: the HTTP layer is mocked and no socket is opened; ``api_spec`` and ``url_for``
 only touch the bundled registries.
@@ -260,16 +262,17 @@ def test_reconfigure_lookup_resolves_existing_endpoint(module, controller, type_
 
 
 # --------------------------------------------------------------------------- #
-# 5. Gap: netflector daemon control is absent from the dynamic map
+# 5. netflector/service daemon verbs come from the service base class
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("action", ["get", "set", "start", "stop", "restart", "status"])
-def test_netflector_service_verbs_absent_from_dynamic_map(action):
-    """netflector/service daemon verbs (get/set/start/stop/restart/status) are NOT in the map."""
-    assert api_spec.has_action("netflector", "service", action) is False
+@pytest.mark.parametrize("action", ["reconfigure", "restart", "start", "status", "stop"])
+def test_netflector_service_verbs_present_from_base_class(action):
+    """netflector/service declares no actions of its own; the five inherited
+    ``ApiMutableServiceControllerBase`` verbs are recorded in the registry."""
+    assert api_spec.has_action("netflector", "service", action) is True
 
 
-def test_netflector_service_controller_absent():
-    assert "service" not in api_spec.list_controllers("netflector")
+def test_netflector_service_controller_present():
+    assert "service" in api_spec.list_controllers("netflector")
 
 
 # --------------------------------------------------------------------------- #

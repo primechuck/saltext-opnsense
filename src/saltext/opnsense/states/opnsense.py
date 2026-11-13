@@ -46,6 +46,10 @@ _RECONFIGURE_DEFAULTS = {
     "kea": "kea/service/reconfigure",
     "acmeclient": "acmeclient/service/reconfigure",
     "firewall": "firewall/alias/reconfigure",
+    # 26.7.9: monit/service reconfigure is inherited from
+    # ApiMutableServiceControllerBase (see utils/common.py); explicit entry
+    # instead of relying on the controller fallback in _infer_reconfigure.
+    "monit": "monit/service/reconfigure",
 }
 _RECONFIGURE_OVERRIDES = {
     ("unbound", "settings"): "unbound/service/reconfigure",

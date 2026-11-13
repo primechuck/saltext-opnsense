@@ -92,7 +92,7 @@ also runs in the unit suite (`tests/unit/test_codegen_guardrails.py`).
 ## API reference — live discovery (not a generated dump)
 
 `docs/API.md` is hand-written. The source of truth is `utils/controllers.json` meta
-(26.7.9, 77 modules, 1843 actions). Live discovery is always accurate for the target firmware:
+(26.7.9, 93 modules, 2038 actions). Live discovery is always accurate for the target firmware:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense.list_api_modules

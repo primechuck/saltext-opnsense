@@ -6,7 +6,7 @@ Requires `salt>=3008`. Resources-only, no proxy.
 
 OPNsense API has 26 core + ~80 plugin modules, each 5-15 actions. Hand-coding 400+ funcs brittle. Templated:
 
-- `generate_spec.py` clones `opnsense/core` + `plugins` at tag, parses `Api/*Controller.php` for `*Action` -> `controllers.json` registry (77 modules, 260 controllers, 1843 actions for 26.7.9)
+- `generate_spec.py` clones `opnsense/core` + `plugins` at tag, parses `Api/*Controller.php` for `*Action` -> `controllers.json` registry (93 modules, 299 controllers, 2038 actions for 26.7.9)
 - Exec `opnsense.call` generic works for any registry entry
 - Resource connection `resources/opnsense/__init__.py` reuses same client
 - No code change when OPNsense adds module — regen registry, CI catches drift
@@ -31,7 +31,7 @@ Resources-only, no proxy daemon.
 
 ### Layer 3: `modules` + `states` — Execution + States
 
-Exec `modules/opnsense.py`: raises `SaltInvocationError` with pillar hint, `doctor`, discovery `list_api_modules/controllers/actions`, dynamic injection via `__getattr__/__dir__` 1843 funcs lazy via context+Lock.
+Exec `modules/opnsense.py`: raises `SaltInvocationError` with pillar hint, `doctor`, discovery `list_api_modules/controllers/actions`, dynamic injection via `__getattr__/__dir__` 2038 funcs lazy via context+Lock.
 
 States `states/opnsense.py`: generic `item_present/absent/reconfigured`, `__context__` caching, `test=True`.
 

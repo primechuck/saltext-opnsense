@@ -22,7 +22,7 @@ Verify:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | head
-# 77 modules, 1843 endpoints
+# 93 modules, 2038 endpoints
 salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers unbound
 salt -C 'T@opnsense:fw-01' opnsense.list_api_actions unbound settings
 salt -C 'T@opnsense:fw-01' opnsense.doctor
@@ -155,7 +155,7 @@ salt-call --local -r --tgt 'T@opnsense' --tgt-type compound state.apply opnsense
 
 ## 5. Friendly CLI listers & dynamic API wrappers
 
-Raw `opnsense.search` returns `{"rows": [...]}`. `opnsense_dns` provides human maps and `opnsense.*` exposes all 1,843 endpoints dynamically:
+Raw `opnsense.search` returns `{"rows": [...]}`. `opnsense_dns` provides human maps and `opnsense.*` exposes all 2,038 endpoints dynamically:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense_dns.list_aliases
