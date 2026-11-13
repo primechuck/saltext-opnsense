@@ -76,6 +76,10 @@ Sentinel header required on every generated **Python** file (enforced in
 
 - Every loadable module defines `__virtual__()` returning `True` or `(False, "reason")`.
   Gate on `utils.common.is_salt_version_ok((3008,))`. Never raise from `__virtual__`.
+  This guard is intentional, not dead code: `pyproject.toml` enforces `salt>=3008` at
+  install time, but an ancient system-packaged Salt can still attempt to load this
+  extension — the guard fails fast with a clear reason instead of a silent broken
+  load. Keep it in every `__virtual__`; do not half-remove it across modules.
 - `__opts__`, `__pillar__`, `__grains__` are **read-only**. Never assign into them. The only
   mutable shared cache is `__context__` (see `resources/opnsense/__init__.py`).
 - Touch `__salt__` **lazily, inside functions** (see `_search_fn()` in `states/opnsense.py`),
@@ -135,6 +139,13 @@ and `api_secret`/`secret`/`password`. `verify_ssl` defaults to `True`.
 - Fixing generator templates in `tools/`, then regenerating (with the drift check green).
 - Improving state idempotency; fixing diff/normalization bugs with a regression test.
 - Docstrings, type hints, `TypedDict`s, docs under `docs/`, changelog fragments.
+
+**Python floor is `>=3.12` — write native syntax only:** use PEP 585 builtins generics
+(`list[str]`, `dict[str, Any]`) and PEP 604 unions (`str | None`), never `typing.List` /
+`typing.Dict` / `typing.Optional` / `typing.Union` in new code. Never add `six`,
+`distutils`, or `pkg_resources` (the one legacy `pkg_resources` fallback in
+`src/saltext/opnsense/__init__.py` is a deprecated-version shim only; prefer
+`importlib.metadata`).
 
 **Human gate required (open the PR, flag it, do not merge or self-approve):**
 - `pyproject.toml` dependencies, `requires-python`, or `salt` version floor.
