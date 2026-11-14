@@ -28,10 +28,10 @@ At runtime nothing is code-generated: `modules/opnsense.py` builds wrappers lazi
 Run from the repository root. Prefer the single entrypoint:
 
 ```bash
-make gen-all CORE=26.7.3     # spec -> models -> verify_import -> pytest tests/unit (recommended)
-# or: nox -s gen_all -- --core-ref 26.7.3 --plugins-ref 26.7.3
-make gen-spec gen-models CORE=26.7.3   # registries only
-make bump CORE=26.7.3        # controllers.json + import check only; does NOT refresh models.json
+make gen-all CORE=26.7.9     # spec -> models -> verify_import -> pytest tests/unit (recommended)
+# or: nox -s gen_all -- --core-ref 26.7.9 --plugins-ref 26.7.9
+make gen-spec gen-models CORE=26.7.9   # registries only
+make bump CORE=26.7.9        # controllers.json + import check only; does NOT refresh models.json
 ```
 
 Bump `controllers.json` and `models.json` together: the drift gate regenerates both at the refs in
@@ -40,8 +40,8 @@ Bump `controllers.json` and `models.json` together: the drift gate regenerates b
 Individual steps (always pass **both** refs so `meta` records what was scanned):
 
 ```bash
-python3 tools/generate_spec.py   --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json
-python3 tools/generate_models.py --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/models.json
+python3 tools/generate_spec.py   --core-ref 26.7.9 --plugins-ref 26.7.9 --output src/saltext/opnsense/utils/controllers.json
+python3 tools/generate_models.py --core-ref 26.7.9 --plugins-ref 26.7.9 --output src/saltext/opnsense/utils/models.json
 ```
 
 - `--local-core/--local-plugins` (spec) and `--core/--plugins` (models) reuse existing clones.
@@ -92,7 +92,7 @@ also runs in the unit suite (`tests/unit/test_codegen_guardrails.py`).
 ## API reference — live discovery (not a generated dump)
 
 `docs/API.md` is hand-written. The source of truth is `utils/controllers.json` meta
-(26.7.3, 76 modules, 1815 actions). Live discovery is always accurate for the target firmware:
+(26.7.9, 93 modules, 2038 actions). Live discovery is always accurate for the target firmware:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense.list_api_modules

@@ -28,7 +28,7 @@ make verify
 # unit (no live OPNsense, mocked)
 PYTHONPATH=src pytest tests/unit -v
 
-# import proof: 76 modules + dynamic 1815 wrappers
+# import proof: 93 modules + dynamic 2038 wrappers
 PYTHONPATH=src python3 tools/verify_import.py
 
 # lint
@@ -71,7 +71,7 @@ check-jsonschema --builtin-schema vendor.github-workflows .github/workflows/*.ym
 ```
 
 Config files:
-- `.pre-commit-config.yaml` – main gate (remove-import-headers, salt-rewrite docstrings, pyupgrade py310+, isort, ruff, bandit, nox-lint, plus yamllint --strict, salt-lint, check-github-workflows, shellcheck)
+- `.pre-commit-config.yaml` – main gate (remove-import-headers, salt-rewrite docstrings, pyupgrade py312+, isort, ruff, bandit, nox-lint, plus yamllint --strict, salt-lint, check-github-workflows, shellcheck)
 - `.yamllint.yaml` – extends default, line-length 120, ignores generated JSON, allows `on:` empty value
 - `.salt-lint` – skips 205/207/208 (file extension/mode noise), see template-formula defaults
 - `.github/workflows/lint.yml` – CI mirror: pre-commit + yaml-lint + salt-lint + ruff + workflow-lint (check-jsonschema + actionlint), all actions pinned to SHA + version comment
@@ -111,7 +111,7 @@ Run `pytest tests/unit -v --collect-only` to verify discovery.
 
 ## Regenerating code
 
-- Spec: `tools/generate_spec.py --core-ref 26.7.3 --plugins-ref 26.7.3 --output src/saltext/opnsense/utils/controllers.json`
+- Spec: `tools/generate_spec.py --core-ref 26.7.9 --plugins-ref 26.7.9 --output src/saltext/opnsense/utils/controllers.json`
 - Models: `tools/generate_models.py`
 - Wrappers: `tools/generate_wrappers.py` (emits 76 exec + state modules + dynamic wrappers)
 - Verify: `tools/verify_import.py`
@@ -159,7 +159,7 @@ See `docs/MAINTENANCE.md` for OPNsense release sprint workflow.
 
 ## Code style
 
-- `ruff` with `line-length=100`, `target-version=py310`, pinned `0.14.8` in CI
+- `ruff` with `line-length=100`, `target-version=py312`, pinned `0.14.8` in CI
 - Builtins allowed: `__opts__`, `__salt__`, `__context__`, `__grains__`, `__utils__`, `__pillar__`, `__resource__`, `__resource_funcs__`, `__minion__` (declared in `pyproject.toml` `tool.ruff.builtins`)
 - No `_proxy/_grains` legacy — removed 1.0.0 Resources-only
 - Prefer Resources targeting `T@opnsense:fw-01` in docs/examples, not legacy minion id

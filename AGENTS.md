@@ -4,7 +4,7 @@ Harness-agnostic contract for autonomous coding agents and human contributors.
 `CLAUDE.md` and `.cursorrules` are symlinks to this file: edit **only** `AGENTS.md`.
 
 `saltext-opnsense` bridges Salt's declarative, idempotent model with OPNsense's imperative,
-UI-driven REST API. Requires `salt>=3008` and Python `>=3.10`. It is **Resources-only**: the proxy
+UI-driven REST API. Requires `salt>=3008` and Python `>=3.12`. It is **Resources-only**: the proxy
 minion was removed in 1.0.0, so do not add proxy code or `salt-proxy` docs.
 
 ## 1. Repository overview and architecture map
@@ -25,7 +25,7 @@ modules/dns.py + states/dns.py   hand-written Unbound alias helpers (opnsense_dn
 
 | Path | Produced by | Notes |
 |---|---|---|
-| `src/saltext/opnsense/utils/controllers.json` | `tools/generate_spec.py` | API registry parsed from upstream PHP `*Api/*Controller.php` (76 modules / 258 controllers / 1815 actions @ OPNsense 26.7.3). JSON has no comments, so the sentinel is `meta.warning`. |
+| `src/saltext/opnsense/utils/controllers.json` | `tools/generate_spec.py` | API registry parsed from upstream PHP `*Api/*Controller.php` (93 modules / 299 controllers / 2038 actions @ OPNsense 26.7.9). JSON has no comments, so the sentinel is `meta.warning`. |
 | `src/saltext/opnsense/utils/models.json` | `tools/generate_models.py` | Field/relation registry parsed from upstream model XML. Same `meta.warning` sentinel. |
 | `src/saltext/opnsense/{modules,states}/opnsense_<module>.py` | `tools/generate_wrappers.py` | **Deprecated, none committed in 2.0.** Wrappers are injected at runtime by `__getattr__` in `modules/opnsense.py`. If such a file ever exists it must begin with the sentinel header (below). |
 | `docs/tutorials/pillars/full_example.sls{,.example}` | `tools/generate_pillar_example.py` | Header-marked. Not part of `generate_all.py` and currently stale (75 modules). Regenerate; do not hand-patch. |
@@ -76,6 +76,10 @@ Sentinel header required on every generated **Python** file (enforced in
 
 - Every loadable module defines `__virtual__()` returning `True` or `(False, "reason")`.
   Gate on `utils.common.is_salt_version_ok((3008,))`. Never raise from `__virtual__`.
+  This guard is intentional, not dead code: `pyproject.toml` enforces `salt>=3008` at
+  install time, but an ancient system-packaged Salt can still attempt to load this
+  extension — the guard fails fast with a clear reason instead of a silent broken
+  load. Keep it in every `__virtual__`; do not half-remove it across modules.
 - `__opts__`, `__pillar__`, `__grains__` are **read-only**. Never assign into them. The only
   mutable shared cache is `__context__` (see `resources/opnsense/__init__.py`).
 - Touch `__salt__` **lazily, inside functions** (see `_search_fn()` in `states/opnsense.py`),
@@ -99,6 +103,22 @@ Sentinel header required on every generated **Python** file (enforced in
 Grains and proxy configuration are **not** consulted. Do not invent new auth parameters or a new
 resolution layer without human review (see section 4). Accepted aliases: `api_key`/`key`/`username`
 and `api_secret`/`secret`/`password`. `verify_ssl` defaults to `True`.
+
+Salt 3008 wraps pillar values in `MaskedDict`/`MaskedList` (`salt.utils.secret`). Scalar leaves
+still read as plain strings via normal `.get()`/`[]` access — masking only redacts `repr`/`str`
+and serialized output — so the credential code paths in `utils/opnsense.py` and the `resources:`
+fallback in `resources/opnsense/__init__.py::_pillar_tree` work as-is today. Two rules follow:
+never compare or log whole pillar subtrees (they render as `**********`), and route every secret
+read through `utils/opnsense.py` / the resource `_connect` path instead of ad-hoc `__pillar__`
+access. If a future code path ever needs explicit plain-Python containers, unwrap with
+`salt.utils.secret.expose()` (note: there is no `unmask` helper in that module) or read via
+`pillar.get(key, unmask=True)` — never hand-roll masking.
+
+The Salt Resources API (`salt.utils.resources.pillar_resources_tree`, `__resource__` /
+`__resource_funcs__`) is new in 3008.0 and is the **only** supported way to reach resource pillar
+data here. Do not pull in `salt.utils.cloud`, `sdb`, or any legacy pillar connection-pooling
+pattern when editing `resources/opnsense/`; the `except Exception` fallback to a direct
+`resources:` pillar read in `_pillar_tree` is the single sanctioned compatibility shim.
 
 ### The idempotency bridge (follow all four steps, in order)
 
@@ -135,6 +155,13 @@ and `api_secret`/`secret`/`password`. `verify_ssl` defaults to `True`.
 - Fixing generator templates in `tools/`, then regenerating (with the drift check green).
 - Improving state idempotency; fixing diff/normalization bugs with a regression test.
 - Docstrings, type hints, `TypedDict`s, docs under `docs/`, changelog fragments.
+
+**Python floor is `>=3.12` — write native syntax only:** use PEP 585 builtins generics
+(`list[str]`, `dict[str, Any]`) and PEP 604 unions (`str | None`), never `typing.List` /
+`typing.Dict` / `typing.Optional` / `typing.Union` in new code. Never add `six`,
+`distutils`, or `pkg_resources` (the one legacy `pkg_resources` fallback in
+`src/saltext/opnsense/__init__.py` is a deprecated-version shim only; prefer
+`importlib.metadata`).
 
 **Human gate required (open the PR, flag it, do not merge or self-approve):**
 - `pyproject.toml` dependencies, `requires-python`, or `salt` version floor.

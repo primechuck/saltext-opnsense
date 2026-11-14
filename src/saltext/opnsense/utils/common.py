@@ -18,6 +18,11 @@ _RECONFIGURE_DEFAULTS_RAW: Final[dict[str, str]] = {
     "dhcp": "kea/service/reconfigure",
     "firewall": "firewall/alias/reconfigure",
     "interfaces": "interfaces/vlan/reconfigure",
+    # 26.7.9: monit/service exposes reconfigure via the inherited
+    # ApiMutableServiceControllerBase, which the spec generator cannot see
+    # (fixed in generate_spec.py); list it explicitly so reconfigure lookup
+    # does not depend on the controller fallback.
+    "monit": "monit/service/reconfigure",
 }
 RECONFIGURE_DEFAULTS: Final[MappingProxyType[str, str]] = MappingProxyType(
     _RECONFIGURE_DEFAULTS_RAW

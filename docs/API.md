@@ -1,6 +1,6 @@
 # API Reference
 
-Bundled spec: OPNsense 26.7.3 — 76 modules, 1815 endpoints, 258 controllers in `src/saltext/opnsense/utils/controllers.json`.
+Bundled spec: OPNsense 26.7.9 — 93 modules, 2038 endpoints, 299 controllers in `src/saltext/opnsense/utils/controllers.json`.
 
 All endpoints are accessible via generic `opnsense.call` and dynamic wrappers `opnsense.{module}_{controller}_{action}` injected via `__getattr__` in `modules/opnsense.py`.
 
@@ -24,7 +24,7 @@ salt -C 'T@opnsense:fw-01' opnsense.search unbound settings host_alias row_count
 - Typed: `opnsense.unbound_settings_searchHostAlias` or `opnsense.unbound_settings_search_host_alias`
 - Convenience: `opnsense_unbound.list_aliases`, `opnsense_bind.list_domains`, etc.
 
-All 1815 actions are callable without code change — dynamic `__getattr__` reads `controllers.json`.
+All 2038 actions are callable without code change — dynamic `__getattr__` reads `controllers.json`.
 
 ## Official upstream docs
 
@@ -39,10 +39,10 @@ Upstream documents request/response shapes; this extension maps 1:1 to those end
 `src/saltext/opnsense/utils/controllers.json` meta field:
 
 ```json
-{"core_ref": "26.7.3", "plugins_ref": "26.7.3", "total_modules": 76, "total_controllers": 258, "total_actions": 1815}
+{"core_ref": "26.7.9", "plugins_ref": "26.7.9", "total_modules": 93, "total_controllers": 299, "total_actions": 2038}
 ```
 
-Renovate tracks `core_ref` for auto-bump PRs. Regenerate via `make bump CORE=26.7.3`.
+Renovate tracks `core_ref` for auto-bump PRs. Regenerate via `make bump CORE=26.7.9`.
 
 ## Debug full table (not committed)
 
@@ -57,7 +57,7 @@ Tool defaults to stdout; use `--output` for file. Do not commit generated refere
 ## Examples
 
 ```bash
-salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | wc -l         # 76
+salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | wc -l         # 77
 salt -C 'T@opnsense:fw-01' opnsense.search firewall alias item row_count=1
 salt -C 'T@opnsense:fw-01' opnsense.get unbound settings host_override <uuid>
 salt -C 'T@opnsense:fw-01' opnsense.call kea dhcpv4 searchSubnet
