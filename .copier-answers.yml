@@ -10,7 +10,7 @@ summary: Salt extension for managing OPNsense via its API
 url: https://github.com/primechuck/saltext-opnsense
 source_url: https://github.com/primechuck/saltext-opnsense
 tracker_url: https://github.com/primechuck/saltext-opnsense/issues
-docs_url: https://primechuck.github.io/saltext-opnsense/
+docs_url: https://github.com/primechuck/saltext-opnsense/tree/main/docs
 license: other
 license_classifier: License :: OSI Approved :: MIT License
 loaders: [module, state]
