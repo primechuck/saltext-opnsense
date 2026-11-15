@@ -120,11 +120,17 @@ Both use PyPI trusted publishing (OIDC); there are no API tokens in the reposito
 ### Dev builds
 
 Nothing to do: merge to `main`. Once the `CI` workflow is green the commit is built and uploaded to
-TestPyPI. Install one with:
+TestPyPI. Install one in two steps, dependencies from PyPI first and then only this package from
+TestPyPI:
 
 ```bash
-pip install --pre --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ saltext-opnsense
+pip install "salt>=3008" requests urllib3
+pip install --pre --no-deps --index-url https://test.pypi.org/simple/ saltext-opnsense
 ```
+
+Never combine `--index-url https://test.pypi.org/simple/` with `--extra-index-url https://pypi.org/simple/`.
+pip takes the highest version across both indexes, and anyone can upload to TestPyPI under the name
+of a real dependency (a `jmespath 99.99.99` that runs code at install time already exists there).
 
 ### Stable release
 
