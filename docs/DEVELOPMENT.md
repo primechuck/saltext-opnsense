@@ -99,9 +99,68 @@ OPNsense ~2/year (25.1, 25.7). Must stay in sync — only `make bump CORE=X.Y` t
 1. Bump: `make bump CORE=26.7.9` or `python tools/generate_spec.py --core-ref 26.7.9 --output src/saltext/opnsense/utils/controllers.json`
 2. Verify: `PYTHONPATH=src python3 tools/verify_import.py -v && PYTHONPATH=src pytest tests/unit -v && ruff check src tests`
 3. Live smoke (lab only): `salt -C 'T@opnsense:fw-01' opnsense.ping && salt -C 'T@opnsense:fw-01' opnsense.doctor`
-4. Commit, PR, tag `v*.*.*` -> publish.yml OIDC to PyPI
+4. Commit, PR, merge to `main` (a dev build goes to TestPyPI automatically), then cut a release (see below)
 5. After merge: `salt '*' saltutil.sync_all` + `opnsense.doctor`
 
 Renovate tracks `controllers.json` meta `core_ref` for auto-bump PRs.
 
 `setuptools_scm` version from git tags `vX.Y.Z`, no `+gHASH`. Writes `_version.py` gitignored.
+
+## Releases: dev and stable
+
+Versions are never written by hand: `setuptools_scm` derives them from git tags.
+
+| Channel | Trigger | Index | Example version | Approval |
+|---|---|---|---|---|
+| Dev | every push to `main` that passes CI (`publish-dev.yml`) | TestPyPI | `2.0.1.dev3` (3rd commit after `v2.0.0`) | none |
+| Stable | pushing a `vX.Y.Z` tag (`publish.yml`) | PyPI | `2.0.0` | `pypi` environment reviewer |
+
+Both use PyPI trusted publishing (OIDC); there are no API tokens in the repository.
+
+### Dev builds
+
+Nothing to do: merge to `main`. Once the `CI` workflow is green the commit is built and uploaded to
+TestPyPI. Install one in two steps, dependencies from PyPI first and then only this package from
+TestPyPI:
+
+```bash
+pip install "salt>=3008" requests urllib3
+pip install --pre --no-deps --index-url https://test.pypi.org/simple/ saltext-opnsense
+```
+
+Never combine `--index-url https://test.pypi.org/simple/` with `--extra-index-url https://pypi.org/simple/`.
+pip takes the highest version across both indexes, and anyone can upload to TestPyPI under the name
+of a real dependency (a `jmespath 99.99.99` that runs code at install time already exists there).
+
+### Stable release
+
+1. On a branch, build the changelog and open a PR (this consumes the fragments in `changelog/`):
+
+   ```bash
+   towncrier build --version 2.0.0
+   ```
+
+2. Merge the PR and wait for CI on `main` to pass.
+3. Tag the merge commit on `main` and push the tag:
+
+   ```bash
+   git switch main && git pull
+   git tag -a v2.0.0 -m "saltext-opnsense 2.0.0"
+   git push origin v2.0.0
+   ```
+
+4. `publish.yml` runs the full CI suite, builds the sdist and wheel, and refuses to continue unless
+   the tag is on `main`, `twine check --strict` passes, and the built version equals the tag.
+5. Approve the pending `pypi` deployment in the Actions run. Only then is anything uploaded.
+
+Pre-releases use the same path with a PEP 440 tag such as `v2.1.0rc1`. PyPI versions are immutable:
+if a release is bad, yank it on PyPI and tag a new patch version; never move or reuse a tag.
+
+### One-time setup (repository owner)
+
+- PyPI: trusted publisher for workflow `publish.yml`, environment `pypi` (already configured).
+- TestPyPI: add a pending trusted publisher for project `saltext-opnsense`, owner `primechuck`,
+  repository `saltext-opnsense`, workflow `publish-dev.yml`, environment `testpypi`.
+- GitHub: create the `testpypi` environment (no reviewers) and add required reviewers to the `pypi`
+  environment (Settings -> Environments).
+- Optional: a tag ruleset restricting who can create `v*` tags.
