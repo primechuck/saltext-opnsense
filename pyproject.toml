@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "wheel",
-    "setuptools>=50.3.2",
+    "setuptools>=61",
     "setuptools_scm[toml]>=3.4",
 ]
 build-backend = "setuptools.build_meta"
@@ -17,7 +17,6 @@ maintainers = [{name = "David Bierce", email = "david@bierce.org"}]
 keywords = ["salt", "salt-extension", "saltext", "opnsense", "firewall", "api", "unbound", "bind", "kea", "acme"]
 classifiers = [
   "Programming Language :: Python",
-  "Programming Language :: Cython",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.12",
@@ -45,7 +44,7 @@ dynamic = ["version"]
 Homepage = "https://github.com/primechuck/saltext-opnsense"
 Repository = "https://github.com/primechuck/saltext-opnsense"
 Issues = "https://github.com/primechuck/saltext-opnsense/issues"
-Documentation = "https://primechuck.github.io/saltext-opnsense/"
+Documentation = "https://github.com/primechuck/saltext-opnsense/tree/main/docs"
 Changelog = "https://github.com/primechuck/saltext-opnsense/blob/main/CHANGELOG.md"
 Source = "https://github.com/primechuck/saltext-opnsense"
 
@@ -104,9 +103,6 @@ exclude = ["tests"]
 write_to = "src/saltext/opnsense/version/_version.py"
 write_to_template = "__version__ = \"{version}\"\n"
 local_scheme = "no-local-version"
-
-[tool.distutils.bdist_wheel]
-universal = 1
 
 [tool.distutils.sdist]
 owner = "root"

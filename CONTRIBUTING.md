@@ -140,9 +140,12 @@ towncrier create 123.feature --edit
 Build on release:
 
 ```bash
-towncrier build --version 1.0.0
+towncrier build --version 2.0.0
 # appends to CHANGELOG.md, deletes fragments
 ```
+
+Releases are cut by pushing a `vX.Y.Z` tag; every green push to `main` is published to TestPyPI as a
+dev build. Full procedure: `docs/DEVELOPMENT.md` ("Releases: dev and stable").
 
 A changelog fragment is optional for small PRs but encouraged.
 

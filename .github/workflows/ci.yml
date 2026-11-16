@@ -5,9 +5,13 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Reused by publish.yml as the release test gate.
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # github.workflow is the *caller's* name under workflow_call, so a release
+  # run never shares (and cancels) a group with the regular CI run.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
