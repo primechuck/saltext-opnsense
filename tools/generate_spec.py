@@ -38,6 +38,17 @@ CONTROLLER_RE = re.compile(
     r"src/opnsense/mvc/app/controllers/OPNsense/([^/]+)/Api/([^/]+)Controller\.php"
 )
 ACTION_RE = re.compile(r"public\s+function\s+(\w+)Action\s*\(")
+EXTENDS_RE = re.compile(r"class\s+\w+\s+extends\s+(\w+)")
+
+# Actions exposed by the shared service base class
+# (src/opnsense/mvc/app/controllers/OPNsense/Base/ApiMutableServiceControllerBase.php).
+# The per-file regex above cannot see inherited actions, so service controllers
+# that declare no actions of their own (e.g. monit/service, netflector/service)
+# would silently vanish from the registry even though these five endpoints
+# exist at runtime via normal PHP method resolution. Verified against
+# opnsense/core 26.7.9; re-verify when bumping core_ref.
+SERVICE_BASE_ACTIONS = ["reconfigure", "restart", "start", "status", "stop"]
+SERVICE_BASE_CLASS = "ApiMutableServiceControllerBase"
 
 # JSON cannot carry a comment header, so the "do not edit" sentinel lives in meta.warning.
 # tools/check_codegen_drift.py requires it to start with "DO NOT EDIT".
@@ -85,7 +96,14 @@ def scan_controllers(root: pathlib.Path):
         content = php_file.read_text(errors="ignore")
         actions = ACTION_RE.findall(content)
         if not actions:
-            continue
+            # No explicit actions: a service controller inheriting from
+            # ApiMutableServiceControllerBase still exposes the base-class
+            # verbs (start/stop/restart/reconfigure/status) at runtime.
+            m_ext = EXTENDS_RE.search(content)
+            if m_ext and m_ext.group(1) == SERVICE_BASE_CLASS:
+                actions = list(SERVICE_BASE_ACTIONS)
+            else:
+                continue
 
         modules.setdefault(module, {})
         modules[module].setdefault(controller, [])

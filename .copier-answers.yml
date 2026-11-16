@@ -16,7 +16,7 @@ license_classifier: License :: OSI Approved :: MIT License
 loaders: [module, state]
 salt_version: '3008'
 max_salt_version: '3008'
-python_requires: '3.10'
+python_requires: '3.12'
 no_saltext_namespace: false
 ssh_fixtures: false
 test_containers: false

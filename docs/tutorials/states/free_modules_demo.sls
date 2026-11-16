@@ -1,7 +1,7 @@
-# Free modules demo — proves dynamic-only covers ALL 76 API modules for free
+# Free modules demo — proves dynamic-only covers ALL 77 API modules for free
 # No static wrappers needed — generic opnsense + dynamic injection (312+ funcs) does it.
 
-# Spec: controllers.json = 76 modules (core+plugins) from live upstream
+# Spec: controllers.json = 93 modules (core+plugins) from live upstream
 # Dynamic injection in modules/opnsense.py creates caddy_*, haproxy_*, nginx_* etc at import
 # Generic state opnsense.item_present works for ANY module (caddy/haproxy/nginx/wireguard etc)
 

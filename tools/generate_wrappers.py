@@ -34,7 +34,7 @@ SENTINEL = (
     "# Make changes in the generator script/templates and re-run codegen.\n"
 )
 HEADER_TMPL = SENTINEL + "# Built against OPNsense {core_ref} - run tools/generate_wrappers.py\n"
-HEADER = HEADER_TMPL.format(core_ref="26.7.3")
+HEADER = HEADER_TMPL.format(core_ref="26.7.9")
 
 
 # Manually curated fallback for acmeclient if missing
