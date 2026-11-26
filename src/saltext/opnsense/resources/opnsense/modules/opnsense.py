@@ -125,7 +125,7 @@ def list_api_actions(module, controller, **kwargs):
 def doctor(**kwargs):
     _strip(kwargs)
     res = {
-        "spec_version": "26.7.3",
+        "spec_version": "26.7.10",
         "loaded_modules_count": len(list_api_modules()),
         "status": "UNKNOWN",
         "resource_id": __resource__["id"] if "__resource__" in globals() else "unknown",  # type: ignore[name-defined]

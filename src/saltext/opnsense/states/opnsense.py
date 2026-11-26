@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 import socket
+from typing import Final
 
 log = logging.getLogger(__name__)
 from saltext.opnsense.utils.common import is_uuid as _is_uuid
@@ -275,7 +276,22 @@ def _auto_resolve(data: dict, module: str = "") -> dict:
     return data
 
 
+# Modules whose item controllers have no apply endpoint: set/add/del persist
+# synchronously (configd/model write), so the state must skip reconfigure.
+# 26.7.10: ``auth/userapikey`` (new controller) declares search/get/set/del
+# only -- there is no ``auth/*/reconfigure`` and the sibling ``auth/user``
+# applies via configdRun('auth sync user'), not via the MVC reconfigure flow.
+# Use ``reconfigure: False`` for auth/userapikey item states.
+_NO_RECONFIGURE_CONTROLLERS: Final = frozenset(
+    {
+        ("auth", "userapikey"),
+    }
+)
+
+
 def _infer_reconfigure(module: str, controller: str, type_name: str | None = None):
+    if (module, controller) in _NO_RECONFIGURE_CONTROLLERS:
+        return None
     for key in [(module, controller, type_name), (module, controller), (module,)]:
         if key in _RECONFIGURE_OVERRIDES:
             return _parse_rc(_RECONFIGURE_OVERRIDES[key])
