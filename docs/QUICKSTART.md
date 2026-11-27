@@ -22,7 +22,7 @@ Verify:
 
 ```bash
 salt -C 'T@opnsense:fw-01' opnsense.list_api_modules | head
-# 93 modules, 2038 endpoints
+# 93 modules, 2042 endpoints
 salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers unbound
 salt -C 'T@opnsense:fw-01' opnsense.list_api_actions unbound settings
 salt -C 'T@opnsense:fw-01' opnsense.doctor
@@ -68,7 +68,7 @@ salt -C 'T@opnsense:fw-01' opnsense.ping
 salt -C 'T@opnsense:fw-01' opnsense.doctor
 ```
 
-`doctor` returns `status: OK` with `spec_version: 26.7.9`.
+`doctor` returns `status: OK` with `spec_version: 26.7.10`.
 
 If `missing OPNsense config host`: check pillar path is `resources:opnsense:hosts:fw-01:host`, not legacy path. See `docs/RESOURCES.md`.
 
@@ -175,7 +175,7 @@ See `docs/STATES.md` for batch `opnsense_dns.managed` and `docs/API.md` for live
 - `missing config host` → check `resources:opnsense:hosts:fw-01:host` exists, `unmask=True`, not flat file
 - `parent resolve failed` → `salt -C 'T@opnsense:fw-01' opnsense.search unbound settings host_override search_phrase=cluster`
 - `Invalid JSON syntax` → OPNsense expects POST, client defaults POST, pass `{}` not empty
-- `404 Endpoint not found` → renamed action, regen `make bump CORE=26.7.9`
+- `404 Endpoint not found` → renamed action, regen `make bump CORE=26.7.10`
 - `RemoteDisconnected` → Kea restart slow, retry 3x backoff, batch + `onchanges`
 - `validations` failed → `OPNsenseValidationError.validations` in comment, fix data
 - Flap bool `1` vs True / CSV `lan,wan` vs list → fixed by `utils/diff.py` normalization

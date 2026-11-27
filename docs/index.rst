@@ -1,7 +1,7 @@
 Welcome to saltext-opnsense's documentation!
 ============================================
 
-OPNsense 26.7.9 — 93 modules, 2038 endpoints via REST API.
+OPNsense 26.7.10 — 93 modules, 2042 endpoints via REST API.
 Salt 3008+ Resources fleet-ready — one managing minion manages dozens FWs.
 
 .. toctree::

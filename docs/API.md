@@ -1,6 +1,6 @@
 # API Reference
 
-Bundled spec: OPNsense 26.7.9 — 93 modules, 2038 endpoints, 299 controllers in `src/saltext/opnsense/utils/controllers.json`.
+Bundled spec: OPNsense 26.7.10 — 93 modules, 2042 endpoints, 300 controllers in `src/saltext/opnsense/utils/controllers.json`.
 
 All endpoints are accessible via generic `opnsense.call` and dynamic wrappers `opnsense.{module}_{controller}_{action}` injected via `__getattr__` in `modules/opnsense.py`.
 
@@ -24,7 +24,7 @@ salt -C 'T@opnsense:fw-01' opnsense.search unbound settings host_alias row_count
 - Typed: `opnsense.unbound_settings_searchHostAlias` or `opnsense.unbound_settings_search_host_alias`
 - Convenience: `opnsense_unbound.list_aliases`, `opnsense_bind.list_domains`, etc.
 
-All 2038 actions are callable without code change — dynamic `__getattr__` reads `controllers.json`.
+All 2042 actions are callable without code change — dynamic `__getattr__` reads `controllers.json`.
 
 ## Official upstream docs
 
@@ -39,10 +39,10 @@ Upstream documents request/response shapes; this extension maps 1:1 to those end
 `src/saltext/opnsense/utils/controllers.json` meta field:
 
 ```json
-{"core_ref": "26.7.9", "plugins_ref": "26.7.9", "total_modules": 93, "total_controllers": 299, "total_actions": 2038}
+{"core_ref": "26.7.10", "plugins_ref": "26.7.10", "total_modules": 93, "total_controllers": 300, "total_actions": 2042}
 ```
 
-Renovate tracks `core_ref` for auto-bump PRs. Regenerate via `make bump CORE=26.7.9`.
+Renovate tracks `core_ref` for auto-bump PRs. Regenerate via `make bump CORE=26.7.10`.
 
 ## Debug full table (not committed)
 

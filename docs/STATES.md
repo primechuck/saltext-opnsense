@@ -182,6 +182,24 @@ salt -C 'T@opnsense:fw-01' opnsense.list_api_controllers acmeclient
 salt -C 'T@opnsense:fw-01' opnsense.search acmeclient accounts account row_count=-1
 ```
 
+## Auth API keys (no reconfigure)
+
+`auth/userapikey` (OPNsense 26.7.10+) manages user API keys and has no
+`reconfigure` endpoint — writes apply synchronously. The generic state skips
+the apply step automatically, but pass `reconfigure: False` explicitly to
+document intent:
+
+```yaml
+deploy_key:
+  opnsense.item_present:
+    - module: auth
+    - controller: userapikey
+    - type: apikey
+    - match: {username: deploy, descr: ci}
+    - data: {username: deploy, descr: ci}
+    - reconfigure: False
+```
+
 ## Batch vs Single
 
 - Single `alias_present` → `add` + `reconfigure` per item (N reloads)
@@ -209,6 +227,6 @@ See `docs/QUICKSTART.md` for fleet targeting `T@opnsense:fw-01` and `docs/API.md
 
 ## Free modules — all 76
 
-Codegen free: wrappers for every OPNsense API module via dynamic `__getattr__` 2038 funcs. Generic `opnsense.item_present` covers any module. See `examples` and `docs/tutorials`.
+Codegen free: wrappers for every OPNsense API module via dynamic `__getattr__` 2042 funcs. Generic `opnsense.item_present` covers any module. See `examples` and `docs/tutorials`.
 
 Targeting always via `T@opnsense:fw-01` (Resources). Pillar path `resources:opnsense:hosts:fw-01:{host,api_key}` or `pillars/hosts/<minion>.sls` example (replace `<minion>` with your managing minion ID).
